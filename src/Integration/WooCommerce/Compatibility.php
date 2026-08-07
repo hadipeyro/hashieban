@@ -44,7 +44,7 @@ final class Compatibility
     }
 
     /**
-     * Check whether the installed WooCommerce version is supported.
+     * Determine whether the installed WooCommerce version is supported.
      */
     public function hasSupportedWooCommerceVersion(): bool
     {
@@ -60,7 +60,7 @@ final class Compatibility
     }
 
     /**
-     * Check whether WooCommerce COGS is enabled.
+     * Determine whether WooCommerce COGS is enabled.
      */
     public function isCogsEnabled(): bool
     {
@@ -72,13 +72,17 @@ final class Compatibility
             return false;
         }
 
-        $features = wc_get_container()->get(FeaturesController::class);
+        $features = wc_get_container()->get(
+            FeaturesController::class
+        );
 
-        return $features->feature_is_enabled('cost_of_goods_sold');
+        return $features->feature_is_enabled(
+            'cost_of_goods_sold'
+        );
     }
 
     /**
-     * Display compatibility notices for administrators.
+     * Render Hashieban compatibility notices.
      */
     public function renderAdminNotices(): void
     {
@@ -99,22 +103,83 @@ final class Compatibility
         }
 
         if (! $this->isCogsEnabled()) {
-            $this->renderNotice(
-                'برای محاسبه سود در حاشیه‌بان، قابلیت «بهای تمام‌شده کالا» (COGS) را از تنظیمات ووکامرس فعال کنید.',
-                'warning'
-            );
+            $this->renderCogsNotice();
         }
     }
 
     /**
-     * Render a WordPress admin notice.
+     * Render instructions for enabling WooCommerce COGS.
      */
-    private function renderNotice(string $message, string $type): void
+    private function renderCogsNotice(): void
     {
-        printf(
-            '<div class="notice notice-%1$s"><p>%2$s</p></div>',
-            esc_attr($type),
-            esc_html($message)
+        $settingsUrl = admin_url(
+            'admin.php?page=wc-settings&tab=advanced&section=features'
         );
-    }
+
+        ?>
+        <div
+            class="notice notice-warning"
+            dir="rtl"
+        >
+            <p>
+                <strong>
+                    حاشیه‌بان برای محاسبه دقیق سود به اطلاعات بهای تمام‌شده کالا نیاز دارد.
+                </strong>
+            </p>
+
+            <p>
+                قابلیت
+                <strong>Cost of Goods Sold (COGS)</strong>
+                در ووکامرس شما غیرفعال است.
+            </p>
+
+            <p>
+                برای فعال‌سازی از مسیر زیر وارد تنظیمات ووکامرس شوید:
+            </p>
+
+            <p>
+                <strong>
+                    ووکامرس ← پیکربندی ← پیشرفته ← امکانات (Features)
+                    ← Cost of Goods Sold
+                </strong>
+            </p>
+
+            <p>
+                گزینه
+                <strong>Cost of Goods Sold</strong>
+                را فعال کنید و سپس در پایین صفحه روی
+                <strong>ذخیره تغییرات</strong>
+                کلیک کنید.
+            </p>
+
+            <p>
+                پس از فعال‌سازی، هنگام ویرایش محصولات می‌توانید
+                بهای تمام‌شده هر محصول را ثبت کنید.
+            </p>
+
+            <p>
+              <a
+                  href="<?php echo esc_url($settingsUrl); ?>"
+                  class="button button-primary"
+              >
+                رفتن به تنظیمات بهای تمام‌شده
+              </a>
+            </p>
+        </div>
+<?php
+}
+
+/**
+ * Render a WordPress admin notice.
+ */
+private function renderNotice(
+    string $message,
+    string $type
+): void {
+    printf(
+        '<div class="notice notice-%1$s" dir="rtl"><p>%2$s</p></div>',
+        esc_attr($type),
+        esc_html($message)
+    );
+}
 }
