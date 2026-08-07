@@ -118,6 +118,33 @@ final class Money
             && $this->precision === $money->precision;
     }
 
+    public function toDecimalString(): string
+    {
+        $negative = $this->minorAmount < 0;
+
+        $absoluteAmount = abs($this->minorAmount);
+
+        if ($this->precision === 0) {
+            return ($negative ? '-' : '') . (string) $absoluteAmount;
+        }
+
+        $multiplier = 10 ** $this->precision;
+
+        $whole = intdiv(
+            $absoluteAmount,
+            $multiplier
+        );
+
+        $fraction = $absoluteAmount % $multiplier;
+
+        return sprintf(
+            '%s%d.%0' . $this->precision . 'd',
+            $negative ? '-' : '',
+            $whole,
+            $fraction
+        );
+    }
+
     private function assertCompatible(self $money): void
     {
         if ($this->currency !== $money->currency) {
