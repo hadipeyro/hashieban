@@ -1,0 +1,128 @@
+.hashieban-finance-page {
+    direction: rtl;
+}
+
+.hashieban-finance-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 24px;
+    margin: 24px 0;
+}
+
+.hashieban-finance-header h1 {
+    margin: 0 0 8px;
+    font-size: 28px;
+}
+
+.hashieban-finance-header p {
+    margin: 0;
+    color: #646970;
+}
+
+.hashieban-currency-badge {
+    padding: 10px 16px;
+    border: 1px solid #dcdcde;
+    border-radius: 999px;
+    background: #fff;
+}
+
+.hashieban-expense-layout {
+    display: grid;
+    grid-template-columns: minmax(300px, 380px) minmax(0, 1fr);
+    gap: 20px;
+    align-items: start;
+}
+
+.hashieban-finance-card {
+    background: #fff;
+    border: 1px solid #e2e4e7;
+    border-radius: 14px;
+    padding: 22px;
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.03);
+}
+
+.hashieban-finance-card h2 {
+    margin-top: 0;
+}
+
+.hashieban-form-field {
+    margin-bottom: 18px;
+}
+
+.hashieban-form-field label {
+    display: block;
+    margin-bottom: 7px;
+    font-weight: 600;
+}
+
+.hashieban-form-field input,
+.hashieban-form-field textarea {
+    width: 100%;
+}
+
+.hashieban-form-field input {
+    min-height: 42px;
+}
+
+.hashieban-form-field small {
+    display: block;
+    margin-top: 6px;
+    color: #646970;
+}
+
+.hashieban-card-heading {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 16px;
+}
+
+.hashieban-card-heading h2 {
+    margin-bottom: 4px;
+}
+
+.hashieban-card-heading p {
+    margin: 0;
+    color: #646970;
+}
+
+.hashieban-table-wrapper {
+    overflow-x: auto;
+}
+
+.hashieban-finance-table th,
+.hashieban-finance-table td {
+    padding: 13px 10px;
+    vertical-align: middle;
+}
+
+.hashieban-danger-link {
+    color: #b32d2e;
+    text-decoration: none;
+}
+
+.hashieban-danger-link:hover {
+    color: #8a2424;
+}
+
+.hashieban-empty-state {
+    padding: 50px 20px;
+    text-align: center;
+    color: #646970;
+    background: #f6f7f7;
+    border-radius: 10px;
+}
+
+@media (max-width: 1100px) {
+    .hashieban-expense-layout {
+        grid-template-columns: 1fr;
+    }
+}
+
+@media (max-width: 782px) {
+    .hashieban-finance-header {
+        flex-direction: column;
+        align-items: stretch;
+    }
+}

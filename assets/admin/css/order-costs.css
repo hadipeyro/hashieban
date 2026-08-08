@@ -1,0 +1,97 @@
+.hashieban-order-costs {
+    direction: rtl;
+    padding: 4px 0;
+}
+
+.hashieban-order-costs__description {
+    margin: 0 0 16px;
+    color: #646970;
+    line-height: 1.9;
+}
+
+.hashieban-direct-cost-summary {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 16px;
+    padding: 14px 16px;
+    margin-bottom: 16px;
+    border: 1px solid #dcdcde;
+    border-radius: 10px;
+    background: #f6f7f7;
+}
+
+.hashieban-direct-cost-summary span {
+    font-weight: 600;
+}
+
+.hashieban-direct-cost-summary strong {
+    font-size: 18px;
+}
+
+.hashieban-direct-cost-row {
+    display: grid;
+    grid-template-columns:
+        minmax(180px, 1.1fr)
+        minmax(140px, 0.7fr)
+        minmax(220px, 1.4fr)
+        auto;
+
+    gap: 12px;
+    align-items: end;
+
+    padding: 14px;
+    margin-bottom: 12px;
+
+    border: 1px solid #e2e4e7;
+    border-radius: 10px;
+
+    background: #f8f9fa;
+}
+
+.hashieban-direct-cost-field label {
+    display: block;
+    margin-bottom: 6px;
+    font-weight: 600;
+}
+
+.hashieban-direct-cost-field input {
+    width: 100%;
+    min-height: 38px;
+}
+
+.hashieban-direct-cost-actions {
+    display: flex;
+    align-items: flex-end;
+}
+
+.hashieban-remove-direct-cost {
+    color: #b32d2e !important;
+    border-color: #dba7a7 !important;
+}
+
+.hashieban-remove-direct-cost:hover {
+    color: #8a2424 !important;
+    border-color: #b32d2e !important;
+}
+
+#hashieban-add-direct-cost {
+    margin-top: 4px;
+}
+
+@media (max-width: 1000px) {
+    .hashieban-direct-cost-row {
+        grid-template-columns: 1fr 1fr;
+    }
+}
+
+@media (max-width: 782px) {
+    .hashieban-direct-cost-row {
+        grid-template-columns: 1fr;
+    }
+
+    .hashieban-direct-cost-summary {
+        align-items: flex-start;
+        flex-direction: column;
+    }
+}

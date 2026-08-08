@@ -26,14 +26,10 @@ final class OrderFinancialData
 
     private Money $cogs;
 
-    /**
-     * @var string[]
-     */
+    private Money $directCosts;
+
     private array $missingData;
 
-    /**
-     * @param string[] $missingData
-     */
     public function __construct(
         int $orderId,
         string $orderNumber,
@@ -44,20 +40,23 @@ final class OrderFinancialData
         Money $feeRevenue,
         Money $refundAmount,
         Money $cogs,
-        array $missingData = []
+        Money $directCosts,
+        array $missingData
     ) {
         $this->orderId = $orderId;
         $this->orderNumber = $orderNumber;
         $this->status = $status;
         $this->currency = $currency;
+
         $this->productRevenue = $productRevenue;
         $this->shippingRevenue = $shippingRevenue;
         $this->feeRevenue = $feeRevenue;
         $this->refundAmount = $refundAmount;
+
         $this->cogs = $cogs;
-        $this->missingData = array_values(
-            array_unique($missingData)
-        );
+        $this->directCosts = $directCosts;
+
+        $this->missingData = $missingData;
     }
 
     public function orderId(): int
@@ -105,9 +104,11 @@ final class OrderFinancialData
         return $this->cogs;
     }
 
-    /**
-     * @return string[]
-     */
+    public function directCosts(): Money
+    {
+        return $this->directCosts;
+    }
+
     public function missingData(): array
     {
         return $this->missingData;
@@ -115,7 +116,7 @@ final class OrderFinancialData
 
     public function hasMissingData(): bool
     {
-        return $this->missingData !== [];
+        return $this->missingData !== array();
     }
 
     public function revenueBeforeDirectCosts(): Money
@@ -124,5 +125,12 @@ final class OrderFinancialData
 					->add($this->shippingRevenue)
 					->add($this->feeRevenue)
 					->subtract($this->refundAmount);
+    }
+
+    public function profitAfterDirectCosts(): Money
+    {
+        return $this->revenueBeforeDirectCosts()
+					->subtract($this->cogs)
+					->subtract($this->directCosts);
     }
 }

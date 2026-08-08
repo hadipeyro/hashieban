@@ -12,24 +12,28 @@ final class AdminMenu
 
     private DashboardPage $dashboard;
 
+    private ExpensesPage $expensesPage;
+
     public function __construct(
         Compatibility $compatibility,
-        DashboardPage $dashboard
+        DashboardPage $dashboard,
+        ExpensesPage $expensesPage
     ) {
         $this->compatibility = $compatibility;
         $this->dashboard = $dashboard;
+        $this->expensesPage = $expensesPage;
     }
 
     public function register(): void
     {
         add_action(
             'admin_menu',
-            [$this, 'registerMenu']
+            array($this, 'registerMenu')
         );
 
         add_action(
             'admin_enqueue_scripts',
-            [$this, 'enqueueAssets']
+            array($this, 'enqueueAssets')
         );
     }
 
@@ -40,36 +44,57 @@ final class AdminMenu
             'حاشیه‌بان',
             'manage_woocommerce',
             'hashieban',
-            [$this->dashboard, 'render'],
+            array(
+                $this->dashboard,
+                'render'
+            ),
             'dashicons-chart-area',
             56
         );
 
         add_submenu_page(
             'hashieban',
-            'پیشخوان حاشیه‌بان',
+            'پیشخوان',
             'پیشخوان',
             'manage_woocommerce',
             'hashieban',
-            [$this->dashboard, 'render']
+            array(
+                $this->dashboard,
+                'render'
+            )
         );
 
         add_submenu_page(
             'hashieban',
-            'وضعیت حاشیه‌بان',
+            'هزینه‌های فروشگاه',
+            'هزینه‌ها',
+            'manage_woocommerce',
+            'hashieban-expenses',
+            array(
+                $this->expensesPage,
+                'render'
+            )
+        );
+
+        add_submenu_page(
+            'hashieban',
+            'وضعیت سیستم',
             'وضعیت سیستم',
             'manage_woocommerce',
             'hashieban-status',
-            [$this, 'renderStatusPage']
+            array(
+                $this,
+                'renderStatusPage'
+            )
         );
     }
 
     public function enqueueAssets(
-        string $hookSuffix
+        string $hook
     ): void {
         if (
             strpos(
-                $hookSuffix,
+                $hook,
                 'hashieban'
             ) === false
         ) {
@@ -82,45 +107,70 @@ final class AdminMenu
                 'assets/admin/css/hashieban-admin.css',
                 HASHIEBAN_FILE
             ),
-            [],
+            array(),
+            HASHIEBAN_VERSION
+        );
+
+        wp_enqueue_style(
+            'hashieban-finance',
+            plugins_url(
+                'assets/admin/css/hashieban-finance.css',
+                HASHIEBAN_FILE
+            ),
+            array(
+                'hashieban-admin'
+            ),
             HASHIEBAN_VERSION
         );
     }
 
     public function renderStatusPage(): void
     {
-        if (! current_user_can('manage_woocommerce')) {
-            wp_die(
-                esc_html__(
-                    'شما اجازه دسترسی به این صفحه را ندارید.',
-                    'hashieban'
-                )
-            );
+        if (
+            ! current_user_can(
+                'manage_woocommerce'
+            )
+        ) {
+            return;
         }
 
-        $woocommerceVersion = defined('WC_VERSION')
-            ? WC_VERSION
-            : 'نامشخص';
+        $woocommerceVersion =
+            defined('WC_VERSION')
+                ? WC_VERSION
+                : '—';
 
-        $woocommerceStatus =
-            $this->compatibility
-                ->hasSupportedWooCommerceVersion();
+        $hposStatus = 'نامشخص';
 
-        $cogsStatus =
-            $this->compatibility
-                ->isCogsEnabled();
+        if (
+            class_exists(
+                '\Automattic\WooCommerce\Utilities\OrderUtil'
+            )
+        ) {
+            $hposEnabled =
+                \Automattic\WooCommerce\Utilities\OrderUtil
+                    ::custom_orders_table_usage_is_enabled();
+
+            $hposStatus =
+                $hposEnabled
+                    ? 'فعال'
+                    : 'غیرفعال';
+        }
 
         ?>
-        <div class="wrap" dir="rtl">
+        <div class="wrap">
 
-            <h1>وضعیت سیستم حاشیه‌بان</h1>
+            <h1>
+                وضعیت سیستم حاشیه‌بان
+            </h1>
 
             <table class="widefat striped">
-
                 <tbody>
 
                     <tr>
-                        <th>نسخه حاشیه‌بان</th>
+                        <th>
+                            نسخه حاشیه‌بان
+                        </th>
+
                         <td>
                             <?php
                             echo esc_html(
@@ -131,7 +181,10 @@ final class AdminMenu
                     </tr>
 
                     <tr>
-                        <th>نسخه ووکامرس</th>
+                        <th>
+                            نسخه WooCommerce
+                        </th>
+
                         <td>
                             <?php
                             echo esc_html(
@@ -142,36 +195,35 @@ final class AdminMenu
                     </tr>
 
                     <tr>
-                        <th>سازگاری ووکامرس</th>
+                        <th>
+                            HPOS
+                        </th>
+
                         <td>
                             <?php
-                            echo $woocommerceStatus
-                                ? '✅ سازگار'
-                                : '❌ ناسازگار';
+                            echo esc_html(
+                                $hposStatus
+                            );
                             ?>
                         </td>
                     </tr>
 
                     <tr>
-                        <th>COGS</th>
-                        <td>
-                            <?php
-                            echo $cogsStatus
-                                ? '✅ فعال'
-                                : '⚠️ غیرفعال';
-                            ?>
-                        </td>
-                    </tr>
+                        <th>
+                            واحد مالی
+                        </th>
 
-                    <tr>
-                        <th>HPOS</th>
                         <td>
-                          ✅ پشتیبانی اعلام شده
+                          <?php
+                          echo esc_html(
+                              \Hashieban\Support\Currency
+                              ::label()
+                          );
+                          ?>
                         </td>
                     </tr>
 
                 </tbody>
-
             </table>
 
         </div>

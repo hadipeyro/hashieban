@@ -6,8 +6,12 @@ namespace Hashieban;
 
 use Hashieban\Admin\AdminMenu;
 use Hashieban\Admin\DashboardPage;
+use Hashieban\Admin\ExpensesPage;
+use Hashieban\Admin\OrderCostsMetaBox;
+use Hashieban\Finance\StoreExpenseRepository;
 use Hashieban\Integration\WooCommerce\Analytics\AnalyticsService;
 use Hashieban\Integration\WooCommerce\Compatibility;
+use Hashieban\Integration\WooCommerce\Order\DirectCostRepository;
 use Hashieban\Integration\WooCommerce\Order\MoneyFactory;
 use Hashieban\Integration\WooCommerce\Order\OrderAdapter;
 
@@ -15,28 +19,63 @@ final class Plugin
 {
     public function boot(): void
     {
-        $compatibility = new Compatibility();
+        $compatibility =
+            new Compatibility();
 
         $compatibility->register();
 
-        $moneyFactory = new MoneyFactory();
+        $moneyFactory =
+            new MoneyFactory();
 
-        $orderAdapter = new OrderAdapter(
-            $moneyFactory
-        );
+        $directCostRepository =
+            new DirectCostRepository(
+                $moneyFactory
+            );
 
-        $analytics = new AnalyticsService(
-            $orderAdapter
-        );
+        $storeExpenseRepository =
+            new StoreExpenseRepository();
 
-        $dashboard = new DashboardPage(
-            $analytics
-        );
+        $storeExpenseRepository
+            ->registerSchema();
 
-        $adminMenu = new AdminMenu(
-            $compatibility,
-            $dashboard
-        );
+        $orderCostsMetaBox =
+            new OrderCostsMetaBox(
+                $directCostRepository
+            );
+
+        $orderCostsMetaBox->register();
+
+        $expensesPage =
+            new ExpensesPage(
+                $storeExpenseRepository,
+                $moneyFactory
+            );
+
+        $expensesPage->register();
+
+        $orderAdapter =
+            new OrderAdapter(
+                $moneyFactory,
+                $directCostRepository
+            );
+
+        $analytics =
+            new AnalyticsService(
+                $orderAdapter,
+                $storeExpenseRepository
+            );
+
+        $dashboard =
+            new DashboardPage(
+                $analytics
+            );
+
+        $adminMenu =
+            new AdminMenu(
+                $compatibility,
+                $dashboard,
+                $expensesPage
+            );
 
         $adminMenu->register();
 

@@ -13,10 +13,15 @@ final class OrderAdapter
 {
     private MoneyFactory $moneyFactory;
 
+    private DirectCostRepository $directCostRepository;
+
     public function __construct(
-        MoneyFactory $moneyFactory
+        MoneyFactory $moneyFactory,
+        DirectCostRepository $directCostRepository
     ) {
         $this->moneyFactory = $moneyFactory;
+        $this->directCostRepository =
+            $directCostRepository;
     }
 
     public function fromOrderId(
@@ -26,7 +31,7 @@ final class OrderAdapter
 
         if (! $order instanceof WC_Order) {
             throw new RuntimeException(
-                'WooCommerce order could not be loaded.'
+                'WooCommerce order not found.'
             );
         }
 
@@ -39,37 +44,48 @@ final class OrderAdapter
         $currency = $order->get_currency();
         $precision = wc_get_price_decimals();
 
-        $productRevenue = $this->calculateProductRevenue(
+        $productRevenue =
+            $this->calculateProductRevenue(
+                $order,
+                $currency,
+                $precision
+            );
+
+        $shippingRevenue =
+            $this->moneyFactory
+                 ->fromWooCommerceAmount(
+                     $order->get_shipping_total(),
+                     $currency,
+                     $precision
+                 );
+
+        $feeRevenue =
+            $this->calculatePositiveFees(
+                $order,
+                $currency,
+                $precision
+            );
+
+        $refundAmount =
+            $this->moneyFactory
+                 ->fromWooCommerceAmount(
+                     $order->get_total_refunded(),
+                     $currency,
+                     $precision
+                 );
+
+        list(
+            $cogs,
+            $missingData
+        ) = $this->calculateCogs(
             $order,
             $currency,
             $precision
         );
 
-        $shippingRevenue = $this->moneyFactory
-								->fromWooCommerceAmount(
-									$order->get_shipping_total(),
-									$currency,
-									$precision
-								);
-
-        $feeRevenue = $this->calculatePositiveFees(
-            $order,
-            $currency,
-            $precision
-        );
-
-        $refundAmount = $this->moneyFactory
-							 ->fromWooCommerceAmount(
-								 $order->get_total_refunded(),
-								 $currency,
-								 $precision
-							 );
-
-        [$cogs, $missingData] = $this->calculateCogs(
-            $order,
-            $currency,
-            $precision
-        );
+        $directCosts =
+            $this->directCostRepository
+                 ->total($order);
 
         return new OrderFinancialData(
             $order->get_id(),
@@ -81,6 +97,7 @@ final class OrderAdapter
             $feeRevenue,
             $refundAmount,
             $cogs,
+            $directCosts,
             $missingData
         );
     }
@@ -95,19 +112,26 @@ final class OrderAdapter
             $precision
         );
 
-        foreach ($order->get_items('line_item') as $item) {
-            if (! $item instanceof WC_Order_Item_Product) {
+        foreach (
+            $order->get_items('line_item')
+            as $item
+        ) {
+            if (
+                ! $item
+                instanceof WC_Order_Item_Product
+            ) {
                 continue;
             }
 
-            $amount = $this->moneyFactory
-						   ->fromWooCommerceAmount(
-							   $item->get_total(),
-							   $currency,
-							   $precision
-						   );
+            $lineTotal =
+                $this->moneyFactory
+                     ->fromWooCommerceAmount(
+                         $item->get_total(),
+                         $currency,
+                         $precision
+                     );
 
-            $total = $total->add($amount);
+            $total = $total->add($lineTotal);
         }
 
         return $total;
@@ -123,32 +147,37 @@ final class OrderAdapter
             $precision
         );
 
-        foreach ($order->get_fees() as $fee) {
-            $feeValue = wc_format_decimal(
+        foreach (
+            $order->get_items('fee')
+            as $fee
+        ) {
+            $feeTotal = wc_format_decimal(
                 (string) $fee->get_total(),
                 $precision
             );
 
-            if ((float) $feeValue <= 0) {
+            if ($feeTotal === '') {
                 continue;
             }
 
-            $amount = $this->moneyFactory
-						   ->fromWooCommerceAmount(
-							   $feeValue,
-							   $currency,
-							   $precision
-						   );
+            $money =
+                $this->moneyFactory
+                     ->fromWooCommerceAmount(
+                         $feeTotal,
+                         $currency,
+                         $precision
+                     );
 
-            $total = $total->add($amount);
+            if (! $money->isPositive()) {
+                continue;
+            }
+
+            $total = $total->add($money);
         }
 
         return $total;
     }
 
-    /**
-     * @return array{0: Money, 1: string[]}
-     */
     private function calculateCogs(
         WC_Order $order,
         string $currency,
@@ -159,25 +188,32 @@ final class OrderAdapter
             $precision
         );
 
-        $missingData = [];
+        $missingData = array();
 
-        foreach ($order->get_items('line_item') as $item) {
-            if (! $item instanceof WC_Order_Item_Product) {
+        foreach (
+            $order->get_items('line_item')
+            as $item
+        ) {
+            if (
+                ! $item
+                instanceof WC_Order_Item_Product
+            ) {
                 continue;
             }
 
             $cogsValue = $item->get_cogs_value();
 
-            $cogs = $this->moneyFactory
-						 ->fromWooCommerceAmount(
-							 $cogsValue,
-							 $currency,
-							 $precision
-						 );
+            $cogs =
+                $this->moneyFactory
+                     ->fromWooCommerceAmount(
+                         $cogsValue,
+                         $currency,
+                         $precision
+                     );
 
             $total = $total->add($cogs);
 
-            if ($cogsValue > 0) {
+            if ($cogs->isPositive()) {
                 continue;
             }
 
@@ -185,24 +221,30 @@ final class OrderAdapter
 
             if (! $product) {
                 $missingData[] = sprintf(
-                    'Missing product or COGS for order item %d.',
-                    $item->get_id()
+                    'COGS محصول آیتم «%s» قابل بررسی نیست.',
+                    $item->get_name()
                 );
 
                 continue;
             }
 
-            if ($product->get_cogs_value() === null) {
+            $productCogs =
+                $product->get_cogs_value();
+
+            if (
+                $productCogs === null
+                || $productCogs === ''
+            ) {
                 $missingData[] = sprintf(
-                    'Missing COGS for order item %d.',
-                    $item->get_id()
+                    'COGS محصول «%s» ثبت نشده است.',
+                    $item->get_name()
                 );
             }
         }
 
-        return [
+        return array(
             $total,
             $missingData,
-        ];
+        );
     }
 }
