@@ -8,6 +8,7 @@ use Hashieban\Admin\AdminMenu;
 use Hashieban\Admin\DashboardPage;
 use Hashieban\Admin\ExpensesPage;
 use Hashieban\Admin\OrderCostsMetaBox;
+use Hashieban\Domain\Profit\ProfitEngine;
 use Hashieban\Finance\StoreExpenseRepository;
 use Hashieban\Integration\WooCommerce\Analytics\AnalyticsService;
 use Hashieban\Integration\WooCommerce\Compatibility;
@@ -27,6 +28,9 @@ final class Plugin
         $moneyFactory =
             new MoneyFactory();
 
+        $profitEngine =
+            new ProfitEngine();
+
         $directCostRepository =
             new DirectCostRepository(
                 $moneyFactory
@@ -43,7 +47,8 @@ final class Plugin
                 $directCostRepository
             );
 
-        $orderCostsMetaBox->register();
+        $orderCostsMetaBox
+            ->register();
 
         $expensesPage =
             new ExpensesPage(
@@ -51,7 +56,8 @@ final class Plugin
                 $moneyFactory
             );
 
-        $expensesPage->register();
+        $expensesPage
+            ->register();
 
         $orderAdapter =
             new OrderAdapter(
@@ -62,7 +68,8 @@ final class Plugin
         $analytics =
             new AnalyticsService(
                 $orderAdapter,
-                $storeExpenseRepository
+                $storeExpenseRepository,
+                $profitEngine
             );
 
         $dashboard =

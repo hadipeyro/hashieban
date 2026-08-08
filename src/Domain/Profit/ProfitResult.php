@@ -23,9 +23,11 @@ final class ProfitResult
         Completeness $completeness
     ) {
         $this->profit = $profit;
-        $this->marginPercentage = $marginPercentage;
+        $this->marginPercentage =
+            $marginPercentage;
         $this->breakdown = $breakdown;
-        $this->completeness = $completeness;
+        $this->completeness =
+            $completeness;
     }
 
     public function profit(): Money

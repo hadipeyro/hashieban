@@ -11,17 +11,11 @@ final class Completeness
 
     private string $status;
 
-    /**
-     * @var string[]
-     */
     private array $missingData;
 
-    /**
-     * @param string[] $missingData
-     */
     private function __construct(
         string $status,
-        array $missingData = []
+        array $missingData
     ) {
         $this->status = $status;
         $this->missingData = $missingData;
@@ -30,32 +24,32 @@ final class Completeness
     public static function complete(): self
     {
         return new self(
-            self::COMPLETE
+            self::COMPLETE,
+            array()
         );
     }
 
-    /**
-     * @param string[] $missingData
-     */
     public static function incomplete(
         array $missingData
     ): self {
+        $clean = array();
+
+        foreach ($missingData as $item) {
+            $item = trim((string) $item);
+
+            if ($item === '') {
+                continue;
+            }
+
+            $clean[] = $item;
+        }
+
         return new self(
             self::INCOMPLETE,
             array_values(
-                array_unique($missingData)
+                array_unique($clean)
             )
         );
-    }
-
-    public function isComplete(): bool
-    {
-        return $this->status === self::COMPLETE;
-    }
-
-    public function isIncomplete(): bool
-    {
-        return ! $this->isComplete();
     }
 
     public function status(): string
@@ -63,11 +57,19 @@ final class Completeness
         return $this->status;
     }
 
-    /**
-     * @return string[]
-     */
     public function missingData(): array
     {
         return $this->missingData;
+    }
+
+    public function isComplete(): bool
+    {
+        return $this->status
+        === self::COMPLETE;
+    }
+
+    public function isIncomplete(): bool
+    {
+        return ! $this->isComplete();
     }
 }

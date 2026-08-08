@@ -6,6 +6,8 @@ namespace Hashieban\Integration\WooCommerce\Analytics;
 
 use DateTimeImmutable;
 use DateTimeInterface;
+use Hashieban\Domain\Money\Money;
+use Hashieban\Domain\Profit\ProfitEngine;
 use Hashieban\Finance\StoreExpenseRepository;
 use Hashieban\Integration\WooCommerce\Order\OrderAdapter;
 use WC_Order;
@@ -16,25 +18,36 @@ final class AnalyticsService
 
     private StoreExpenseRepository $expenseRepository;
 
+    private ProfitEngine $profitEngine;
+
     public function __construct(
         OrderAdapter $orderAdapter,
-        StoreExpenseRepository $expenseRepository
+        StoreExpenseRepository $expenseRepository,
+        ProfitEngine $profitEngine
     ) {
-        $this->orderAdapter = $orderAdapter;
-        $this->expenseRepository = $expenseRepository;
+        $this->orderAdapter =
+            $orderAdapter;
+
+        $this->expenseRepository =
+            $expenseRepository;
+
+        $this->profitEngine =
+            $profitEngine;
     }
 
     public function getDashboardData(
         DateTimeImmutable $start,
         DateTimeImmutable $end
     ): array {
-        $currency = get_woocommerce_currency();
-        $precision = wc_get_price_decimals();
+        $currency =
+            get_woocommerce_currency();
+
+        $precision =
+            wc_get_price_decimals();
 
         $revenueMinor = 0;
         $cogsMinor = 0;
         $directCostsMinor = 0;
-        $orderProfitMinor = 0;
 
         $orderCount = 0;
         $incompleteCount = 0;
@@ -42,10 +55,11 @@ final class AnalyticsService
         $recentOrders = array();
         $buckets = array();
 
-        $bucketMode = $this->resolveBucketMode(
-            $start,
-            $end
-        );
+        $bucketMode =
+            $this->resolveBucketMode(
+                $start,
+                $end
+            );
 
         $page = 1;
         $maxPages = 1;
@@ -57,16 +71,26 @@ final class AnalyticsService
                         'processing',
                         'completed',
                     ),
-                    'currency' => $currency,
-                    'limit' => 100,
-                    'page' => $page,
-                    'paginate' => true,
-                    'orderby' => 'date',
-                    'order' => 'DESC',
+                    'currency' =>
+                        $currency,
+                    'limit' =>
+                        100,
+                    'page' =>
+                        $page,
+                    'paginate' =>
+                        true,
+                    'orderby' =>
+                        'date',
+                    'order' =>
+                        'DESC',
                     'date_created' =>
-                        $start->format('Y-m-d H:i:s')
+                        $start->format(
+                            'Y-m-d H:i:s'
+                        )
 								  . '...'
-								  . $end->format('Y-m-d H:i:s'),
+								  . $end->format(
+									  'Y-m-d H:i:s'
+								  ),
                 )
             );
 
@@ -79,66 +103,96 @@ final class AnalyticsService
 
             $orders = $result->orders;
 
-            $maxPages = isset($result->max_num_pages)
+            $maxPages =
+                isset(
+                    $result->max_num_pages
+                )
             ? max(
                 1,
-                (int) $result->max_num_pages
+                (int) $result
+                            ->max_num_pages
             )
-					  : 1;
+                : 1;
 
             foreach ($orders as $order) {
                 if (! $order instanceof WC_Order) {
                     continue;
                 }
 
-                $financial = $this->orderAdapter
-								  ->fromOrder($order);
+                $financial =
+                    $this->orderAdapter
+                         ->fromOrder($order);
 
-                $revenue = $financial
-                    ->revenueBeforeDirectCosts()
-                    ->minorAmount();
+                $profitResult =
+                    $this->profitEngine
+                         ->calculateOrder(
+                             $financial
+                         );
 
-                $cogs = $financial
-                    ->cogs()
-                    ->minorAmount();
+                $breakdown =
+                    $profitResult
+                        ->breakdown();
 
-                $directCosts = $financial
-                    ->directCosts()
-                    ->minorAmount();
+                $revenue =
+                    $breakdown
+                        ->revenue()
+                        ->minorAmount();
 
-                $grossProfit =
-                    $revenue - $cogs;
+                $cogs =
+                    $breakdown
+                        ->cogs()
+                        ->minorAmount();
+
+                $directCosts =
+                    $breakdown
+                        ->orderCosts()
+                        ->minorAmount();
 
                 $orderProfit =
-                    $grossProfit - $directCosts;
+                    $profitResult
+                        ->profit()
+                        ->minorAmount();
 
-                $revenueMinor += $revenue;
-                $cogsMinor += $cogs;
-                $directCostsMinor += $directCosts;
-                $orderProfitMinor += $orderProfit;
+                $revenueMinor +=
+                    $revenue;
+
+                $cogsMinor +=
+                    $cogs;
+
+                $directCostsMinor +=
+                    $directCosts;
 
                 $orderCount++;
 
                 if (
-                    $financial->hasMissingData()
+                    $profitResult
+                        ->completeness()
+                        ->isIncomplete()
                 ) {
                     $incompleteCount++;
                 }
 
-                $date = $order->get_date_created();
+                $date =
+                    $order
+                        ->get_date_created();
 
                 if ($date) {
-                    $bucketKey = $this->bucketKey(
-                        $date,
-                        $bucketMode
-                    );
+                    $bucketKey =
+                        $this->bucketKey(
+                            $date,
+                            $bucketMode
+                        );
 
                     if (
                         ! isset(
-                            $buckets[$bucketKey]
+                            $buckets[
+                                $bucketKey
+                            ]
                         )
                     ) {
-                        $buckets[$bucketKey] =
+                        $buckets[
+                            $bucketKey
+                        ] =
                             $this->newBucket(
                                 $date,
                                 $bucketMode
@@ -162,7 +216,8 @@ final class AnalyticsService
                 }
 
                 if (
-                    count($recentOrders) < 8
+                    count($recentOrders)
+                    < 8
                 ) {
                     $customer = trim(
                         $order
@@ -173,48 +228,51 @@ final class AnalyticsService
                         $customer = 'مهمان';
                     }
 
-                    $margin = null;
+                    $recentOrders[] =
+                        array(
+                            'id' =>
+                                $order
+                                    ->get_id(),
 
-                    if ($revenue !== 0) {
-                        $margin =
-                            ($orderProfit / $revenue)
-                        * 100;
-                    }
+                            'number' =>
+                                $order
+                                    ->get_order_number(),
 
-                    $recentOrders[] = array(
-                        'id' =>
-                            $order->get_id(),
+                            'customer' =>
+                                $customer,
 
-                        'number' =>
-                            $order->get_order_number(),
+                            'date' =>
+                                $date
+                            ? $date->format(
+                                'Y/m/d H:i'
+                            )
+                                  : '—',
 
-                        'customer' =>
-                            $customer,
+                            'status' =>
+                                wc_get_order_status_name(
+                                    $order
+                                        ->get_status()
+                                ),
 
-                        'date' =>
-                            $date
-                        ? $date->format(
-                            'Y/m/d H:i'
-                        )
-                              : '—',
+                            'revenue_minor' =>
+                                $revenue,
 
-                        'status' =>
-                            wc_get_order_status_name(
-                                $order->get_status()
-                            ),
+                            'profit_minor' =>
+                                $orderProfit,
 
-                        'revenue_minor' =>
-                            $revenue,
+                            'margin_percentage' =>
+                                $profitResult
+                                    ->marginPercentage(),
 
-                        'profit_minor' =>
-                            $orderProfit,
+                            'complete' =>
+                                $profitResult
+                                    ->completeness()
+                                    ->isComplete(),
 
-                        'margin_percentage' =>
-                            $margin,
-
-                        'edit_url' =>
-                            $order->get_edit_order_url(),
-                    );
+                            'edit_url' =>
+                                $order
+                                    ->get_edit_order_url(),
+                        );
                 }
             }
 
@@ -222,7 +280,7 @@ final class AnalyticsService
 
         } while ($page <= $maxPages);
 
-        $storeExpensesMoney =
+        $storeExpenses =
             $this->expenseRepository
                  ->sumBetween(
                      $start,
@@ -230,10 +288,6 @@ final class AnalyticsService
                      $currency,
                      $precision
                  );
-
-        $storeExpensesMinor =
-            $storeExpensesMoney
-                ->minorAmount();
 
         $expenseRows =
             $this->expenseRepository
@@ -246,14 +300,17 @@ final class AnalyticsService
         foreach ($expenseRows as $expense) {
             if (
                 empty(
-                    $expense['expense_date']
+                    $expense[
+                        'expense_date'
+                    ]
                 )
             ) {
                 continue;
             }
 
             $expenseDate =
-                DateTimeImmutable::createFromFormat(
+                DateTimeImmutable
+                ::createFromFormat(
                     '!Y-m-d',
                     $expense[
                         'expense_date'
@@ -273,10 +330,14 @@ final class AnalyticsService
 
             if (
                 ! isset(
-                    $buckets[$bucketKey]
+                    $buckets[
+                        $bucketKey
+                    ]
                 )
             ) {
-                $buckets[$bucketKey] =
+                $buckets[
+                    $bucketKey
+                ] =
                     $this->newBucket(
                         $expenseDate,
                         $bucketMode
@@ -301,21 +362,58 @@ final class AnalyticsService
 
         ksort($buckets);
 
+        $revenueMoney =
+            new Money(
+                $revenueMinor,
+                $currency,
+                $precision
+            );
+
+        $cogsMoney =
+            new Money(
+                $cogsMinor,
+                $currency,
+                $precision
+            );
+
+        $directCostsMoney =
+            new Money(
+                $directCostsMinor,
+                $currency,
+                $precision
+            );
+
+        $storeProfit =
+            $this->profitEngine
+                 ->calculateStore(
+                     $revenueMoney,
+                     $cogsMoney,
+                     $directCostsMoney,
+                     $storeExpenses,
+                     $incompleteCount
+                 );
+
+        $breakdown =
+            $storeProfit
+                ->breakdown();
+
         $grossProfitMinor =
-            $revenueMinor
-            - $cogsMinor;
+            $breakdown
+                ->revenue()
+                ->subtract(
+                    $breakdown->cogs()
+                )
+                ->minorAmount();
+
+        $orderProfitMinor =
+            $breakdown
+                ->profitBeforeStoreExpenses()
+                ->minorAmount();
 
         $netProfitMinor =
-            $orderProfitMinor
-            - $storeExpensesMinor;
-
-        $marginPercentage = null;
-
-        if ($revenueMinor !== 0) {
-            $marginPercentage =
-                ($netProfitMinor / $revenueMinor)
-            * 100;
-        }
+            $storeProfit
+                ->profit()
+                ->minorAmount();
 
         return array(
             'currency' =>
@@ -337,7 +435,8 @@ final class AnalyticsService
                 $directCostsMinor,
 
             'store_expenses_minor' =>
-                $storeExpensesMinor,
+                $storeExpenses
+                    ->minorAmount(),
 
             'order_profit_minor' =>
                 $orderProfitMinor,
@@ -346,14 +445,14 @@ final class AnalyticsService
                 $netProfitMinor,
 
             /*
-             * Compatibility with the
-             * current DashboardPage.
+             * Current dashboard compatibility.
              */
             'profit_minor' =>
                 $netProfitMinor,
 
             'margin_percentage' =>
-                $marginPercentage,
+                $storeProfit
+                    ->marginPercentage(),
 
             'order_count' =>
                 $orderCount,
@@ -361,8 +460,15 @@ final class AnalyticsService
             'incomplete_count' =>
                 $incompleteCount,
 
+            'complete' =>
+                $storeProfit
+                    ->completeness()
+                    ->isComplete(),
+
             'daily' =>
-                array_values($buckets),
+                array_values(
+                    $buckets
+                ),
 
             'recent_orders' =>
                 $recentOrders,
@@ -376,10 +482,11 @@ final class AnalyticsService
         DateTimeImmutable $start,
         DateTimeImmutable $end
     ): array {
-        return $this->getDashboardData(
-            $start,
-            $end
-        );
+        return $this
+            ->getDashboardData(
+                $start,
+                $end
+            );
     }
 
     private function resolveBucketMode(
@@ -430,17 +537,19 @@ final class AnalyticsService
         string $mode
     ): array {
         if ($mode === 'month') {
-            $label = $date->format(
-                'Y/m'
-            );
+            $label =
+                $date->format(
+                    'Y/m'
+                );
         } elseif ($mode === 'week') {
             $label =
                 'هفته '
                 . $date->format('W');
         } else {
-            $label = $date->format(
-                'm/d'
-            );
+            $label =
+                $date->format(
+                    'm/d'
+                );
         }
 
         return array(
@@ -450,10 +559,6 @@ final class AnalyticsService
                     $mode
                 ),
 
-            /*
-             * DashboardPage currently
-             * uses this value for dates.
-             */
             'timestamp' =>
                 $date->getTimestamp(),
 

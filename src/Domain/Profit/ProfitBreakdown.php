@@ -12,28 +12,29 @@ final class ProfitBreakdown
 
     private Money $cogs;
 
-    private Money $shippingCost;
+    private Money $orderCosts;
 
-    private Money $packagingCost;
-
-    private Money $paymentCost;
-
-    private Money $additionalCost;
+    private Money $storeExpenses;
 
     public function __construct(
         Money $revenue,
         Money $cogs,
-        Money $shippingCost,
-        Money $packagingCost,
-        Money $paymentCost,
-        Money $additionalCost
+        Money $orderCosts,
+        Money $storeExpenses
     ) {
         $this->revenue = $revenue;
         $this->cogs = $cogs;
-        $this->shippingCost = $shippingCost;
-        $this->packagingCost = $packagingCost;
-        $this->paymentCost = $paymentCost;
-        $this->additionalCost = $additionalCost;
+        $this->orderCosts = $orderCosts;
+        $this->storeExpenses = $storeExpenses;
+
+        /*
+         * Trigger Money compatibility validation
+         * immediately.
+         */
+        $this->revenue
+             ->subtract($this->cogs)
+             ->subtract($this->orderCosts)
+             ->subtract($this->storeExpenses);
     }
 
     public function revenue(): Money
@@ -46,32 +47,35 @@ final class ProfitBreakdown
         return $this->cogs;
     }
 
-    public function shippingCost(): Money
+    public function orderCosts(): Money
     {
-        return $this->shippingCost;
+        return $this->orderCosts;
     }
 
-    public function packagingCost(): Money
+    public function storeExpenses(): Money
     {
-        return $this->packagingCost;
+        return $this->storeExpenses;
     }
 
-    public function paymentCost(): Money
-    {
-        return $this->paymentCost;
-    }
-
-    public function additionalCost(): Money
-    {
-        return $this->additionalCost;
-    }
-
-    public function totalDirectCosts(): Money
+    public function totalExpenses(): Money
     {
         return $this->cogs
-					->add($this->shippingCost)
-					->add($this->packagingCost)
-					->add($this->paymentCost)
-					->add($this->additionalCost);
+					->add($this->orderCosts)
+					->add($this->storeExpenses);
+    }
+
+    public function profitBeforeStoreExpenses(): Money
+    {
+        return $this->revenue
+					->subtract($this->cogs)
+					->subtract($this->orderCosts);
+    }
+
+    public function netProfit(): Money
+    {
+        return $this->revenue
+					->subtract($this->cogs)
+					->subtract($this->orderCosts)
+					->subtract($this->storeExpenses);
     }
 }
