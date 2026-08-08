@@ -1,0 +1,200 @@
+.hb-settings-page {
+    direction: rtl;
+    max-width: 1450px;
+}
+
+.hb-settings-hero {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 24px;
+    padding: 28px;
+    margin: 24px 0;
+    color: #fff;
+    background:
+        linear-gradient(
+            135deg,
+            #135e96,
+            #2271b1,
+            #5b5bd6
+        );
+    border-radius: 20px;
+    box-shadow:
+        0 10px 35px
+        rgba(34, 113, 177, 0.20);
+}
+
+.hb-settings-eyebrow {
+    display: inline-block;
+    margin-bottom: 7px;
+    opacity: 0.8;
+}
+
+.hb-settings-hero h1 {
+    margin: 0 0 8px;
+    color: #fff;
+    font-size: 30px;
+}
+
+.hb-settings-hero p {
+    margin: 0;
+    opacity: 0.85;
+}
+
+.hb-settings-unit {
+    padding: 12px 18px;
+    background:
+        rgba(255, 255, 255, 0.14);
+    border:
+        1px solid
+        rgba(255, 255, 255, 0.25);
+    border-radius: 999px;
+}
+
+.hb-settings-grid {
+    display: grid;
+    grid-template-columns:
+        minmax(300px, 0.7fr)
+        minmax(500px, 1.3fr);
+    gap: 20px;
+}
+
+.hb-settings-card {
+    padding: 24px;
+    background: #fff;
+    border: 1px solid #e2e4e7;
+    border-radius: 18px;
+    box-shadow:
+        0 4px 18px
+        rgba(0, 0, 0, 0.04);
+}
+
+.hb-settings-card h2 {
+    margin-top: 0;
+}
+
+.hb-settings-card > p {
+    color: #646970;
+    line-height: 1.9;
+}
+
+.hb-settings-icon {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    min-width: 70px;
+    height: 44px;
+    padding: 0 12px;
+    margin-bottom: 18px;
+    color: #2271b1;
+    font-weight: 800;
+    background: #eef6fc;
+    border-radius: 12px;
+}
+
+.hb-radio-card {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    padding: 15px;
+    margin-bottom: 12px;
+    cursor: pointer;
+    background: #f6f7f7;
+    border: 1px solid #dcdcde;
+    border-radius: 12px;
+}
+
+.hb-radio-card:hover {
+    border-color: #2271b1;
+}
+
+.hb-radio-card span {
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+}
+
+.hb-radio-card small {
+    color: #646970;
+}
+
+.hb-settings-card-head {
+    display: flex;
+    justify-content: space-between;
+    gap: 16px;
+    margin-bottom: 20px;
+}
+
+.hb-settings-card-head p {
+    color: #646970;
+}
+
+.hb-settings-badge {
+    height: fit-content;
+    padding: 7px 12px;
+    background: #eef6fc;
+    border-radius: 999px;
+}
+
+.hb-global-cost-row {
+    display: grid;
+    grid-template-columns:
+        minmax(180px, 1fr)
+        minmax(180px, 0.8fr)
+        auto;
+    gap: 10px;
+    align-items: center;
+    padding: 12px;
+    margin-bottom: 10px;
+    background: #f8f9fa;
+    border: 1px solid #e2e4e7;
+    border-radius: 12px;
+}
+
+.hb-global-cost-row input {
+    width: 100%;
+    min-height: 40px;
+}
+
+.hb-money-input {
+    display: flex;
+    align-items: center;
+    overflow: hidden;
+    background: #fff;
+    border: 1px solid #8c8f94;
+    border-radius: 5px;
+}
+
+.hb-money-input input {
+    border: 0 !important;
+    box-shadow: none !important;
+}
+
+.hb-money-input span {
+    padding: 0 10px;
+    white-space: nowrap;
+    color: #646970;
+}
+
+.hb-settings-card hr {
+    margin: 22px 0;
+    border: 0;
+    border-top: 1px solid #e2e4e7;
+}
+
+@media (max-width: 1000px) {
+    .hb-settings-grid {
+        grid-template-columns: 1fr;
+    }
+}
+
+@media (max-width: 782px) {
+    .hb-settings-hero {
+        align-items: stretch;
+        flex-direction: column;
+    }
+
+    .hb-global-cost-row {
+        grid-template-columns: 1fr;
+    }
+}

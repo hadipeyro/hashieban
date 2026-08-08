@@ -8,21 +8,23 @@ use DateTimeImmutable;
 use DateTimeInterface;
 use Hashieban\Domain\Money\Money;
 use Hashieban\Domain\Profit\ProfitEngine;
+use Hashieban\Finance\GlobalOrderCostRepository;
 use Hashieban\Finance\StoreExpenseRepository;
 use Hashieban\Integration\WooCommerce\Order\OrderAdapter;
+use Hashieban\Support\JalaliDate;
 use WC_Order;
 
 final class AnalyticsService
 {
     private OrderAdapter $orderAdapter;
-
     private StoreExpenseRepository $expenseRepository;
-
+    private GlobalOrderCostRepository $globalCosts;
     private ProfitEngine $profitEngine;
 
     public function __construct(
         OrderAdapter $orderAdapter,
         StoreExpenseRepository $expenseRepository,
+        GlobalOrderCostRepository $globalCosts,
         ProfitEngine $profitEngine
     ) {
         $this->orderAdapter =
@@ -30,6 +32,9 @@ final class AnalyticsService
 
         $this->expenseRepository =
             $expenseRepository;
+
+        $this->globalCosts =
+            $globalCosts;
 
         $this->profitEngine =
             $profitEngine;
@@ -45,9 +50,16 @@ final class AnalyticsService
         $precision =
             wc_get_price_decimals();
 
+        $globalCostPerOrder =
+            $this->globalCosts->total(
+                $currency,
+                $precision
+            );
+
         $revenueMinor = 0;
         $cogsMinor = 0;
         $directCostsMinor = 0;
+        $globalCostsMinor = 0;
 
         $orderCount = 0;
         $incompleteCount = 0;
@@ -73,16 +85,11 @@ final class AnalyticsService
                     ),
                     'currency' =>
                         $currency,
-                    'limit' =>
-                        100,
-                    'page' =>
-                        $page,
-                    'paginate' =>
-                        true,
-                    'orderby' =>
-                        'date',
-                    'order' =>
-                        'DESC',
+                    'limit' => 100,
+                    'page' => $page,
+                    'paginate' => true,
+                    'orderby' => 'date',
+                    'order' => 'DESC',
                     'date_created' =>
                         $start->format(
                             'Y-m-d H:i:s'
@@ -101,8 +108,6 @@ final class AnalyticsService
                 break;
             }
 
-            $orders = $result->orders;
-
             $maxPages =
                 isset(
                     $result->max_num_pages
@@ -114,7 +119,10 @@ final class AnalyticsService
             )
                 : 1;
 
-            foreach ($orders as $order) {
+            foreach (
+                $result->orders
+                as $order
+            ) {
                 if (! $order instanceof WC_Order) {
                     continue;
                 }
@@ -126,7 +134,8 @@ final class AnalyticsService
                 $profitResult =
                     $this->profitEngine
                          ->calculateOrder(
-                             $financial
+                             $financial,
+                             $globalCostPerOrder
                          );
 
                 $breakdown =
@@ -148,6 +157,11 @@ final class AnalyticsService
                         ->orderCosts()
                         ->minorAmount();
 
+                $globalOrderCosts =
+                    $breakdown
+                        ->globalOrderCosts()
+                        ->minorAmount();
+
                 $orderProfit =
                     $profitResult
                         ->profit()
@@ -161,6 +175,9 @@ final class AnalyticsService
 
                 $directCostsMinor +=
                     $directCosts;
+
+                $globalCostsMinor +=
+                    $globalOrderCosts;
 
                 $orderCount++;
 
@@ -206,13 +223,23 @@ final class AnalyticsService
 
                     $buckets[
                         $bucketKey
-                    ]['profit_minor'] +=
-                        $orderProfit;
+                    ]['cogs_minor'] +=
+                        $cogs;
 
                     $buckets[
                         $bucketKey
                     ]['direct_costs_minor'] +=
                         $directCosts;
+
+                    $buckets[
+                        $bucketKey
+                    ]['global_order_costs_minor'] +=
+                        $globalOrderCosts;
+
+                    $buckets[
+                        $bucketKey
+                    ]['profit_minor'] +=
+                        $orderProfit;
                 }
 
                 if (
@@ -231,8 +258,7 @@ final class AnalyticsService
                     $recentOrders[] =
                         array(
                             'id' =>
-                                $order
-                                    ->get_id(),
+                                $order->get_id(),
 
                             'number' =>
                                 $order
@@ -243,15 +269,18 @@ final class AnalyticsService
 
                             'date' =>
                                 $date
-                            ? $date->format(
-                                'Y/m/d H:i'
+                            ? JalaliDate::format(
+                                $date
+                            )
+                            . ' - '
+                            . $date->format(
+                                'H:i'
                             )
                                   : '—',
 
                             'status' =>
                                 wc_get_order_status_name(
-                                    $order
-                                        ->get_status()
+                                    $order->get_status()
                                 ),
 
                             'revenue_minor' =>
@@ -362,33 +391,29 @@ final class AnalyticsService
 
         ksort($buckets);
 
-        $revenueMoney =
-            new Money(
-                $revenueMinor,
-                $currency,
-                $precision
-            );
-
-        $cogsMoney =
-            new Money(
-                $cogsMinor,
-                $currency,
-                $precision
-            );
-
-        $directCostsMoney =
-            new Money(
-                $directCostsMinor,
-                $currency,
-                $precision
-            );
-
         $storeProfit =
             $this->profitEngine
                  ->calculateStore(
-                     $revenueMoney,
-                     $cogsMoney,
-                     $directCostsMoney,
+                     new Money(
+                         $revenueMinor,
+                         $currency,
+                         $precision
+                     ),
+                     new Money(
+                         $cogsMinor,
+                         $currency,
+                         $precision
+                     ),
+                     new Money(
+                         $directCostsMinor,
+                         $currency,
+                         $precision
+                     ),
+                     new Money(
+                         $globalCostsMinor,
+                         $currency,
+                         $precision
+                     ),
                      $storeExpenses,
                      $incompleteCount
                  );
@@ -396,24 +421,6 @@ final class AnalyticsService
         $breakdown =
             $storeProfit
                 ->breakdown();
-
-        $grossProfitMinor =
-            $breakdown
-                ->revenue()
-                ->subtract(
-                    $breakdown->cogs()
-                )
-                ->minorAmount();
-
-        $orderProfitMinor =
-            $breakdown
-                ->profitBeforeStoreExpenses()
-                ->minorAmount();
-
-        $netProfitMinor =
-            $storeProfit
-                ->profit()
-                ->minorAmount();
 
         return array(
             'currency' =>
@@ -429,26 +436,37 @@ final class AnalyticsService
                 $cogsMinor,
 
             'gross_profit_minor' =>
-                $grossProfitMinor,
+                $breakdown
+                    ->revenue()
+                    ->subtract(
+                        $breakdown->cogs()
+                    )
+                    ->minorAmount(),
 
             'direct_costs_minor' =>
                 $directCostsMinor,
+
+            'global_order_costs_minor' =>
+                $globalCostsMinor,
 
             'store_expenses_minor' =>
                 $storeExpenses
                     ->minorAmount(),
 
             'order_profit_minor' =>
-                $orderProfitMinor,
+                $breakdown
+                    ->profitBeforeStoreExpenses()
+                    ->minorAmount(),
 
             'net_profit_minor' =>
-                $netProfitMinor,
+                $storeProfit
+                    ->profit()
+                    ->minorAmount(),
 
-            /*
-             * Current dashboard compatibility.
-             */
             'profit_minor' =>
-                $netProfitMinor,
+                $storeProfit
+                    ->profit()
+                    ->minorAmount(),
 
             'margin_percentage' =>
                 $storeProfit
@@ -465,10 +483,12 @@ final class AnalyticsService
                     ->completeness()
                     ->isComplete(),
 
+            'global_cost_per_order_minor' =>
+                $globalCostPerOrder
+                    ->minorAmount(),
+
             'daily' =>
-                array_values(
-                    $buckets
-                ),
+                array_values($buckets),
 
             'recent_orders' =>
                 $recentOrders,
@@ -482,11 +502,10 @@ final class AnalyticsService
         DateTimeImmutable $start,
         DateTimeImmutable $end
     ): array {
-        return $this
-            ->getDashboardData(
-                $start,
-                $end
-            );
+        return $this->getDashboardData(
+            $start,
+            $end
+        );
     }
 
     private function resolveBucketMode(
@@ -504,7 +523,7 @@ final class AnalyticsService
             return 'day';
         }
 
-        if ($days <= 190) {
+        if ($days <= 220) {
             return 'week';
         }
 
@@ -516,15 +535,22 @@ final class AnalyticsService
         string $mode
     ): string {
         if ($mode === 'month') {
-            return $date->format(
-                'Y-m'
+            list(
+                $year,
+                $month
+            ) = JalaliDate::parts($date);
+
+            return sprintf(
+                '%04d-%02d',
+                $year,
+                $month
             );
         }
 
         if ($mode === 'week') {
-            return $date->format(
-                'o-W'
-            );
+            return $this
+                ->weekStart($date)
+                ->format('Y-m-d');
         }
 
         return $date->format(
@@ -538,17 +564,20 @@ final class AnalyticsService
     ): array {
         if ($mode === 'month') {
             $label =
-                $date->format(
-                    'Y/m'
+                JalaliDate::monthLabel(
+                    $date
                 );
         } elseif ($mode === 'week') {
             $label =
-                'هفته '
-                . $date->format('W');
+                JalaliDate::weekRangeLabel(
+                    $this->weekStart(
+                        $date
+                    )
+                );
         } else {
             $label =
-                $date->format(
-                    'm/d'
+                JalaliDate::shortNumeric(
+                    $date
                 );
         }
 
@@ -565,17 +594,48 @@ final class AnalyticsService
             'label' =>
                 $label,
 
-            'revenue_minor' =>
-                0,
+            'revenue_minor' => 0,
+            'cogs_minor' => 0,
+            'direct_costs_minor' => 0,
+            'global_order_costs_minor' => 0,
+            'store_expenses_minor' => 0,
+            'profit_minor' => 0,
+        );
+    }
 
-            'profit_minor' =>
-                0,
+    private function weekStart(
+        DateTimeInterface $date
+    ): DateTimeImmutable {
+        $copy = new DateTimeImmutable(
+            '@' . $date->getTimestamp()
+        );
 
-            'direct_costs_minor' =>
-                0,
+        $copy = $copy->setTimezone(
+            wp_timezone()
+        );
 
-            'store_expenses_minor' =>
-                0,
+        /*
+         * PHP:
+         * Sunday = 0
+         * ...
+         * Saturday = 6
+         */
+        $weekday =
+            (int) $copy->format('w');
+
+        $offset =
+            ($weekday + 1) % 7;
+
+        if ($offset > 0) {
+            $copy = $copy->modify(
+                '-' . $offset . ' days'
+            );
+        }
+
+        return $copy->setTime(
+            0,
+            0,
+            0
         );
     }
 }

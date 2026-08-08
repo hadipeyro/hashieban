@@ -10,30 +10,30 @@ use Hashieban\Integration\WooCommerce\Order\OrderFinancialData;
 final class ProfitEngine
 {
     public function calculateOrder(
-        OrderFinancialData $financial
+        OrderFinancialData $financial,
+        ?Money $globalOrderCosts = null
     ): ProfitResult {
         $revenue =
             $financial
                 ->revenueBeforeDirectCosts();
 
-        $cogs =
-            $financial->cogs();
-
-        $orderCosts =
-            $financial->directCosts();
-
-        $storeExpenses =
-            Money::zero(
-                $revenue->currency(),
-                $revenue->precision()
-            );
+        $globalOrderCosts =
+            $globalOrderCosts
+        ?? Money::zero(
+            $revenue->currency(),
+            $revenue->precision()
+        );
 
         $breakdown =
             new ProfitBreakdown(
                 $revenue,
-                $cogs,
-                $orderCosts,
-                $storeExpenses
+                $financial->cogs(),
+                $financial->directCosts(),
+                $globalOrderCosts,
+                Money::zero(
+                    $revenue->currency(),
+                    $revenue->precision()
+                )
             );
 
         $completeness =
@@ -53,6 +53,7 @@ final class ProfitEngine
         Money $revenue,
         Money $cogs,
         Money $orderCosts,
+        Money $globalOrderCosts,
         Money $storeExpenses,
         int $incompleteOrders = 0
     ): ProfitResult {
@@ -61,23 +62,21 @@ final class ProfitEngine
                 $revenue,
                 $cogs,
                 $orderCosts,
+                $globalOrderCosts,
                 $storeExpenses
             );
 
-        if ($incompleteOrders > 0) {
-            $completeness =
-                Completeness::incomplete(
-                    array(
-                        sprintf(
-                            '%d سفارش دارای اطلاعات مالی ناقص است.',
-                            $incompleteOrders
-                        ),
-                    )
-                );
-        } else {
-            $completeness =
-                Completeness::complete();
-        }
+        $completeness =
+            $incompleteOrders > 0
+        ? Completeness::incomplete(
+            array(
+                sprintf(
+                    '%d سفارش دارای اطلاعات مالی ناقص است.',
+                    $incompleteOrders
+                ),
+            )
+        )
+            : Completeness::complete();
 
         return $this->createResult(
             $breakdown,
@@ -92,19 +91,20 @@ final class ProfitEngine
         $profit =
             $breakdown->netProfit();
 
-        $revenueMinor =
+        $revenue =
             $breakdown
                 ->revenue()
                 ->minorAmount();
 
         $margin = null;
 
-        if ($revenueMinor !== 0) {
+        if ($revenue !== 0) {
             $margin =
                 (
                     $profit->minorAmount()
-                    / $revenueMinor
-                ) * 100;
+                    / $revenue
+                )
+            * 100;
         }
 
         return new ProfitResult(

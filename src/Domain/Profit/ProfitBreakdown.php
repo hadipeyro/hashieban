@@ -9,32 +9,27 @@ use Hashieban\Domain\Money\Money;
 final class ProfitBreakdown
 {
     private Money $revenue;
-
     private Money $cogs;
-
     private Money $orderCosts;
-
+    private Money $globalOrderCosts;
     private Money $storeExpenses;
 
     public function __construct(
         Money $revenue,
         Money $cogs,
         Money $orderCosts,
+        Money $globalOrderCosts,
         Money $storeExpenses
     ) {
         $this->revenue = $revenue;
         $this->cogs = $cogs;
         $this->orderCosts = $orderCosts;
-        $this->storeExpenses = $storeExpenses;
+        $this->globalOrderCosts =
+            $globalOrderCosts;
+        $this->storeExpenses =
+            $storeExpenses;
 
-        /*
-         * Trigger Money compatibility validation
-         * immediately.
-         */
-        $this->revenue
-             ->subtract($this->cogs)
-             ->subtract($this->orderCosts)
-             ->subtract($this->storeExpenses);
+        $this->netProfit();
     }
 
     public function revenue(): Money
@@ -52,6 +47,11 @@ final class ProfitBreakdown
         return $this->orderCosts;
     }
 
+    public function globalOrderCosts(): Money
+    {
+        return $this->globalOrderCosts;
+    }
+
     public function storeExpenses(): Money
     {
         return $this->storeExpenses;
@@ -61,6 +61,9 @@ final class ProfitBreakdown
     {
         return $this->cogs
 					->add($this->orderCosts)
+					->add(
+						$this->globalOrderCosts
+					)
 					->add($this->storeExpenses);
     }
 
@@ -68,14 +71,18 @@ final class ProfitBreakdown
     {
         return $this->revenue
 					->subtract($this->cogs)
-					->subtract($this->orderCosts);
+					->subtract($this->orderCosts)
+					->subtract(
+						$this->globalOrderCosts
+					);
     }
 
     public function netProfit(): Money
     {
-        return $this->revenue
-					->subtract($this->cogs)
-					->subtract($this->orderCosts)
-					->subtract($this->storeExpenses);
+        return $this
+            ->profitBeforeStoreExpenses()
+            ->subtract(
+                $this->storeExpenses
+            );
     }
 }

@@ -5,35 +5,50 @@ declare(strict_types=1);
 namespace Hashieban\Admin;
 
 use Hashieban\Integration\WooCommerce\Compatibility;
+use Hashieban\Support\Currency;
 
 final class AdminMenu
 {
     private Compatibility $compatibility;
-
     private DashboardPage $dashboard;
-
     private ExpensesPage $expensesPage;
+    private SettingsPage $settingsPage;
 
     public function __construct(
         Compatibility $compatibility,
         DashboardPage $dashboard,
-        ExpensesPage $expensesPage
+        ExpensesPage $expensesPage,
+        SettingsPage $settingsPage
     ) {
-        $this->compatibility = $compatibility;
-        $this->dashboard = $dashboard;
-        $this->expensesPage = $expensesPage;
+        $this->compatibility =
+            $compatibility;
+
+        $this->dashboard =
+            $dashboard;
+
+        $this->expensesPage =
+            $expensesPage;
+
+        $this->settingsPage =
+            $settingsPage;
     }
 
     public function register(): void
     {
         add_action(
             'admin_menu',
-            array($this, 'registerMenu')
+            array(
+                $this,
+                'registerMenu'
+            )
         );
 
         add_action(
             'admin_enqueue_scripts',
-            array($this, 'enqueueAssets')
+            array(
+                $this,
+                'enqueueAssets'
+            )
         );
     }
 
@@ -72,6 +87,18 @@ final class AdminMenu
             'hashieban-expenses',
             array(
                 $this->expensesPage,
+                'render'
+            )
+        );
+
+        add_submenu_page(
+            'hashieban',
+            'تنظیمات',
+            'تنظیمات',
+            'manage_woocommerce',
+            'hashieban-settings',
+            array(
+                $this->settingsPage,
                 'render'
             )
         );
@@ -122,6 +149,70 @@ final class AdminMenu
             ),
             HASHIEBAN_VERSION
         );
+
+        wp_enqueue_style(
+            'hashieban-jalali-datepicker',
+            plugins_url(
+                'assets/vendor/jalalidatepicker/jalalidatepicker.min.css',
+                HASHIEBAN_FILE
+            ),
+            array(),
+            HASHIEBAN_VERSION
+        );
+
+        wp_enqueue_script(
+            'hashieban-jalali-datepicker',
+            plugins_url(
+                'assets/vendor/jalalidatepicker/jalalidatepicker.min.js',
+                HASHIEBAN_FILE
+            ),
+            array(),
+            HASHIEBAN_VERSION,
+            true
+        );
+
+        wp_enqueue_script(
+            'hashieban-common',
+            plugins_url(
+                'assets/admin/js/hashieban-common.js',
+                HASHIEBAN_FILE
+            ),
+            array(
+                'hashieban-jalali-datepicker'
+            ),
+            HASHIEBAN_VERSION,
+            true
+        );
+
+        if (
+            strpos(
+                $hook,
+                'hashieban-settings'
+            ) !== false
+        ) {
+            wp_enqueue_style(
+                'hashieban-settings',
+                plugins_url(
+                    'assets/admin/css/hashieban-settings.css',
+                    HASHIEBAN_FILE
+                ),
+                array(
+                    'hashieban-admin'
+                ),
+                HASHIEBAN_VERSION
+            );
+
+            wp_enqueue_script(
+                'hashieban-settings',
+                plugins_url(
+                    'assets/admin/js/hashieban-settings.js',
+                    HASHIEBAN_FILE
+                ),
+                array(),
+                HASHIEBAN_VERSION,
+                true
+            );
+        }
     }
 
     public function renderStatusPage(): void
@@ -146,12 +237,12 @@ final class AdminMenu
                 '\Automattic\WooCommerce\Utilities\OrderUtil'
             )
         ) {
-            $hposEnabled =
+            $enabled =
                 \Automattic\WooCommerce\Utilities\OrderUtil
                     ::custom_orders_table_usage_is_enabled();
 
             $hposStatus =
-                $hposEnabled
+                $enabled
                     ? 'فعال'
                     : 'غیرفعال';
         }
@@ -182,7 +273,7 @@ final class AdminMenu
 
                     <tr>
                         <th>
-                            نسخه WooCommerce
+                            WooCommerce
                         </th>
 
                         <td>
@@ -210,14 +301,27 @@ final class AdminMenu
 
                     <tr>
                         <th>
-                            واحد مالی
+                            واحد اصلی ووکامرس
+                        </th>
+
+                        <td>
+                            <?php
+                            echo esc_html(
+                                Currency::storeLabel()
+                            );
+                            ?>
+                        </td>
+                    </tr>
+
+                    <tr>
+                        <th>
+                            واحد نمایش حاشیه‌بان
                         </th>
 
                         <td>
                           <?php
                           echo esc_html(
-                              \Hashieban\Support\Currency
-                              ::label()
+                              Currency::label()
                           );
                           ?>
                         </td>
