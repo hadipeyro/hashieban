@@ -20,35 +20,22 @@ final class AdminMenu
         ExpensesPage $expensesPage,
         SettingsPage $settingsPage
     ) {
-        $this->compatibility =
-            $compatibility;
-
-        $this->dashboard =
-            $dashboard;
-
-        $this->expensesPage =
-            $expensesPage;
-
-        $this->settingsPage =
-            $settingsPage;
+        $this->compatibility = $compatibility;
+        $this->dashboard = $dashboard;
+        $this->expensesPage = $expensesPage;
+        $this->settingsPage = $settingsPage;
     }
 
     public function register(): void
     {
         add_action(
             'admin_menu',
-            array(
-                $this,
-                'registerMenu'
-            )
+            array($this, 'registerMenu')
         );
 
         add_action(
             'admin_enqueue_scripts',
-            array(
-                $this,
-                'enqueueAssets'
-            )
+            array($this, 'enqueueAssets')
         );
     }
 
@@ -59,10 +46,7 @@ final class AdminMenu
             'حاشیه‌بان',
             'manage_woocommerce',
             'hashieban',
-            array(
-                $this->dashboard,
-                'render'
-            ),
+            array($this->dashboard, 'render'),
             'dashicons-chart-area',
             56
         );
@@ -73,10 +57,7 @@ final class AdminMenu
             'پیشخوان',
             'manage_woocommerce',
             'hashieban',
-            array(
-                $this->dashboard,
-                'render'
-            )
+            array($this->dashboard, 'render')
         );
 
         add_submenu_page(
@@ -85,10 +66,7 @@ final class AdminMenu
             'هزینه‌ها',
             'manage_woocommerce',
             'hashieban-expenses',
-            array(
-                $this->expensesPage,
-                'render'
-            )
+            array($this->expensesPage, 'render')
         );
 
         add_submenu_page(
@@ -97,10 +75,7 @@ final class AdminMenu
             'تنظیمات',
             'manage_woocommerce',
             'hashieban-settings',
-            array(
-                $this->settingsPage,
-                'render'
-            )
+            array($this->settingsPage, 'render')
         );
 
         add_submenu_page(
@@ -109,22 +84,14 @@ final class AdminMenu
             'وضعیت سیستم',
             'manage_woocommerce',
             'hashieban-status',
-            array(
-                $this,
-                'renderStatusPage'
-            )
+            array($this, 'renderStatusPage')
         );
     }
 
     public function enqueueAssets(
         string $hook
     ): void {
-        if (
-            strpos(
-                $hook,
-                'hashieban'
-            ) === false
-        ) {
+        if (strpos($hook, 'hashieban') === false) {
             return;
         }
 
@@ -144,9 +111,7 @@ final class AdminMenu
                 'assets/admin/css/hashieban-finance.css',
                 HASHIEBAN_FILE
             ),
-            array(
-                'hashieban-admin'
-            ),
+            array('hashieban-admin'),
             HASHIEBAN_VERSION
         );
 
@@ -177,28 +142,19 @@ final class AdminMenu
                 'assets/admin/js/hashieban-common.js',
                 HASHIEBAN_FILE
             ),
-            array(
-                'hashieban-jalali-datepicker'
-            ),
+            array('hashieban-jalali-datepicker'),
             HASHIEBAN_VERSION,
             true
         );
 
-        if (
-            strpos(
-                $hook,
-                'hashieban-settings'
-            ) !== false
-        ) {
+        if (strpos($hook, 'hashieban-settings') !== false) {
             wp_enqueue_style(
                 'hashieban-settings',
                 plugins_url(
                     'assets/admin/css/hashieban-settings.css',
                     HASHIEBAN_FILE
                 ),
-                array(
-                    'hashieban-admin'
-                ),
+                array('hashieban-admin'),
                 HASHIEBAN_VERSION
             );
 
@@ -213,123 +169,72 @@ final class AdminMenu
                 true
             );
         }
+
+        if (strpos($hook, 'hashieban') !== false) {
+            wp_enqueue_script(
+                'hashieban-chartjs',
+                plugins_url(
+                    'assets/vendor/chartjs/chart.umd.js',
+                    HASHIEBAN_FILE
+                ),
+                array(),
+                HASHIEBAN_VERSION,
+                true
+            );
+        }
     }
 
     public function renderStatusPage(): void
     {
-        if (
-            ! current_user_can(
-                'manage_woocommerce'
-            )
-        ) {
+        if (! current_user_can('manage_woocommerce')) {
             return;
         }
 
-        $woocommerceVersion =
-            defined('WC_VERSION')
-                ? WC_VERSION
-                : '—';
+        $woocommerceVersion = defined('WC_VERSION')
+            ? WC_VERSION
+            : '—';
 
         $hposStatus = 'نامشخص';
 
-        if (
-            class_exists(
-                '\Automattic\WooCommerce\Utilities\OrderUtil'
-            )
-        ) {
-            $enabled =
-                \Automattic\WooCommerce\Utilities\OrderUtil
-                    ::custom_orders_table_usage_is_enabled();
+        if (class_exists('\Automattic\WooCommerce\Utilities\OrderUtil')) {
+            $enabled = \Automattic\WooCommerce\Utilities\OrderUtil
+                ::custom_orders_table_usage_is_enabled();
 
-            $hposStatus =
-                $enabled
-                    ? 'فعال'
-                    : 'غیرفعال';
+            $hposStatus = $enabled ? 'فعال' : 'غیرفعال';
         }
 
         ?>
         <div class="wrap">
-
-            <h1>
-                وضعیت سیستم حاشیه‌بان
-            </h1>
+            <h1>وضعیت سیستم حاشیه‌بان</h1>
 
             <table class="widefat striped">
                 <tbody>
-
                     <tr>
-                        <th>
-                            نسخه حاشیه‌بان
-                        </th>
-
-                        <td>
-                            <?php
-                            echo esc_html(
-                                HASHIEBAN_VERSION
-                            );
-                            ?>
-                        </td>
+                        <th>نسخه حاشیه‌بان</th>
+                        <td><?php echo esc_html(HASHIEBAN_VERSION); ?></td>
                     </tr>
 
                     <tr>
-                        <th>
-                            WooCommerce
-                        </th>
-
-                        <td>
-                            <?php
-                            echo esc_html(
-                                $woocommerceVersion
-                            );
-                            ?>
-                        </td>
+                        <th>WooCommerce</th>
+                        <td><?php echo esc_html($woocommerceVersion); ?></td>
                     </tr>
 
                     <tr>
-                        <th>
-                            HPOS
-                        </th>
-
-                        <td>
-                            <?php
-                            echo esc_html(
-                                $hposStatus
-                            );
-                            ?>
-                        </td>
+                        <th>HPOS</th>
+                        <td><?php echo esc_html($hposStatus); ?></td>
                     </tr>
 
                     <tr>
-                        <th>
-                            واحد اصلی ووکامرس
-                        </th>
-
-                        <td>
-                            <?php
-                            echo esc_html(
-                                Currency::storeLabel()
-                            );
-                            ?>
-                        </td>
+                        <th>واحد اصلی ووکامرس</th>
+                        <td><?php echo esc_html(Currency::storeLabel()); ?></td>
                     </tr>
 
                     <tr>
-                        <th>
-                            واحد نمایش حاشیه‌بان
-                        </th>
-
-                        <td>
-                          <?php
-                          echo esc_html(
-                              Currency::label()
-                          );
-                          ?>
-                        </td>
+                        <th>واحد نمایش حاشیه‌بان</th>
+                        <td><?php echo esc_html(Currency::label()); ?></td>
                     </tr>
-
                 </tbody>
             </table>
-
         </div>
         <?php
 		}
