@@ -6,6 +6,7 @@ namespace Hashieban\Admin;
 
 use DateTimeImmutable;
 use Hashieban\Integration\WooCommerce\Analytics\AnalyticsService;
+use Hashieban\Support\Currency;
 
 final class DashboardPage
 {
@@ -21,442 +22,515 @@ final class DashboardPage
     {
         if (! current_user_can('manage_woocommerce')) {
             wp_die(
-                esc_html__(
-                    'شما اجازه دسترسی به این صفحه را ندارید.',
-                    'hashieban'
+                esc_html(
+                    'شما اجازه دسترسی به این بخش را ندارید.'
                 )
             );
         }
 
-        [$start, $end, $activeRange] =
+        $this->enqueueAssets();
+
+        [$start, $end, $range] =
             $this->resolveDateRange();
 
-        $data = $this->analytics->getDashboardData(
-            $start,
-            $end
-        );
+        $data = $this->analytics
+            ->getDashboardData(
+                $start,
+                $end
+            );
+
+        $currency = $data['currency'];
+        $precision = (int) $data['precision'];
+
+        $revenue =
+            (int) $data['revenue_minor'];
+
+        $cogs =
+            (int) $data['cogs_minor'];
+
+        $directCosts =
+            (int) $data['direct_costs_minor'];
+
+        $storeExpenses =
+            (int) $data['store_expenses_minor'];
+
+        $netProfit =
+            (int) $data['net_profit_minor'];
+
+        $totalExpenses =
+            $cogs
+            + $directCosts
+            + $storeExpenses;
+
+        $orderCount =
+            (int) $data['order_count'];
+
+        $margin =
+            $data['margin_percentage'];
+
+        $averageProfit =
+            $orderCount > 0
+                ? (int) round(
+                    $netProfit / $orderCount
+                )
+                : 0;
+
+        $bestRevenueBucket =
+            $this->findBestBucket(
+                $data['daily'],
+                'revenue_minor'
+            );
+
+        $bestProfitBucket =
+            $this->findBestBucket(
+                $data['daily'],
+                'profit_minor'
+            );
+
+        $currencyLabel =
+            Currency::label($currency);
 
         ?>
-        <div class="wrap hb-admin" dir="rtl">
+        <div class="wrap hashieban-dashboard-v2">
 
-            <div class="hb-header">
+            <div class="hb-dashboard-header">
+
                 <div>
-                    <h1>حاشیه‌بان</h1>
+                    <h1>
+                        حاشیه‌بان
+                    </h1>
 
                     <p>
-                        تصویر واقعی‌تری از سودآوری فروشگاه شما
+                        وضعیت واقعی مالی فروشگاه در بازه انتخاب‌شده
                     </p>
                 </div>
 
-                <div class="hb-period">
-                    <?php
-                    echo esc_html(
-                        $start->format('Y/m/d')
-                        . ' تا '
-                        . $end->format('Y/m/d')
-                    );
-                    ?>
+                <div class="hb-currency-pill">
+                    واحد مالی:
+                    <strong>
+                        <?php
+                        echo esc_html(
+                            $currencyLabel
+                        );
+                        ?>
+                    </strong>
                 </div>
+
             </div>
 
             <?php
-            $this->renderRangeSelector(
-                $activeRange,
+            $this->renderRangeFilters(
+                $range,
                 $start,
                 $end
             );
             ?>
 
-            <?php
-            $this->renderCards($data);
-            ?>
+            <section
+                class="hb-main-profit-card <?php
+                echo $netProfit < 0
+                    ? 'is-loss'
+                    : 'is-profit';
+                ?>"
+            >
 
-            <div class="hb-grid hb-grid-main">
+                <div class="hb-main-profit-label">
+                    سود خالص شما
+                </div>
 
-                <section class="hb-panel">
-                    <div class="hb-panel-heading">
-                        <div>
-                            <h2>روند فروش و سود</h2>
-                            <p>
-                                عملکرد سفارش‌های معتبر در بازه انتخاب‌شده
-                            </p>
-                        </div>
-                    </div>
-
-                    <?php
-                    $this->renderChart(
-                        $data['daily']
-                    );
-                    ?>
-                </section>
-
-                <section class="hb-panel hb-margin-panel">
-
-                    <div class="hb-panel-heading">
-                        <div>
-                            <h2>حاشیه سود</h2>
-                            <p>
-                                نسبت سود ناخالص به درآمد
-                            </p>
-                        </div>
-                    </div>
-
-                    <?php
-                    $this->renderMarginRing(
-                        $data['margin_percentage']
-                    );
-                    ?>
-
-                </section>
-
-            </div>
-
-            <?php
-            $this->renderRecentOrders(
-                $data
-            );
-            ?>
-
-            <div class="hb-development-note">
-                <strong>
-                    مرحله فعلی:
-                </strong>
-
-                سود نمایش‌داده‌شده در این نسخه توسعه،
-                سود ناخالص بر پایه فروش و COGS است.
-
-                هزینه واقعی ارسال، بسته‌بندی، کارمزد درگاه
-                و سایر هزینه‌های مستقیم در مراحل بعد به
-                موتور سود اضافه می‌شوند.
-            </div>
-
-        </div>
-        <?php
-    }
-
-    /**
-     * @param array<string, mixed> $data
-     */
-    private function renderCards(
-        array $data
-    ): void {
-        ?>
-        <div class="hb-kpis">
-
-            <?php
-            $this->renderMoneyCard(
-                'فروش',
-                $data['revenue_minor'],
-                $data,
-                'مجموع درآمد سفارش‌های معتبر'
-            );
-
-            $this->renderMoneyCard(
-                'بهای تمام‌شده',
-                $data['cogs_minor'],
-                $data,
-                'هزینه خرید کالاهای فروخته‌شده'
-            );
-
-            $this->renderMoneyCard(
-                'سود ناخالص فعلی',
-                $data['profit_minor'],
-                $data,
-                'فروش منهای بهای تمام‌شده',
-                $data['profit_minor'] < 0
-                    ? 'danger'
-                    : 'success'
-            );
-            ?>
-
-            <div class="hb-card">
-                <span class="hb-card-label">
-                    تعداد سفارش
-                </span>
-
-                <strong class="hb-card-value">
+                <div class="hb-main-profit-value">
                     <?php
                     echo esc_html(
-                        number_format_i18n(
-                            (int) $data['order_count']
+                        Currency::formatMinor(
+                            $netProfit,
+                            $currency,
+                            $precision
                         )
                     );
                     ?>
-                </strong>
+                </div>
 
-                <span class="hb-card-help">
-                    سفارش تکمیل‌شده یا در حال انجام
-                </span>
-            </div>
+                <p>
+                    مبلغی که بعد از کسر قیمت خرید کالاها،
+                    هزینه‌های سفارش و هزینه‌های کلی فروشگاه
+                    برای شما باقی مانده است.
+                </p>
 
-        </div>
+                <div class="hb-profit-confidence">
+                    محاسبه بر اساس تمام هزینه‌هایی است که
+                    تاکنون در حاشیه‌بان ثبت کرده‌اید.
+                </div>
 
-        <div class="hb-health-row">
+            </section>
 
-            <div class="hb-health-item">
-                <span>وضعیت داده‌های مالی</span>
+            <section class="hb-kpi-grid">
 
-                <?php if ((int) $data['incomplete_count'] === 0) : ?>
-
-                    <strong class="hb-good">
-                        کامل
-                    </strong>
-
-                <?php else : ?>
-
-                    <strong class="hb-warning">
-                        <?php
-                        echo esc_html(
-                            number_format_i18n(
-                                (int) $data['incomplete_count']
-                            )
-                        );
-                        ?>
-                        سفارش نیازمند بررسی
-                    </strong>
-
-                <?php endif; ?>
-            </div>
-
-        </div>
-        <?php
-    }
-
-    /**
-     * @param array<string, mixed> $data
-     */
-    private function renderMoneyCard(
-        string $title,
-        int $minorAmount,
-        array $data,
-        string $help,
-        string $class = ''
-    ): void {
-        ?>
-        <div class="hb-card <?php echo esc_attr($class); ?>">
-
-            <span class="hb-card-label">
-                <?php echo esc_html($title); ?>
-            </span>
-
-            <strong class="hb-card-value">
                 <?php
-                echo wp_kses_post(
-                    $this->formatMoney(
-                        $minorAmount,
-                        (int) $data['precision'],
-                        (string) $data['currency']
-                    )
+                $this->renderKpi(
+                    'فروش کل',
+                    Currency::formatMinor(
+                        $revenue,
+                        $currency,
+                        $precision
+                    ),
+                    'کل درآمد ثبت‌شده در این بازه'
+                );
+
+                $this->renderKpi(
+                    'کل هزینه‌ها',
+                    Currency::formatMinor(
+                        $totalExpenses,
+                        $currency,
+                        $precision
+                    ),
+                    'قیمت خرید کالا + هزینه سفارش + هزینه‌های فروشگاه'
+                );
+
+                $this->renderKpi(
+                    'حاشیه سود خالص',
+                    $margin !== null
+                        ? number_format_i18n(
+                            (float) $margin,
+                            1
+                        ) . '٪'
+                        : '—',
+                    'درصدی از فروش که تبدیل به سود شده'
+                );
+
+                $this->renderKpi(
+                    'تعداد سفارش',
+                    number_format_i18n(
+                        $orderCount
+                    ),
+                    'سفارش‌های معتبر این بازه'
+                );
+
+                $this->renderKpi(
+                    'میانگین سود هر سفارش',
+                    Currency::formatMinor(
+                        $averageProfit,
+                        $currency,
+                        $precision
+                    ),
+                    'میانگین سود خالص به ازای هر سفارش'
+                );
+
+                $this->renderKpi(
+                    'اطلاعات ناقص',
+                    number_format_i18n(
+                        (int) $data[
+                            'incomplete_count'
+                        ]
+                    ),
+                    'سفارش‌هایی که اطلاعات مالی کامل ندارند'
                 );
                 ?>
-            </strong>
 
-            <span class="hb-card-help">
-                <?php echo esc_html($help); ?>
-            </span>
+            </section>
 
-        </div>
-        <?php
-    }
+            <section class="hb-dashboard-grid">
 
-    /**
-     * @param array<int, array<string, mixed>> $daily
-     */
-    private function renderChart(
-        array $daily
-    ): void {
-        if ($daily === []) {
-            ?>
-            <div class="hb-empty-chart">
-                هنوز سفارش معتبری در این بازه وجود ندارد.
-            </div>
-            <?php
-            return;
-        }
+                <div class="hb-panel hb-chart-panel">
 
-        $daily = array_slice(
-            $daily,
-            -14
-        );
+                    <div class="hb-panel-header">
 
-        $max = 1;
+                        <div>
+                            <h2>
+                                روند مالی
+                            </h2>
 
-        foreach ($daily as $day) {
-            $max = max(
-                $max,
-                (int) $day['revenue_minor']
-            );
-        }
+                            <p>
+                                روی هر بازه کلیک کنید تا جزئیاتش را ببینید.
+                            </p>
+                        </div>
 
-        ?>
-        <div class="hb-chart">
+                        <div
+                            class="hb-chart-switcher"
+                            role="group"
+                        >
 
-            <?php foreach ($daily as $day) : ?>
+                            <button
+                                type="button"
+                                class="hb-chart-switch is-active"
+                                data-series="revenue"
+                            >
+                                فروش
+                            </button>
 
-                <?php
-                $revenueHeight = (
-                    (int) $day['revenue_minor']
-                    / $max
-                ) * 100;
+                            <button
+                                type="button"
+                                class="hb-chart-switch"
+                                data-series="profit"
+                            >
+                                سود خالص
+                            </button>
 
-                $profitHeight = (
-                    abs((int) $day['profit_minor'])
-                    / $max
-                ) * 100;
-
-                $profitClass =
-                    (int) $day['profit_minor'] < 0
-                        ? 'negative'
-                        : '';
-                ?>
-
-                <div class="hb-chart-day">
-
-                    <div class="hb-bars">
-
-                        <span
-                            class="hb-bar revenue"
-                            style="<?php
-                            echo esc_attr(
-                                'height:'
-                                . max(
-                                    4,
-                                    $revenueHeight
-                                )
-                                . '%'
-                            );
-                            ?>"
-                            title="فروش"
-                        ></span>
-
-                        <span
-                            class="hb-bar profit <?php
-                            echo esc_attr(
-                                $profitClass
-                            );
-                            ?>"
-                            style="<?php
-                            echo esc_attr(
-                                'height:'
-                                . max(
-                                    4,
-                                    $profitHeight
-                                )
-                                . '%'
-                            );
-                            ?>"
-                            title="سود"
-                        ></span>
+                        </div>
 
                     </div>
 
-                    <span class="hb-chart-date">
+                    <div
+                        class="hb-live-chart"
+                        id="hashieban-live-chart"
+                        data-currency="<?php
+                        echo esc_attr(
+                            $currencyLabel
+                        );
+                        ?>"
+                    >
+
                         <?php
-                        echo esc_html(
-                            wp_date(
-                                'm/d',
-                                (int) $day['timestamp']
-                            )
+                        foreach (
+                            $data['daily']
+                            as $bucket
+                        ) :
+                            ?>
+
+                            <button
+                                type="button"
+                                class="hb-chart-column"
+                                data-label="<?php
+                                echo esc_attr(
+                                    $bucket['label']
+                                );
+                                ?>"
+                                data-revenue="<?php
+                                echo esc_attr(
+                                    (string) $bucket[
+                                        'revenue_minor'
+                                    ]
+                                );
+                                ?>"
+                                data-profit="<?php
+                                echo esc_attr(
+                                    (string) $bucket[
+                                        'profit_minor'
+                                    ]
+                                );
+                                ?>"
+                            >
+
+                                <span
+                                    class="hb-chart-value"
+                                ></span>
+
+                                <span
+                                    class="hb-chart-bar-wrap"
+                                >
+                                    <span
+                                        class="hb-chart-bar"
+                                    ></span>
+                                </span>
+
+                                <span
+                                    class="hb-chart-label"
+                                >
+                                    <?php
+                                    echo esc_html(
+                                        $bucket['label']
+                                    );
+                                    ?>
+                                </span>
+
+                            </button>
+
+                        <?php endforeach; ?>
+
+                    </div>
+
+                    <div
+                        class="hb-chart-detail"
+                        id="hashieban-chart-detail"
+                        hidden
+                    >
+
+                        <strong
+                            id="hashieban-chart-detail-title"
+                        ></strong>
+
+                        <span>
+                            فروش:
+                            <b
+                                id="hashieban-chart-detail-revenue"
+                            ></b>
+                        </span>
+
+                        <span>
+                            سود:
+                            <b
+                                id="hashieban-chart-detail-profit"
+                            ></b>
+                        </span>
+
+                    </div>
+
+                </div>
+
+                <div class="hb-panel">
+
+                    <div class="hb-panel-header">
+                        <div>
+                            <h2>
+                                خلاصه عملکرد
+                            </h2>
+
+                            <p>
+                                بهترین نقاط این بازه
+                            </p>
+                        </div>
+                    </div>
+
+                    <div class="hb-highlight-list">
+
+                        <div class="hb-highlight-item">
+                            <span>
+                                بهترین بازه فروش
+                            </span>
+
+                            <strong>
+                                <?php
+                                echo esc_html(
+                                    $bestRevenueBucket
+                                        ? $bestRevenueBucket[
+                                            'label'
+                                        ]
+                                        : '—'
+                                );
+                                ?>
+                            </strong>
+
+                            <?php
+                            if ($bestRevenueBucket) :
+                                ?>
+                                <small>
+                                    <?php
+                                    echo esc_html(
+                                        Currency::formatMinor(
+                                            (int) $bestRevenueBucket[
+                                                'revenue_minor'
+                                            ],
+                                            $currency,
+                                            $precision
+                                        )
+                                    );
+                                    ?>
+                                </small>
+                            <?php endif; ?>
+                        </div>
+
+                        <div class="hb-highlight-item">
+                            <span>
+                                بیشترین سود
+                            </span>
+
+                            <strong>
+                                <?php
+                                echo esc_html(
+                                    $bestProfitBucket
+                                        ? $bestProfitBucket[
+                                            'label'
+                                        ]
+                                        : '—'
+                                );
+                                ?>
+                            </strong>
+
+                            <?php
+                            if ($bestProfitBucket) :
+                                ?>
+                                <small>
+                                    <?php
+                                    echo esc_html(
+                                        Currency::formatMinor(
+                                            (int) $bestProfitBucket[
+                                                'profit_minor'
+                                            ],
+                                            $currency,
+                                            $precision
+                                        )
+                                    );
+                                    ?>
+                                </small>
+                            <?php endif; ?>
+                        </div>
+
+                    </div>
+
+                </div>
+
+            </section>
+
+            <section class="hb-panel">
+
+                <details class="hb-financial-details">
+
+                    <summary>
+                        جزئیات هزینه‌ها
+                    </summary>
+
+                    <p class="hb-details-help">
+                        اگر فقط می‌خواهید بدانید چقدر سود کرده‌اید،
+                        نیازی نیست این بخش را بررسی کنید.
+                    </p>
+
+                    <div class="hb-cost-breakdown">
+
+                        <?php
+                        $this->renderCostRow(
+                            'قیمت خرید کالاها',
+                            $cogs,
+                            $currency,
+                            $precision
+                        );
+
+                        $this->renderCostRow(
+                            'هزینه‌های ثبت‌شده روی سفارش‌ها',
+                            $directCosts,
+                            $currency,
+                            $precision
+                        );
+
+                        $this->renderCostRow(
+                            'هزینه‌های کلی فروشگاه',
+                            $storeExpenses,
+                            $currency,
+                            $precision
+                        );
+
+                        $this->renderCostRow(
+                            'مجموع هزینه‌ها',
+                            $totalExpenses,
+                            $currency,
+                            $precision,
+                            true
                         );
                         ?>
-                    </span>
+
+                    </div>
+
+                </details>
+
+            </section>
+
+            <section class="hb-panel">
+
+                <div class="hb-panel-header">
+
+                    <div>
+                        <h2>
+                            سفارش‌های اخیر
+                        </h2>
+
+                        <p>
+                            فروش و سود هر سفارش
+                        </p>
+                    </div>
 
                 </div>
-
-            <?php endforeach; ?>
-
-        </div>
-
-        <div class="hb-chart-legend">
-            <span>
-                <i class="revenue"></i>
-                فروش
-            </span>
-
-            <span>
-                <i class="profit"></i>
-                سود
-            </span>
-        </div>
-        <?php
-    }
-
-    private function renderMarginRing(
-        ?float $margin
-    ): void {
-        $display = $margin !== null
-            ? round($margin, 1)
-            : 0.0;
-
-        $ring = max(
-            0,
-            min(
-                100,
-                $display
-            )
-        );
-
-        ?>
-        <div
-            class="hb-margin-ring"
-            style="<?php
-            echo esc_attr(
-                '--hb-margin:' . $ring
-            );
-            ?>"
-        >
-            <div class="hb-margin-ring-inner">
-
-                <strong>
-                    <?php
-                    echo esc_html(
-                        number_format_i18n(
-                            $display,
-                            1
-                        )
-                    );
-                    ?>%
-                </strong>
-
-                <span>
-                    حاشیه سود
-                </span>
-
-            </div>
-        </div>
-        <?php
-    }
-
-    /**
-     * @param array<string, mixed> $data
-     */
-    private function renderRecentOrders(
-        array $data
-    ): void {
-        ?>
-        <section class="hb-panel hb-orders">
-
-            <div class="hb-panel-heading">
-                <div>
-                    <h2>آخرین سفارش‌های این بازه</h2>
-
-                    <p>
-                        دیگر نیازی به واردکردن دستی شناسه سفارش نیست.
-                    </p>
-                </div>
-            </div>
-
-            <?php if ($data['recent_orders'] === []) : ?>
-
-                <div class="hb-empty">
-                    سفارشی برای نمایش پیدا نشد.
-                </div>
-
-            <?php else : ?>
 
                 <div class="hb-table-wrap">
 
-                    <table class="hb-table">
+                    <table class="widefat striped hb-orders-table">
 
                         <thead>
                             <tr>
@@ -465,123 +539,139 @@ final class DashboardPage
                                 <th>تاریخ</th>
                                 <th>وضعیت</th>
                                 <th>فروش</th>
-                                <th>سود</th>
-                                <th>حاشیه</th>
-                                <th></th>
+                                <th>سود سفارش</th>
+                                <th>حاشیه سود</th>
                             </tr>
                         </thead>
 
                         <tbody>
 
                         <?php
-                        foreach (
-                            $data['recent_orders']
-                            as $order
+                        if (
+                            $data[
+                                'recent_orders'
+                            ] === array()
                         ) :
                             ?>
 
                             <tr>
-
-                                <td>
-                                    <strong>
-                                        #
-                                        <?php
-                                        echo esc_html(
-                                            (string) $order['number']
-                                        );
-                                        ?>
-                                    </strong>
+                                <td colspan="7">
+                                    سفارشی در این بازه پیدا نشد.
                                 </td>
-
-                                <td>
-                                    <?php
-                                    echo esc_html(
-                                        (string) $order['customer']
-                                    );
-                                    ?>
-                                </td>
-
-                                <td>
-                                    <?php
-                                    echo esc_html(
-                                        (string) $order['date']
-                                    );
-                                    ?>
-                                </td>
-
-                                <td>
-                                    <span class="hb-status">
-                                        <?php
-                                        echo esc_html(
-                                            (string) $order['status']
-                                        );
-                                        ?>
-                                    </span>
-                                </td>
-
-                                <td>
-                                    <?php
-                                    echo wp_kses_post(
-                                        $this->formatMoney(
-                                            (int) $order['revenue_minor'],
-                                            (int) $data['precision'],
-                                            (string) $data['currency']
-                                        )
-                                    );
-                                    ?>
-                                </td>
-
-                                <td class="<?php
-                                echo (int) $order['profit_minor'] < 0
-                                    ? 'hb-negative'
-                                    : 'hb-positive';
-                                ?>">
-                                    <?php
-                                    echo wp_kses_post(
-                                        $this->formatMoney(
-                                            (int) $order['profit_minor'],
-                                            (int) $data['precision'],
-                                            (string) $data['currency']
-                                        )
-                                    );
-                                    ?>
-                                </td>
-
-                                <td>
-                                    <?php
-                                    if (
-                                        $order['margin_percentage']
-                                        !== null
-                                    ) {
-                                        echo esc_html(
-                                            number_format_i18n(
-                                                (float) $order['margin_percentage'],
-                                                1
-                                            )
-                                            . '%'
-                                        );
-                                    } else {
-                                        echo '—';
-                                    }
-                                    ?>
-                                </td>
-
-                                <td>
-                                    <a
-                                        class="hb-link"
-                                        href="<?php
-                                        echo esc_url(
-                                            (string) $order['edit_url']
-                                        );
-                                        ?>"
-                                    >
-                                        مشاهده سفارش
-                                    </a>
-                                </td>
-
                             </tr>
 
-                        <?php endforeach; ?>
+                        <?php
+                        else :
+                            foreach (
+                                $data['recent_orders']
+                                as $order
+                            ) :
+                                ?>
+
+                                <tr>
+
+                                    <td>
+                                        <a
+                                            href="<?php
+                                            echo esc_url(
+                                                $order[
+                                                    'edit_url'
+                                                ]
+                                            );
+                                            ?>"
+                                        >
+                                            #<?php
+                                            echo esc_html(
+                                                $order[
+                                                    'number'
+                                                ]
+                                            );
+                                            ?>
+                                        </a>
+                                    </td>
+
+                                    <td>
+                                        <?php
+                                        echo esc_html(
+                                            $order[
+                                                'customer'
+                                            ]
+                                        );
+                                        ?>
+                                    </td>
+
+                                    <td>
+                                        <?php
+                                        echo esc_html(
+                                            $order['date']
+                                        );
+                                        ?>
+                                    </td>
+
+                                    <td>
+                                        <?php
+                                        echo esc_html(
+                                            $order[
+                                                'status'
+                                            ]
+                                        );
+                                        ?>
+                                    </td>
+
+                                    <td>
+                                        <?php
+                                        echo esc_html(
+                                            Currency::formatMinor(
+                                                (int) $order[
+                                                    'revenue_minor'
+                                                ],
+                                                $currency,
+                                                $precision
+                                            )
+                                        );
+                                        ?>
+                                    </td>
+
+                                    <td>
+                                        <strong>
+                                            <?php
+                                            echo esc_html(
+                                                Currency::formatMinor(
+                                                    (int) $order[
+                                                        'profit_minor'
+                                                    ],
+                                                    $currency,
+                                                    $precision
+                                                )
+                                            );
+                                            ?>
+                                        </strong>
+                                    </td>
+
+                                    <td>
+                                        <?php
+                                        echo $order[
+                                            'margin_percentage'
+                                        ] !== null
+                                            ? esc_html(
+                                                number_format_i18n(
+                                                    (float) $order[
+                                                        'margin_percentage'
+                                                    ],
+                                                    1
+                                                )
+                                                . '٪'
+                                            )
+                                            : '—';
+                                        ?>
+                                    </td>
+
+                                </tr>
+
+                            <?php
+                            endforeach;
+                        endif;
+                        ?>
 
                         </tbody>
 
@@ -589,50 +679,62 @@ final class DashboardPage
 
                 </div>
 
-            <?php endif; ?>
+            </section>
 
-        </section>
+        </div>
         <?php
     }
 
-    private function renderRangeSelector(
-        string $active,
+    private function renderRangeFilters(
+        string $range,
         DateTimeImmutable $start,
         DateTimeImmutable $end
     ): void {
-        $ranges = [
+        $ranges = array(
             '7d' => '۷ روز',
             '30d' => '۳۰ روز',
             '90d' => '۹۰ روز',
+            '3m' => '۳ ماه',
+            '6m' => '۶ ماه',
             'year' => 'یک سال',
-        ];
+        );
 
         ?>
-        <div class="hb-filters">
+        <div class="hb-range-bar">
 
             <div class="hb-range-buttons">
 
-                <?php foreach ($ranges as $key => $label) : ?>
+                <?php
+                foreach (
+                    $ranges as $key => $label
+                ) :
+                    ?>
 
                     <a
+                        class="hb-range-button <?php
+                        echo $range === $key
+                            ? 'is-active'
+                            : '';
+                        ?>"
                         href="<?php
                         echo esc_url(
                             add_query_arg(
-                                [
-                                    'page' => 'hashieban',
-                                    'hb_range' => $key,
-                                ],
-                                admin_url('admin.php')
+                                array(
+                                    'page' =>
+                                        'hashieban',
+                                    'range' =>
+                                        $key,
+                                ),
+                                admin_url(
+                                    'admin.php'
+                                )
                             )
                         );
                         ?>"
-                        class="<?php
-                        echo $active === $key
-                            ? 'active'
-                            : '';
-                        ?>"
                     >
-                        <?php echo esc_html($label); ?>
+                        <?php
+                        echo esc_html($label);
+                        ?>
                     </a>
 
                 <?php endforeach; ?>
@@ -641,9 +743,9 @@ final class DashboardPage
 
             <form
                 method="get"
-                action="<?php echo esc_url(admin_url('admin.php')); ?>"
                 class="hb-custom-range"
             >
+
                 <input
                     type="hidden"
                     name="page"
@@ -652,7 +754,7 @@ final class DashboardPage
 
                 <input
                     type="hidden"
-                    name="hb_range"
+                    name="range"
                     value="custom"
                 >
 
@@ -660,7 +762,7 @@ final class DashboardPage
                     از
                     <input
                         type="date"
-                        name="hb_from"
+                        name="start_date"
                         value="<?php
                         echo esc_attr(
                             $start->format('Y-m-d')
@@ -673,7 +775,7 @@ final class DashboardPage
                     تا
                     <input
                         type="date"
-                        name="hb_to"
+                        name="end_date"
                         value="<?php
                         echo esc_attr(
                             $end->format('Y-m-d')
@@ -686,118 +788,277 @@ final class DashboardPage
                     type="submit"
                     class="button"
                 >
-                  اعمال بازه
+                    اعمال
                 </button>
 
             </form>
 
         </div>
         <?php
+    }
+
+    private function renderKpi(
+        string $title,
+        string $value,
+        string $description
+    ): void {
+        ?>
+        <div class="hb-kpi-card">
+
+            <span class="hb-kpi-title">
+                <?php echo esc_html($title); ?>
+            </span>
+
+            <strong class="hb-kpi-value">
+                <?php echo esc_html($value); ?>
+            </strong>
+
+            <small>
+                <?php
+                echo esc_html(
+                    $description
+                );
+                ?>
+            </small>
+
+        </div>
+        <?php
+    }
+
+    private function renderCostRow(
+        string $title,
+        int $amount,
+        string $currency,
+        int $precision,
+        bool $total = false
+    ): void {
+        ?>
+        <div
+            class="hb-cost-row <?php
+            echo $total
+                ? 'is-total'
+                : '';
+            ?>"
+        >
+
+            <span>
+                <?php
+                echo esc_html($title);
+                ?>
+            </span>
+
+            <strong>
+              <?php
+              echo esc_html(
+                  Currency::formatMinor(
+                      $amount,
+                      $currency,
+                      $precision
+                  )
+              );
+              ?>
+            </strong>
+
+        </div>
+        <?php
 		}
 
-		/**
-		 * @return array{0: DateTimeImmutable, 1: DateTimeImmutable, 2: string}
-		 */
+		private function findBestBucket(
+			array $buckets,
+			string $field
+		): ?array {
+			$best = null;
+
+			foreach ($buckets as $bucket) {
+				if (
+					! isset($bucket[$field])
+				) {
+					continue;
+				}
+
+				if (
+					$best === null
+					|| (int) $bucket[$field]
+                    > (int) $best[$field]
+				) {
+					$best = $bucket;
+				}
+			}
+
+			return $best;
+		}
+
 		private function resolveDateRange(): array
 		{
 			$timezone = wp_timezone();
 
-			$today = new DateTimeImmutable(
-				'today',
+			$now = new DateTimeImmutable(
+				'now',
 				$timezone
 			);
 
-			$active = isset($_GET['hb_range'])
+			$end = $now->setTime(
+				23,
+				59,
+				59
+			);
+
+			$range = isset($_GET['range'])
             ? sanitize_key(
                 wp_unslash(
-                    $_GET['hb_range']
+                    $_GET['range']
                 )
             )
-					: '30d';
+				   : '30d';
 
-			switch ($active) {
+			switch ($range) {
 				case '7d':
-					$start = $today->modify('-6 days');
+					$start = $now
+                    ->modify('-6 days')
+                    ->setTime(0, 0, 0);
 					break;
 
 				case '90d':
-					$start = $today->modify('-89 days');
+					$start = $now
+                    ->modify('-89 days')
+                    ->setTime(0, 0, 0);
+					break;
+
+				case '3m':
+					$start = $now
+                    ->modify('-3 months')
+                    ->setTime(0, 0, 0);
+					break;
+
+				case '6m':
+					$start = $now
+                    ->modify('-6 months')
+                    ->setTime(0, 0, 0);
 					break;
 
 				case 'year':
-					$start = $today->modify('-1 year');
+					$start = $now
+                    ->modify('-1 year')
+                    ->setTime(0, 0, 0);
 					break;
 
 				case 'custom':
-					$start = $this->parseDate(
-						isset($_GET['hb_from'])
-                        ? (string) wp_unslash($_GET['hb_from'])
-                        : '',
-						$today->modify('-29 days')
-					);
+					$custom =
+						$this->resolveCustomRange(
+							$now
+						);
 
-					$today = $this->parseDate(
-						isset($_GET['hb_to'])
-                        ? (string) wp_unslash($_GET['hb_to'])
-                        : '',
-						$today
-					);
-
-					if ($start > $today) {
-						[$start, $today] = [
-							$today,
-							$start,
-						];
+					if ($custom !== null) {
+						return array(
+							$custom[0],
+							$custom[1],
+							'custom',
+						);
 					}
 
+					$range = '30d';
+
+					$start = $now
+                    ->modify('-29 days')
+                    ->setTime(0, 0, 0);
 					break;
 
 				case '30d':
 				default:
-					$active = '30d';
-					$start = $today->modify('-29 days');
+					$range = '30d';
+
+					$start = $now
+                    ->modify('-29 days')
+                    ->setTime(0, 0, 0);
 					break;
 			}
 
-			return [
+			return array(
 				$start,
-				$today,
-				$active,
-			];
-		}
-
-		private function parseDate(
-			string $date,
-			DateTimeImmutable $fallback
-		): DateTimeImmutable {
-			$parsed = DateTimeImmutable::createFromFormat(
-				'!Y-m-d',
-				sanitize_text_field($date),
-				wp_timezone()
+				$end,
+				$range,
 			);
-
-			return $parsed instanceof DateTimeImmutable
-            ? $parsed
-				 : $fallback;
 		}
 
-		private function formatMoney(
-			int $minorAmount,
-			int $precision,
-			string $currency
-		): string {
-			$amount = $minorAmount;
+		private function resolveCustomRange(
+			DateTimeImmutable $now
+		): ?array {
+			$startValue = isset(
+				$_GET['start_date']
+			)
+            ? sanitize_text_field(
+                wp_unslash(
+                    $_GET['start_date']
+                )
+            )
+						: '';
 
-			if ($precision > 0) {
-				$amount = $minorAmount
-                / (10 ** $precision);
+			$endValue = isset(
+				$_GET['end_date']
+			)
+            ? sanitize_text_field(
+                wp_unslash(
+                    $_GET['end_date']
+                )
+            )
+					  : '';
+
+			if (
+				$startValue === ''
+				|| $endValue === ''
+			) {
+				return null;
 			}
 
-			return wc_price(
-				$amount,
-				[
-					'currency' => $currency,
-				]
+			$start =
+				DateTimeImmutable::createFromFormat(
+					'!Y-m-d',
+					$startValue,
+					wp_timezone()
+				);
+
+			$end =
+				DateTimeImmutable::createFromFormat(
+					'!Y-m-d',
+					$endValue,
+					wp_timezone()
+				);
+
+			if (
+				! $start
+				|| ! $end
+				|| $start > $end
+			) {
+				return null;
+			}
+
+			return array(
+				$start->setTime(0, 0, 0),
+				$end->setTime(23, 59, 59),
+			);
+		}
+
+		private function enqueueAssets(): void
+		{
+			wp_enqueue_style(
+				'hashieban-dashboard-v2',
+				plugins_url(
+					'assets/admin/css/hashieban-dashboard.css',
+					HASHIEBAN_FILE
+				),
+				array(),
+				HASHIEBAN_VERSION
+			);
+
+			wp_enqueue_script(
+				'hashieban-dashboard-v2',
+				plugins_url(
+					'assets/admin/js/hashieban-dashboard.js',
+					HASHIEBAN_FILE
+				),
+				array(),
+				HASHIEBAN_VERSION,
+				true
 			);
 		}
 		}
