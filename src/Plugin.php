@@ -33,6 +33,8 @@ use Hashieban\Integration\WooCommerce\Analytics\OrderProfitCenterService;
 use Hashieban\Integration\WooCommerce\Analytics\ReportsHubService;
 use Hashieban\Integration\WooCommerce\Analytics\TimeIntelligenceService;
 use Hashieban\Integration\WooCommerce\Compatibility;
+use Hashieban\Integration\WooCommerce\Geo\GeoAddressCapture;
+use Hashieban\Integration\WooCommerce\Geo\GeoAddressResolver;
 use Hashieban\Integration\WooCommerce\Order\DirectCostRepository;
 use Hashieban\Integration\WooCommerce\Order\MoneyFactory;
 use Hashieban\Integration\WooCommerce\Order\OrderAdapter;
@@ -49,6 +51,16 @@ final class Plugin
 
         $moneyFactory =
             new MoneyFactory();
+
+        $geoAddressResolver =
+            new GeoAddressResolver();
+
+        $geoAddressCapture =
+            new GeoAddressCapture(
+                $geoAddressResolver
+            );
+
+        $geoAddressCapture->register();
 
         $profitEngine =
             new ProfitEngine();
@@ -234,7 +246,8 @@ final class Plugin
         $dataHealth =
             new DataHealthService(
                 $orderAdapter,
-                $productProfitability
+                $productProfitability,
+                $geoAddressResolver
             );
 
         $dataHealthPage =

@@ -69,7 +69,7 @@ final class DataHealthPage
                 $this->renderKpi(
                     'آمادگی نقشه ایران',
                     $this->formatPercentage($report['geo_readiness_percentage']),
-                    number_format_i18n((int) $report['geo_incomplete_count']) . ' سفارش بدون استان/شهر',
+                    number_format_i18n((int) $report['geo_incomplete_count']) . ' از ' . number_format_i18n((int) $report['geo_eligible_order_count']) . ' سفارش ایرانی ناقص',
                     (float) $report['geo_readiness_percentage'] >= 90 ? 'good' : 'neutral'
                 );
                 $this->renderKpi(
@@ -157,7 +157,7 @@ final class DataHealthPage
                 <?php
                 $this->renderSimpleOrderTable(
                     'آدرس جغرافیایی ناقص',
-                    'این داده مستقیماً روی دقت نقشه ایران و تحلیل استانی/شهری اثر می‌گذارد.',
+                    'این موارد مربوط به سفارش‌های ایرانی قدیمی‌اند؛ برای سفارش‌های جدید، استان و شهر Checkout اجباری شده‌اند.',
                     (array) $report['geo_incomplete_orders'],
                     'geo'
                 );
@@ -200,7 +200,7 @@ final class DataHealthPage
                     <div><strong>COGS صفر با COGS گمشده یکی نیست</strong><span>اگر صفر عمداً ثبت شده باشد، به‌عنوان Missing علامت نمی‌خورد.</span></div>
                     <div><strong>ارزهای متفاوت جمع نمی‌شوند</strong><span>تا زمانی که موتور چندارزی واقعی ساخته نشود، عدد جعلی تولید نمی‌کنیم.</span></div>
                     <div><strong>تاریخچه سفارش حفظ می‌شود</strong><span>حذف محصول نباید باعث حذف سفارش تاریخی یا اطلاعات مالی گذشته شود.</span></div>
-                    <div><strong>داده جغرافیایی از همین حالا مهم است</strong><span>کیفیت استان و شهر، پایه نقشه ایران و Geo Intelligence آینده است.</span></div>
+                    <div><strong>جغرافیا یک لایه تحلیلی است، نه خطای مالی</strong><span>استان و شهر روی امتیاز سلامت مالی جریمه نمی‌شوند؛ فقط آمادگی نقشه ایران را مشخص می‌کنند.</span></div>
                 </div>
             </section>
 

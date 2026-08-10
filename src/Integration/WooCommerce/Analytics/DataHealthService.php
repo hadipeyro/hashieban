@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace Hashieban\Integration\WooCommerce\Analytics;
 
 use DateTimeImmutable;
+use Hashieban\Integration\WooCommerce\Geo\GeoAddressResolver;
 use Hashieban\Integration\WooCommerce\Order\OrderAdapter;
 use Throwable;
 use WC_Order;
@@ -14,13 +15,16 @@ final class DataHealthService
 {
     private OrderAdapter $orderAdapter;
     private ProductProfitabilityService $products;
+    private GeoAddressResolver $geoAddress;
 
     public function __construct(
         OrderAdapter $orderAdapter,
-        ProductProfitabilityService $products
+        ProductProfitabilityService $products,
+        GeoAddressResolver $geoAddress
     ) {
         $this->orderAdapter = $orderAdapter;
         $this->products = $products;
+        $this->geoAddress = $geoAddress;
     }
 
     public function getReport(
@@ -45,6 +49,7 @@ final class DataHealthService
         $incompleteOrderCount = 0;
         $refundWarningCount = 0;
         $geoIncompleteCount = 0;
+        $geoEligibleOrderCount = 0;
         $contactIncompleteCount = 0;
         $orphanProductLineCount = 0;
 
@@ -129,13 +134,19 @@ final class DataHealthService
 
                 $includedOrders++;
 
-                $geoMissing = $this->missingGeoFields($order);
-                if ($geoMissing !== array()) {
-                    $geoIncompleteCount++;
+                if ($this->geoAddress->isIranOrder($order)) {
+                    $geoEligibleOrderCount++;
+                    $geoMissing = $this->geoAddress->missingFields($order);
 
-                    if (count($geoIncompleteOrders) < 20) {
-                        $baseRow['missing_fields'] = $geoMissing;
-                        $geoIncompleteOrders[] = $baseRow;
+                    if ($geoMissing !== array()) {
+                        $geoIncompleteCount++;
+
+                        if (count($geoIncompleteOrders) < 20) {
+                            $resolvedGeo = $this->geoAddress->resolve($order);
+                            $baseRow['missing_fields'] = $geoMissing;
+                            $baseRow['geo_source'] = (string) ($resolvedGeo['source'] ?? 'billing');
+                            $geoIncompleteOrders[] = $baseRow;
+                        }
                     }
                 }
 
@@ -203,8 +214,8 @@ final class DataHealthService
             ? (($productCount - $productsWithMissingCogs) / $productCount) * 100
             : 100.0;
 
-        $geoReadiness = $includedOrders > 0
-            ? (($includedOrders - $geoIncompleteCount) / $includedOrders) * 100
+        $geoReadiness = $geoEligibleOrderCount > 0
+            ? (($geoEligibleOrderCount - $geoIncompleteCount) / $geoEligibleOrderCount) * 100
             : 100.0;
 
         $contactReadiness = $includedOrders > 0
@@ -217,7 +228,6 @@ final class DataHealthService
             $mixedCurrencyCount,
             $calculationErrorCount,
             $refundWarningCount,
-            $geoIncompleteCount,
             $orphanProductLineCount,
             $productsWithMissingCogs,
             $productCount
@@ -249,6 +259,7 @@ final class DataHealthService
             'incomplete_order_count' => $incompleteOrderCount,
             'refund_warning_count' => $refundWarningCount,
             'geo_incomplete_count' => $geoIncompleteCount,
+            'geo_eligible_order_count' => $geoEligibleOrderCount,
             'contact_incomplete_count' => $contactIncompleteCount,
             'orphan_product_line_count' => $orphanProductLineCount,
             'products_with_missing_cogs' => $productsWithMissingCogs,
@@ -312,21 +323,6 @@ final class DataHealthService
         );
     }
 
-    private function missingGeoFields(WC_Order $order): array
-    {
-        $missing = array();
-
-        if (trim((string) $order->get_billing_state()) === '') {
-            $missing[] = 'استان';
-        }
-
-        if (trim((string) $order->get_billing_city()) === '') {
-            $missing[] = 'شهر';
-        }
-
-        return $missing;
-    }
-
     private function hasMissingContact(WC_Order $order): bool
     {
         $email = trim((string) $order->get_billing_email());
@@ -358,7 +354,6 @@ final class DataHealthService
         int $mixedCurrencyOrders,
         int $calculationErrors,
         int $refundWarnings,
-        int $geoIncompleteOrders,
         int $orphanProductLines,
         int $missingCogsProducts,
         int $productCount
@@ -374,11 +369,6 @@ final class DataHealthService
             $score -= min(
                 10,
                 (int) round(($refundWarnings / $includedOrders) * 20)
-            );
-
-            $score -= min(
-                8,
-                (int) round(($geoIncompleteOrders / $includedOrders) * 10)
             );
         }
 
@@ -472,9 +462,9 @@ final class DataHealthService
             $issues[] = array(
                 'severity' => 'info',
                 'title' => 'آمادگی داده جغرافیایی کامل نیست',
-                'message' => 'برای بخشی از سفارش‌ها استان یا شهر ثبت نشده؛ این موضوع دقت نقشه فروش ایران و تحلیل منطقه‌ای آینده را کم می‌کند.',
+                'message' => 'برای بخشی از سفارش‌های ایرانی قدیمی استان یا شهر کامل نیست. حاشیه‌بان از این مرحله به بعد این دو فیلد را در Checkout ایران اجباری می‌کند تا Geo Intelligence داده قابل اتکاتری داشته باشد.',
                 'metric' => number_format_i18n($geoIncompleteCount) . ' سفارش',
-                'action' => 'کیفیت آدرس صورتحساب/ارسال را در فرایند Checkout بهتر کنید.',
+                'action' => 'سفارش‌های قدیمی ناقص را در صورت نیاز تکمیل کنید؛ سفارش‌های جدید ایران با استان و شهر اجباری ثبت می‌شوند.',
             );
         }
 
