@@ -9,7 +9,7 @@ use Hashieban\Domain\Money\Money;
 
 final class StoreExpenseRepository
 {
-    private const DATABASE_VERSION = '1';
+    private const DATABASE_VERSION = '2';
 
     private const DATABASE_VERSION_OPTION =
         'hashieban_expenses_database_version';
@@ -30,8 +30,8 @@ final class StoreExpenseRepository
         );
 
         if (
-            $installedVersion ===
-				self::DATABASE_VERSION
+            $installedVersion
+            === self::DATABASE_VERSION
         ) {
             return;
         }
@@ -40,12 +40,14 @@ final class StoreExpenseRepository
 
         $tableName = $this->tableName();
 
-        $charsetCollate = $wpdb->get_charset_collate();
+        $charsetCollate =
+            $wpdb->get_charset_collate();
 
         $sql = "
             CREATE TABLE {$tableName} (
                 id BIGINT UNSIGNED NOT NULL AUTO_INCREMENT,
                 title VARCHAR(190) NOT NULL,
+                category_id VARCHAR(64) NOT NULL DEFAULT '',
                 category VARCHAR(190) NOT NULL DEFAULT '',
                 amount_minor BIGINT NOT NULL DEFAULT 0,
                 currency VARCHAR(12) NOT NULL,
@@ -54,8 +56,9 @@ final class StoreExpenseRepository
                 note TEXT NULL,
                 created_by BIGINT UNSIGNED NOT NULL DEFAULT 0,
                 created_at DATETIME NOT NULL,
-                PRIMARY KEY  (id),
+                PRIMARY KEY (id),
                 KEY expense_date (expense_date),
+                KEY category_id (category_id),
                 KEY currency_date (currency, expense_date)
             ) {$charsetCollate};
         ";
@@ -73,7 +76,8 @@ final class StoreExpenseRepository
 
     public function add(
         string $title,
-        string $category,
+        string $categoryId,
+        string $categorySnapshot,
         Money $amount,
         string $expenseDate,
         string $note,
@@ -84,22 +88,38 @@ final class StoreExpenseRepository
         $wpdb->insert(
             $this->tableName(),
             array(
-                'title' => $title,
-                'category' => $category,
+                'title' =>
+                    $title,
+
+                'category_id' =>
+                    $categoryId,
+
+                'category' =>
+                    $categorySnapshot,
+
                 'amount_minor' =>
                     $amount->minorAmount(),
+
                 'currency' =>
                     $amount->currency(),
+
                 'precision_value' =>
                     $amount->precision(),
+
                 'expense_date' =>
                     $expenseDate,
-                'note' => $note,
-                'created_by' => $createdBy,
+
+                'note' =>
+                    $note,
+
+                'created_by' =>
+                    $createdBy,
+
                 'created_at' =>
                     current_time('mysql'),
             ),
             array(
+                '%s',
                 '%s',
                 '%s',
                 '%d',
@@ -115,8 +135,9 @@ final class StoreExpenseRepository
         return (int) $wpdb->insert_id;
     }
 
-    public function delete(int $id): void
-    {
+    public function delete(
+        int $id
+    ): void {
         global $wpdb;
 
         $wpdb->delete(
@@ -154,10 +175,8 @@ final class StoreExpenseRepository
             $end->format('Y-m-d')
         );
 
-        $amount = (int) $wpdb->get_var($sql);
-
         return new Money(
-            $amount,
+            (int) $wpdb->get_var($sql),
             $currency,
             $precision
         );
@@ -197,6 +216,41 @@ final class StoreExpenseRepository
              : array();
     }
 
+    public function totalsByCategoryBetween(
+        DateTimeInterface $start,
+        DateTimeInterface $end,
+        string $currency
+    ): array {
+        global $wpdb;
+
+        $sql = $wpdb->prepare(
+            "
+            SELECT
+                category_id,
+                category,
+                SUM(amount_minor) AS amount_minor
+            FROM {$this->tableName()}
+            WHERE currency = %s
+              AND expense_date >= %s
+              AND expense_date <= %s
+            GROUP BY category_id, category
+            ORDER BY amount_minor DESC
+            ",
+            $currency,
+            $start->format('Y-m-d'),
+            $end->format('Y-m-d')
+        );
+
+        $rows = $wpdb->get_results(
+            $sql,
+            ARRAY_A
+        );
+
+        return is_array($rows)
+        ? $rows
+             : array();
+    }
+
     public function paginate(
         int $page,
         int $perPage
@@ -206,7 +260,8 @@ final class StoreExpenseRepository
         $page = max(1, $page);
         $perPage = max(1, $perPage);
 
-        $offset = ($page - 1) * $perPage;
+        $offset =
+            ($page - 1) * $perPage;
 
         $sql = $wpdb->prepare(
             "

@@ -6,10 +6,12 @@ namespace Hashieban;
 
 use Hashieban\Admin\AdminMenu;
 use Hashieban\Admin\DashboardPage;
+use Hashieban\Admin\ExpenseCategoriesPage;
 use Hashieban\Admin\ExpensesPage;
 use Hashieban\Admin\OrderCostsMetaBox;
 use Hashieban\Admin\SettingsPage;
 use Hashieban\Domain\Profit\ProfitEngine;
+use Hashieban\Finance\ExpenseCategoryRepository;
 use Hashieban\Finance\GlobalOrderCostRepository;
 use Hashieban\Finance\StoreExpenseRepository;
 use Hashieban\Integration\WooCommerce\Analytics\AnalyticsService;
@@ -33,9 +35,16 @@ final class Plugin
         $profitEngine =
             new ProfitEngine();
 
+        $expenseCategories =
+            new ExpenseCategoryRepository();
+
+        $expenseCategories
+            ->ensureDefaults();
+
         $directCostRepository =
             new DirectCostRepository(
-                $moneyFactory
+                $moneyFactory,
+                $expenseCategories
             );
 
         $storeExpenseRepository =
@@ -49,19 +58,27 @@ final class Plugin
 
         $orderCostsMetaBox =
             new OrderCostsMetaBox(
-                $directCostRepository
+                $directCostRepository,
+                $expenseCategories
             );
 
-        $orderCostsMetaBox
-            ->register();
+        $orderCostsMetaBox->register();
 
         $expensesPage =
             new ExpensesPage(
                 $storeExpenseRepository,
-                $moneyFactory
+                $moneyFactory,
+                $expenseCategories
             );
 
         $expensesPage->register();
+
+        $expenseCategoriesPage =
+            new ExpenseCategoriesPage(
+                $expenseCategories
+            );
+
+        $expenseCategoriesPage->register();
 
         $settingsPage =
             new SettingsPage(
@@ -95,6 +112,7 @@ final class Plugin
                 $compatibility,
                 $dashboard,
                 $expensesPage,
+                $expenseCategoriesPage,
                 $settingsPage
             );
 

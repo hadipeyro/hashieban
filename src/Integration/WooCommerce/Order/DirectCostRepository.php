@@ -5,23 +5,39 @@ declare(strict_types=1);
 namespace Hashieban\Integration\WooCommerce\Order;
 
 use Hashieban\Domain\Money\Money;
+use Hashieban\Finance\ExpenseCategoryRepository;
+use Hashieban\Support\Currency;
 use InvalidArgumentException;
 use WC_Order;
 
 final class DirectCostRepository
 {
-    private const META_KEY = '_hashieban_direct_costs';
+    private const META_KEY =
+        '_hashieban_direct_costs';
 
     private MoneyFactory $moneyFactory;
 
-    public function __construct(MoneyFactory $moneyFactory)
-    {
-        $this->moneyFactory = $moneyFactory;
+    private ExpenseCategoryRepository $categories;
+
+    public function __construct(
+        MoneyFactory $moneyFactory,
+        ExpenseCategoryRepository $categories
+    ) {
+        $this->moneyFactory =
+            $moneyFactory;
+
+        $this->categories =
+            $categories;
     }
 
-    public function getCosts(WC_Order $order): array
-    {
-        $stored = $order->get_meta(self::META_KEY, true, 'edit');
+    public function getCosts(
+        WC_Order $order
+    ): array {
+        $stored = $order->get_meta(
+            self::META_KEY,
+            true,
+            'edit'
+        );
 
         if (! is_array($stored)) {
             return array();
@@ -34,44 +50,81 @@ final class DirectCostRepository
                 continue;
             }
 
-            $id = isset($row['id'])
-            ? sanitize_key((string) $row['id'])
-                : '';
+            $title = sanitize_text_field(
+                (string) (
+                    $row['title']
+                    ?? ''
+                )
+            );
 
-            $title = isset($row['title'])
-            ? sanitize_text_field((string) $row['title'])
-                   : '';
-
-            $amount = isset($row['amount'])
-            ? wc_format_decimal(
-                (string) $row['amount'],
+            $amount = wc_format_decimal(
+                (string) (
+                    $row['amount']
+                    ?? ''
+                ),
                 wc_get_price_decimals()
-            )
-					: '';
+            );
 
-            $note = isset($row['note'])
-            ? sanitize_textarea_field((string) $row['note'])
-                  : '';
-
-            if ($title === '' || $amount === '') {
+            if (
+                $title === ''
+                || $amount === ''
+            ) {
                 continue;
             }
 
+            $categoryId = sanitize_key(
+                (string) (
+                    $row['category_id']
+                    ?? ''
+                )
+            );
+
+            if ($categoryId === '') {
+                $categoryId =
+                    $this->categories
+                         ->fallbackId();
+            }
+
             $costs[] = array(
-                'id' => $id,
-                'title' => $title,
-                'amount' => $amount,
-                'note' => $note,
+                'id' =>
+                    sanitize_key(
+                        (string) (
+                            $row['id']
+                            ?? ''
+                        )
+                    ),
+
+                'category_id' =>
+                    $categoryId,
+
+                'title' =>
+                    $title,
+
+                'amount' =>
+                    $amount,
+
+                'note' =>
+                    sanitize_textarea_field(
+                        (string) (
+                            $row['note']
+                            ?? ''
+                        )
+                    ),
             );
         }
 
         return $costs;
     }
 
-    public function saveCosts(WC_Order $order, array $rows): void
-    {
-        $currency = $order->get_currency();
-        $precision = wc_get_price_decimals();
+    public function saveCosts(
+        WC_Order $order,
+        array $rows
+    ): void {
+        $currency =
+            $order->get_currency();
+
+        $precision =
+            wc_get_price_decimals();
 
         $costs = array();
 
@@ -81,35 +134,49 @@ final class DirectCostRepository
             }
 
             $title = sanitize_text_field(
-                (string) ($row['title'] ?? '')
+                (string) (
+                    $row['title']
+                    ?? ''
+                )
             );
 
-            $rawAmount = (string) ($row['amount'] ?? '');
+            $rawDisplayAmount =
+                sanitize_text_field(
+                    (string) (
+                        $row['amount']
+                        ?? ''
+                    )
+                );
 
-            $note = sanitize_textarea_field(
-                (string) ($row['note'] ?? '')
-            );
-
-            if ($title === '' || $rawAmount === '') {
+            if (
+                $title === ''
+                || $rawDisplayAmount === ''
+            ) {
                 continue;
             }
 
-            $amount = wc_format_decimal(
-                $rawAmount,
-                $precision
-            );
+            $storeAmount =
+                Currency::displayInputToStoreDecimal(
+                    $rawDisplayAmount,
+                    $currency,
+                    $precision
+                );
 
-            if ($amount === '') {
+            if ($storeAmount === '') {
                 continue;
             }
 
             try {
-                $money = $this->moneyFactory->fromWooCommerceAmount(
-                    $amount,
-                    $currency,
-                    $precision
-                );
-            } catch (InvalidArgumentException $exception) {
+                $money =
+                    $this->moneyFactory
+                         ->fromWooCommerceAmount(
+                             $storeAmount,
+                             $currency,
+                             $precision
+                         );
+            } catch (
+                InvalidArgumentException $exception
+            ) {
                 continue;
             }
 
@@ -118,7 +185,10 @@ final class DirectCostRepository
             }
 
             $id = sanitize_key(
-                (string) ($row['id'] ?? '')
+                (string) (
+                    $row['id']
+                    ?? ''
+                )
             );
 
             if ($id === '') {
@@ -129,16 +199,52 @@ final class DirectCostRepository
                 );
             }
 
+            $categoryId = sanitize_key(
+                (string) (
+                    $row['category_id']
+                    ?? ''
+                )
+            );
+
+            $category =
+                $this->categories
+                     ->find($categoryId);
+
+            if (
+                ! $category
+                || empty($category['active'])
+            ) {
+                $categoryId =
+                    $this->categories
+                         ->fallbackId();
+            }
+
             $costs[] = array(
                 'id' => $id,
-                'title' => $title,
-                'amount' => $amount,
-                'note' => $note,
+
+                'category_id' =>
+                    $categoryId,
+
+                'title' =>
+                    $title,
+
+                'amount' =>
+                    $storeAmount,
+
+                'note' =>
+                    sanitize_textarea_field(
+                        (string) (
+                            $row['note']
+                            ?? ''
+                        )
+                    ),
             );
         }
 
         if ($costs === array()) {
-            $order->delete_meta_data(self::META_KEY);
+            $order->delete_meta_data(
+                self::META_KEY
+            );
         } else {
             $order->update_meta_data(
                 self::META_KEY,
@@ -149,24 +255,35 @@ final class DirectCostRepository
         $order->save_meta_data();
     }
 
-    public function total(WC_Order $order): Money
-    {
-        $currency = $order->get_currency();
-        $precision = wc_get_price_decimals();
+    public function total(
+        WC_Order $order
+    ): Money {
+        $currency =
+            $order->get_currency();
+
+        $precision =
+            wc_get_price_decimals();
 
         $total = Money::zero(
             $currency,
             $precision
         );
 
-        foreach ($this->getCosts($order) as $cost) {
+        foreach (
+            $this->getCosts($order)
+            as $cost
+        ) {
             try {
-                $money = $this->moneyFactory->fromWooCommerceAmount(
-                    $cost['amount'],
-                    $currency,
-                    $precision
-                );
-            } catch (InvalidArgumentException $exception) {
+                $money =
+                    $this->moneyFactory
+                         ->fromWooCommerceAmount(
+                             $cost['amount'],
+                             $currency,
+                             $precision
+                         );
+            } catch (
+                InvalidArgumentException $exception
+            ) {
                 continue;
             }
 
@@ -174,5 +291,52 @@ final class DirectCostRepository
         }
 
         return $total;
+    }
+
+    public function totalsByCategory(
+        WC_Order $order
+    ): array {
+        $currency =
+            $order->get_currency();
+
+        $precision =
+            wc_get_price_decimals();
+
+        $totals = array();
+
+        foreach (
+            $this->getCosts($order)
+            as $cost
+        ) {
+            $categoryId =
+                $cost['category_id'];
+
+            try {
+                $money =
+                    $this->moneyFactory
+                         ->fromWooCommerceAmount(
+                             $cost['amount'],
+                             $currency,
+                             $precision
+                         );
+            } catch (
+                InvalidArgumentException $exception
+            ) {
+                continue;
+            }
+
+            if (
+                ! isset(
+                    $totals[$categoryId]
+                )
+            ) {
+                $totals[$categoryId] = 0;
+            }
+
+            $totals[$categoryId] +=
+                $money->minorAmount();
+        }
+
+        return $totals;
     }
 }

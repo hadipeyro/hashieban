@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace Hashieban\Admin;
 
+use Hashieban\Finance\ExpenseCategoryRepository;
 use Hashieban\Integration\WooCommerce\Order\DirectCostRepository;
 use Hashieban\Support\Currency;
 use WC_Order;
@@ -13,10 +14,17 @@ final class OrderCostsMetaBox
 {
     private DirectCostRepository $repository;
 
+    private ExpenseCategoryRepository $categories;
+
     public function __construct(
-        DirectCostRepository $repository
+        DirectCostRepository $repository,
+        ExpenseCategoryRepository $categories
     ) {
-        $this->repository = $repository;
+        $this->repository =
+            $repository;
+
+        $this->categories =
+            $categories;
     }
 
     public function register(): void
@@ -48,13 +56,13 @@ final class OrderCostsMetaBox
                 'wc_get_page_screen_id'
             )
         ) {
-            $wooCommerceScreen =
+            $wcScreen =
                 wc_get_page_screen_id(
                     'shop-order'
                 );
 
-            if ($wooCommerceScreen !== '') {
-                $screen = $wooCommerceScreen;
+            if ($wcScreen !== '') {
+                $screen = $wcScreen;
             }
         }
 
@@ -79,12 +87,19 @@ final class OrderCostsMetaBox
             return;
         }
 
-        $costs = $this->repository
-            ->getCosts($order);
+        $costs =
+            $this->repository
+                ->getCosts($order);
 
-        $currencyLabel = Currency::label(
-            $order->get_currency()
-        );
+        $categories =
+            $this->categories
+                ->active();
+
+        $currency =
+            $order->get_currency();
+
+        $currencyLabel =
+            Currency::label($currency);
 
         wp_nonce_field(
             'hashieban_save_direct_costs',
@@ -95,32 +110,18 @@ final class OrderCostsMetaBox
         <div class="hashieban-order-costs">
 
             <p class="hashieban-order-costs__description">
-                هر هزینه‌ای که فقط مربوط به همین سفارش است
-                وارد کنید. این مبالغ مستقیماً از سود این سفارش
-                و سود فروشگاه کم می‌شوند.
-            </p>
-
-            <p>
-                واحد مبلغ:
-                <strong>
-                    <?php
-                    echo esc_html(
-                        $currencyLabel
-                    );
-                    ?>
-                </strong>
+                هزینه‌های واقعی مربوط به همین سفارش را وارد کنید.
+                هر هزینه می‌تواند دسته و رنگ مخصوص خودش را داشته باشد
+                و مستقیماً از سود سفارش کم می‌شود.
             </p>
 
             <div class="hashieban-direct-cost-summary">
-
                 <span>
                     مجموع هزینه‌های جانبی سفارش
                 </span>
 
                 <strong>
-                    <span
-                        id="hashieban-direct-cost-total"
-                    >
+                    <span id="hashieban-direct-cost-total">
                         0
                     </span>
 
@@ -130,7 +131,6 @@ final class OrderCostsMetaBox
                     );
                     ?>
                 </strong>
-
             </div>
 
             <div id="hashieban-direct-cost-rows">
@@ -140,6 +140,24 @@ final class OrderCostsMetaBox
                     $costs
                     as $index => $cost
                 ) :
+                    ?>
+
+                    <?php
+                    $categoryColor =
+                        $this->categories
+                            ->color(
+                                $cost[
+                                    'category_id'
+                                ]
+                            );
+
+                    $displayAmount =
+                        Currency::storeDecimalToDisplayInput(
+                            (string) $cost[
+                                'amount'
+                            ],
+                            $currency
+                        );
                     ?>
 
                     <div class="hashieban-direct-cost-row">
@@ -153,14 +171,64 @@ final class OrderCostsMetaBox
                         <div class="hashieban-direct-cost-field">
 
                             <label>
-                                عنوان هزینه
+                                دسته هزینه
+                            </label>
+
+                            <div class="hb-order-category-select">
+
+                                <span
+                                    class="hb-order-category-dot"
+                                    style="background: <?php echo esc_attr($categoryColor); ?>;"
+                                ></span>
+
+                                <select
+                                    class="hb-order-category"
+                                    name="hashieban_direct_costs[<?php echo esc_attr((string) $index); ?>][category_id]"
+                                >
+
+                                    <?php
+                                    foreach (
+                                        $categories
+                                        as $category
+                                    ) :
+                                        ?>
+
+                                        <option
+                                            value="<?php echo esc_attr($category['id']); ?>"
+                                            data-color="<?php echo esc_attr($category['color']); ?>"
+                                            <?php
+                                            selected(
+                                                $cost['category_id'],
+                                                $category['id']
+                                            );
+                                            ?>
+                                        >
+                                            <?php
+                                            echo esc_html(
+                                                $category['name']
+                                            );
+                                            ?>
+                                        </option>
+
+                                    <?php endforeach; ?>
+
+                                </select>
+
+                            </div>
+
+                        </div>
+
+                        <div class="hashieban-direct-cost-field">
+
+                            <label>
+                                عنوان
                             </label>
 
                             <input
                                 type="text"
                                 name="hashieban_direct_costs[<?php echo esc_attr((string) $index); ?>][title]"
                                 value="<?php echo esc_attr($cost['title']); ?>"
-                                placeholder="مثلاً هزینه پست"
+                                placeholder="مثلاً پست پیشتاز"
                             >
 
                         </div>
@@ -169,18 +237,14 @@ final class OrderCostsMetaBox
 
                             <label>
                                 مبلغ
-                                (<?php
-                                echo esc_html(
-                                    $currencyLabel
-                                );
-                                ?>)
+                                (<?php echo esc_html($currencyLabel); ?>)
                             </label>
 
                             <input
                                 type="number"
                                 class="hashieban-direct-cost-amount"
                                 name="hashieban_direct_costs[<?php echo esc_attr((string) $index); ?>][amount]"
-                                value="<?php echo esc_attr($cost['amount']); ?>"
+                                value="<?php echo esc_attr($displayAmount); ?>"
                                 min="0"
                                 step="any"
                                 inputmode="decimal"
@@ -221,13 +285,29 @@ final class OrderCostsMetaBox
 
             </div>
 
-            <button
-                type="button"
-                class="button button-secondary"
-                id="hashieban-add-direct-cost"
-            >
-                + افزودن هزینه
-            </button>
+            <div class="hb-order-cost-footer">
+
+                <button
+                    type="button"
+                    class="button button-secondary"
+                    id="hashieban-add-direct-cost"
+                >
+                    + افزودن هزینه
+                </button>
+
+                <a
+                    href="<?php
+                    echo esc_url(
+                        admin_url(
+                            'admin.php?page=hashieban-expense-categories'
+                        )
+                    );
+                    ?>"
+                >
+                    مدیریت دسته‌ها و رنگ‌ها
+                </a>
+
+            </div>
 
         </div>
 
@@ -244,13 +324,66 @@ final class OrderCostsMetaBox
                 <div class="hashieban-direct-cost-field">
 
                     <label>
-                        عنوان هزینه
+                        دسته هزینه
                     </label>
+
+                    <div class="hb-order-category-select">
+
+                        <span
+                            class="hb-order-category-dot"
+                            style="background: <?php
+                            echo esc_attr(
+                                $this->categories
+                                    ->color(
+                                        $this->categories
+                                            ->fallbackId()
+                                    )
+                            );
+                            ?>;"
+                        ></span>
+
+                        <select
+                            class="hb-order-category"
+                            name="hashieban_direct_costs[__INDEX__][category_id]"
+                        >
+
+                            <?php
+                            foreach (
+                                $categories
+                                as $category
+                            ) :
+                                ?>
+
+                                <option
+                                    value="<?php echo esc_attr($category['id']); ?>"
+                                    data-color="<?php echo esc_attr($category['color']); ?>"
+                                    <?php
+                                    selected(
+                                        $category['id'],
+                                        $this->categories
+                                            ->fallbackId()
+                                    );
+                                    ?>
+                                >
+                                    <?php echo esc_html($category['name']); ?>
+                                </option>
+
+                            <?php endforeach; ?>
+
+                        </select>
+
+                    </div>
+
+                </div>
+
+                <div class="hashieban-direct-cost-field">
+
+                    <label>عنوان</label>
 
                     <input
                         type="text"
                         name="hashieban_direct_costs[__INDEX__][title]"
-                        placeholder="مثلاً بسته‌بندی"
+                        placeholder="مثلاً هزینه ارسال"
                     >
 
                 </div>
@@ -259,11 +392,7 @@ final class OrderCostsMetaBox
 
                     <label>
                         مبلغ
-                        (<?php
-                        echo esc_html(
-                            $currencyLabel
-                        );
-                        ?>)
+                        (<?php echo esc_html($currencyLabel); ?>)
                     </label>
 
                     <input
@@ -280,9 +409,7 @@ final class OrderCostsMetaBox
 
                 <div class="hashieban-direct-cost-field">
 
-                    <label>
-                        توضیح
-                    </label>
+                    <label>توضیح</label>
 
                     <input
                         type="text"
@@ -306,7 +433,6 @@ final class OrderCostsMetaBox
             </div>
 
         </template>
-
         <?php
 		}
 
@@ -349,7 +475,8 @@ final class OrderCostsMetaBox
 				return;
 			}
 
-			$order = wc_get_order($orderId);
+			$order =
+				wc_get_order($orderId);
 
 			if (! $order instanceof WC_Order) {
 				return;
@@ -405,7 +532,8 @@ final class OrderCostsMetaBox
 					);
 
 				if ($wcScreen !== '') {
-					$validScreens[] = $wcScreen;
+					$validScreens[] =
+						$wcScreen;
 				}
 			}
 
@@ -449,13 +577,14 @@ final class OrderCostsMetaBox
 			}
 
 			if ($object instanceof WP_Post) {
-				$order = wc_get_order(
-					$object->ID
-				);
+				$order =
+					wc_get_order(
+						$object->ID
+					);
 
-				if ($order instanceof WC_Order) {
-					return $order;
-				}
+				return $order instanceof WC_Order
+                ? $order
+					 : null;
 			}
 
 			return null;

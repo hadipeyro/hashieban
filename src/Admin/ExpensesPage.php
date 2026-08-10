@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace Hashieban\Admin;
 
 use DateTimeImmutable;
+use Hashieban\Finance\ExpenseCategoryRepository;
 use Hashieban\Finance\StoreExpenseRepository;
 use Hashieban\Integration\WooCommerce\Order\MoneyFactory;
 use Hashieban\Support\Currency;
@@ -16,12 +17,21 @@ final class ExpensesPage
 
     private MoneyFactory $moneyFactory;
 
+    private ExpenseCategoryRepository $categories;
+
     public function __construct(
         StoreExpenseRepository $repository,
-        MoneyFactory $moneyFactory
+        MoneyFactory $moneyFactory,
+        ExpenseCategoryRepository $categories
     ) {
-        $this->repository = $repository;
-        $this->moneyFactory = $moneyFactory;
+        $this->repository =
+            $repository;
+
+        $this->moneyFactory =
+            $moneyFactory;
+
+        $this->categories =
+            $categories;
     }
 
     public function register(): void
@@ -39,93 +49,125 @@ final class ExpensesPage
 
     public function render(): void
     {
-        if (! current_user_can('manage_woocommerce')) {
-            wp_die(
-                esc_html__(
-                    'شما اجازه دسترسی به این بخش را ندارید.',
-                    'hashieban'
-                )
-            );
+        if (
+            ! current_user_can(
+                'manage_woocommerce'
+            )
+        ) {
+            wp_die('Access denied.');
         }
 
-        $currency = Currency::storeCode();
-        $precision = Currency::precision();
-        $currencyLabel = Currency::label($currency);
+        $currency =
+            Currency::storeCode();
 
-        $page = isset($_GET['paged'])
-            ? max(1, absint($_GET['paged']))
-            : 1;
+        $precision =
+            Currency::precision();
+
+        $currencyLabel =
+            Currency::label(
+                $currency
+            );
+
+        $categories =
+            $this->categories
+                ->active();
+
+        $page =
+            isset($_GET['paged'])
+                ? max(
+                    1,
+                    absint($_GET['paged'])
+                )
+                : 1;
 
         $perPage = 30;
 
-        $expenses = $this->repository->paginate(
-            $page,
-            $perPage
-        );
+        $expenses =
+            $this->repository
+                ->paginate(
+                    $page,
+                    $perPage
+                );
 
-        $totalItems = $this->repository->count();
+        $totalItems =
+            $this->repository
+                ->count();
 
-        $totalPages = max(
-            1,
-            (int) ceil($totalItems / $perPage)
-        );
+        $totalPages =
+            max(
+                1,
+                (int) ceil(
+                    $totalItems
+                    / $perPage
+                )
+            );
 
-        $today = new DateTimeImmutable(
-            'now',
-            wp_timezone()
-        );
+        $today =
+            new DateTimeImmutable(
+                'now',
+                wp_timezone()
+            );
 
         ?>
         <div class="wrap hashieban-finance-page">
 
             <div class="hashieban-finance-header">
+
                 <div>
-                    <h1>هزینه‌های فروشگاه</h1>
+                    <h1>
+                        هزینه‌های فروشگاه
+                    </h1>
+
                     <p>
-                        هزینه‌هایی که در این بخش ثبت می‌شوند
-                        مستقیماً از سود خالص فروشگاه کم می‌شوند.
+                        هزینه‌های عمومی فروشگاه که
+                        در سود خالص بازه زمانی اعمال می‌شوند.
                     </p>
                 </div>
 
                 <div class="hashieban-currency-badge">
                     واحد مالی:
-                    <strong><?php echo esc_html($currencyLabel); ?></strong>
+                    <strong>
+                        <?php
+                        echo esc_html(
+                            $currencyLabel
+                        );
+                        ?>
+                    </strong>
                 </div>
+
             </div>
 
-            <?php if (isset($_GET['hb_saved']) && $_GET['hb_saved'] === '1') : ?>
-                <div class="notice notice-success is-dismissible">
-                    <p>هزینه ثبت شد و در محاسبه سود خالص اعمال می‌شود.</p>
-                </div>
-            <?php endif; ?>
+            <?php if (
+                isset($_GET['hb_saved'])
+            ) : ?>
 
-            <?php if (isset($_GET['hb_deleted']) && $_GET['hb_deleted'] === '1') : ?>
                 <div class="notice notice-success is-dismissible">
-                    <p>هزینه حذف شد.</p>
+                    <p>
+                        هزینه ثبت و در محاسبات مالی اعمال شد.
+                    </p>
                 </div>
-            <?php endif; ?>
 
-            <?php if (isset($_GET['hb_error']) && $_GET['hb_error'] === '1') : ?>
-                <div class="notice notice-error">
-                    <p>اطلاعات هزینه معتبر نیست.</p>
-                </div>
             <?php endif; ?>
 
             <div class="hashieban-expense-layout">
 
                 <section class="hashieban-finance-card">
-                    <h2>ثبت هزینه جدید</h2>
 
-                    <p class="description">
-                        مثال: خرید چسب، تبلیغات، حقوق،
-                        اجاره، هزینه انبار، اینترنت،
-                        نرم‌افزار یا هر هزینه دیگری.
-                    </p>
+                    <h2>
+                        ثبت هزینه جدید
+                    </h2>
 
                     <form
                         method="post"
-                        action="<?php echo esc_url(admin_url('admin-post.php')); ?>"
+                        action="<?php
+                        echo esc_url(
+                            admin_url(
+                                'admin-post.php'
+                            )
+                        );
+                        ?>"
                     >
+
                         <input
                             type="hidden"
                             name="action"
@@ -140,49 +182,76 @@ final class ExpensesPage
                         ?>
 
                         <div class="hashieban-form-field">
-                            <label for="hb-expense-title">عنوان هزینه</label>
-                            <input
-                                id="hb-expense-title"
-                                type="text"
-                                name="title"
-                                required
-                                placeholder="مثلاً خرید چسب بسته‌بندی"
-                            >
-                        </div>
 
-                        <div class="hashieban-form-field">
-                            <label for="hb-expense-category">دسته‌بندی</label>
-                            <input
-                                id="hb-expense-category"
-                                type="text"
-                                name="category"
-                                list="hb-expense-categories"
-                                placeholder="مثلاً مواد مصرفی"
-                            >
-
-                            <datalist id="hb-expense-categories">
-                                <option value="مواد مصرفی">
-                                <option value="بسته‌بندی">
-                                <option value="ارسال">
-                                <option value="تبلیغات">
-                                <option value="حقوق">
-                                <option value="اجاره">
-                                <option value="انبار">
-                                <option value="مالیات">
-                                <option value="کارمزد">
-                                <option value="هاست و نرم‌افزار">
-                                <option value="آب، برق و اینترنت">
-                                <option value="سایر">
-                            </datalist>
-                        </div>
-
-                        <div class="hashieban-form-field">
-                            <label for="hb-expense-amount">
-                                مبلغ (<?php echo esc_html($currencyLabel); ?>)
+                            <label>
+                                عنوان هزینه
                             </label>
 
                             <input
-                                id="hb-expense-amount"
+                                type="text"
+                                name="title"
+                                required
+                                placeholder="مثلاً خرید پاکت پستی"
+                            >
+
+                        </div>
+
+                        <div class="hashieban-form-field">
+
+                            <label>
+                                دسته هزینه
+                            </label>
+
+                            <select
+                                name="category_id"
+                                required
+                            >
+
+                                <?php
+                                foreach (
+                                    $categories
+                                    as $category
+                                ) :
+                                    ?>
+
+                                    <option
+                                        value="<?php echo esc_attr($category['id']); ?>"
+                                    >
+                                        <?php
+                                        echo esc_html(
+                                            $category['name']
+                                        );
+                                        ?>
+                                    </option>
+
+                                <?php endforeach; ?>
+
+                            </select>
+
+                            <small>
+                                <a
+                                    href="<?php
+                                    echo esc_url(
+                                        admin_url(
+                                            'admin.php?page=hashieban-expense-categories'
+                                        )
+                                    );
+                                    ?>"
+                                >
+                                    + ساخت یا ویرایش دسته‌ها
+                                </a>
+                            </small>
+
+                        </div>
+
+                        <div class="hashieban-form-field">
+
+                            <label>
+                                مبلغ
+                                (<?php echo esc_html($currencyLabel); ?>)
+                            </label>
+
+                            <input
                                 type="number"
                                 name="amount"
                                 min="0"
@@ -192,38 +261,43 @@ final class ExpensesPage
                                 placeholder="0"
                             >
 
-                            <small>
-                                مبلغ را با واحد
-                                <strong><?php echo esc_html($currencyLabel); ?></strong>
-                                وارد کنید.
-                            </small>
                         </div>
 
                         <div class="hashieban-form-field">
-                            <label for="hb-expense-date">تاریخ هزینه</label>
+
+                            <label>
+                                تاریخ هزینه
+                            </label>
 
                             <input
-                                id="hb-expense-date"
                                 type="text"
                                 name="expense_date"
-                                value="<?php echo esc_attr(JalaliDate::numeric($today)); ?>"
+                                value="<?php
+                                echo esc_attr(
+                                    JalaliDate::numeric(
+                                        $today
+                                    )
+                                );
+                                ?>"
                                 required
                                 autocomplete="off"
                                 data-jdp
-                                placeholder="۱۴۰۵/۰۵/۱۷"
                             >
 
-                            <small>تاریخ را به شمسی انتخاب کنید.</small>
                         </div>
 
                         <div class="hashieban-form-field">
-                            <label for="hb-expense-note">توضیح</label>
+
+                            <label>
+                                توضیح
+                            </label>
+
                             <textarea
-                                id="hb-expense-note"
                                 name="note"
                                 rows="3"
                                 placeholder="اختیاری"
                             ></textarea>
+
                         </div>
 
                         <button
@@ -232,33 +306,51 @@ final class ExpensesPage
                         >
                             ثبت و اعمال در سود خالص
                         </button>
+
                     </form>
+
                 </section>
 
                 <section class="hashieban-finance-card hashieban-expense-list-card">
 
                     <div class="hashieban-card-heading">
                         <div>
-                            <h2>دفتر هزینه‌ها</h2>
+                            <h2>
+                                دفتر هزینه‌ها
+                            </h2>
+
                             <p>
-                                <?php echo esc_html(number_format_i18n($totalItems)); ?>
+                                <?php
+                                echo esc_html(
+                                    number_format_i18n(
+                                        $totalItems
+                                    )
+                                );
+                                ?>
                                 هزینه ثبت‌شده
                             </p>
                         </div>
                     </div>
 
-                    <?php if ($expenses === array()) : ?>
+                    <?php if (
+                        $expenses === array()
+                    ) : ?>
+
                         <div class="hashieban-empty-state">
                             هنوز هزینه‌ای ثبت نشده است.
                         </div>
+
                     <?php else : ?>
+
                         <div class="hashieban-table-wrapper">
+
                             <table class="widefat striped hashieban-finance-table">
+
                                 <thead>
                                     <tr>
                                         <th>تاریخ</th>
                                         <th>عنوان</th>
-                                        <th>دسته‌بندی</th>
+                                        <th>دسته</th>
                                         <th>مبلغ</th>
                                         <th>توضیح</th>
                                         <th></th>
@@ -266,13 +358,54 @@ final class ExpensesPage
                                 </thead>
 
                                 <tbody>
-                                    <?php foreach ($expenses as $expense) : ?>
+
+                                    <?php
+                                    foreach (
+                                        $expenses
+                                        as $expense
+                                    ) :
+                                        ?>
+
+                                        <?php
+                                        $categoryId =
+                                            (string) (
+                                                $expense[
+                                                    'category_id'
+                                                ]
+                                                ?? ''
+                                            );
+
+                                        $categoryName =
+                                            $categoryId !== ''
+                                                ? $this->categories
+                                                    ->name(
+                                                        $categoryId
+                                                    )
+                                                : (
+                                                    $expense[
+                                                        'category'
+                                                    ]
+                                                    ?: 'سایر'
+                                                );
+
+                                        $categoryColor =
+                                            $categoryId !== ''
+                                                ? $this->categories
+                                                    ->color(
+                                                        $categoryId
+                                                    )
+                                                : '#64748b';
+                                        ?>
+
                                         <tr>
+
                                             <td>
                                                 <?php
                                                 echo esc_html(
                                                     JalaliDate::fromYmd(
-                                                        (string) $expense['expense_date']
+                                                        $expense[
+                                                            'expense_date'
+                                                        ]
                                                     )
                                                 );
                                                 ?>
@@ -280,16 +413,31 @@ final class ExpensesPage
 
                                             <td>
                                                 <strong>
-                                                    <?php echo esc_html($expense['title']); ?>
+                                                    <?php
+                                                    echo esc_html(
+                                                        $expense[
+                                                            'title'
+                                                        ]
+                                                    );
+                                                    ?>
                                                 </strong>
                                             </td>
 
                                             <td>
+                                                <span
+                                                    style="
+                                                        display:inline-block;
+                                                        width:10px;
+                                                        height:10px;
+                                                        margin-left:6px;
+                                                        border-radius:50%;
+                                                        background:<?php echo esc_attr($categoryColor); ?>;
+                                                    "
+                                                ></span>
+
                                                 <?php
                                                 echo esc_html(
-                                                    $expense['category'] !== ''
-                                                        ? $expense['category']
-                                                        : '—'
+                                                    $categoryName
                                                 );
                                                 ?>
                                             </td>
@@ -298,9 +446,15 @@ final class ExpensesPage
                                                 <?php
                                                 echo esc_html(
                                                     Currency::formatMinor(
-                                                        (int) $expense['amount_minor'],
-                                                        $expense['currency'],
-                                                        (int) $expense['precision_value']
+                                                        (int) $expense[
+                                                            'amount_minor'
+                                                        ],
+                                                        $expense[
+                                                            'currency'
+                                                        ],
+                                                        (int) $expense[
+                                                            'precision_value'
+                                                        ]
                                                     )
                                                 );
                                                 ?>
@@ -309,72 +463,108 @@ final class ExpensesPage
                                             <td>
                                                 <?php
                                                 echo esc_html(
-                                                    $expense['note'] !== ''
-                                                        ? $expense['note']
-                                                        : '—'
+                                                    $expense['note']
+                                                        ?: '—'
                                                 );
                                                 ?>
                                             </td>
 
                                             <td>
                                                 <?php
-                                                $deleteUrl = wp_nonce_url(
-                                                    add_query_arg(
-                                                        array(
-                                                            'action' => 'hashieban_delete_expense',
-                                                            'expense_id' => (int) $expense['id'],
+                                                $deleteUrl =
+                                                    wp_nonce_url(
+                                                        add_query_arg(
+                                                            array(
+                                                                'action' =>
+                                                                    'hashieban_delete_expense',
+
+                                                                'expense_id' =>
+                                                                    (int) $expense[
+                                                                        'id'
+                                                                    ],
+                                                            ),
+                                                            admin_url(
+                                                                'admin-post.php'
+                                                            )
                                                         ),
-                                                        admin_url('admin-post.php')
-                                                    ),
-                                                    'hashieban_delete_expense_' . (int) $expense['id']
-                                                );
+                                                        'hashieban_delete_expense_'
+                                                            . (int) $expense[
+                                                                'id'
+                                                            ]
+                                                    );
                                                 ?>
 
                                                 <a
-                                                    class="hashieban-danger-link"
                                                     href="<?php echo esc_url($deleteUrl); ?>"
+                                                    class="hashieban-danger-link"
                                                     onclick="return confirm('این هزینه حذف شود؟');"
                                                 >
                                                     حذف
                                                 </a>
                                             </td>
+
                                         </tr>
+
                                     <?php endforeach; ?>
+
                                 </tbody>
+
                             </table>
+
                         </div>
+
                     <?php endif; ?>
 
-                    <?php if ($totalPages > 1) : ?>
+                    <?php if (
+                        $totalPages > 1
+                    ) : ?>
+
                         <div class="tablenav">
                           <div class="tablenav-pages">
+
                             <?php
                             echo wp_kses_post(
                                 paginate_links(
                                     array(
-                                        'base' => add_query_arg(
-                                            'paged',
-                                            '%#%',
-                                            admin_url('admin.php?page=hashieban-expenses')
-                                        ),
-                                        'current' => $page,
-                                        'total' => $totalPages,
+                                        'base' =>
+                                            add_query_arg(
+                                                'paged',
+                                                '%#%',
+                                                admin_url(
+                                                    'admin.php?page=hashieban-expenses'
+                                                )
+                                            ),
+
+                                        'current' =>
+                                            $page,
+
+                                        'total' =>
+                                            $totalPages,
                                     )
                                 )
                             );
                             ?>
+
                           </div>
                         </div>
+
                     <?php endif; ?>
+
                 </section>
+
             </div>
+
         </div>
         <?php
 		}
 
 		public function handleAdd(): void
 		{
-			if (! current_user_can('manage_woocommerce')) {
+			if (
+				! current_user_can(
+					'manage_woocommerce'
+				)
+			) {
 				wp_die('Access denied.');
 			}
 
@@ -384,73 +574,112 @@ final class ExpensesPage
 			);
 
 			$title = sanitize_text_field(
-				wp_unslash($_POST['title'] ?? '')
+				wp_unslash(
+					$_POST['title']
+					?? ''
+				)
 			);
 
-			$category = sanitize_text_field(
-				wp_unslash($_POST['category'] ?? '')
+			$categoryId = sanitize_key(
+				wp_unslash(
+					$_POST['category_id']
+					?? ''
+				)
 			);
 
-			$rawAmount = sanitize_text_field(
-				wp_unslash($_POST['amount'] ?? '')
-			);
+			$category =
+				$this->categories
+					 ->find($categoryId);
 
-			$expenseDateInput = sanitize_text_field(
-				wp_unslash($_POST['expense_date'] ?? '')
-			);
+			if (
+				! $category
+				|| empty($category['active'])
+			) {
+				$categoryId =
+					$this->categories
+						 ->fallbackId();
 
-			$note = sanitize_textarea_field(
-				wp_unslash($_POST['note'] ?? '')
-			);
+				$category =
+					$this->categories
+						 ->find($categoryId);
+			}
 
-			if ($title === '' || $rawAmount === '' || $expenseDateInput === '') {
+			$rawAmount =
+				sanitize_text_field(
+					wp_unslash(
+						$_POST['amount']
+						?? ''
+					)
+				);
+
+			$dateInput =
+				sanitize_text_field(
+					wp_unslash(
+						$_POST['expense_date']
+						?? ''
+					)
+				);
+
+			$note =
+				sanitize_textarea_field(
+					wp_unslash(
+						$_POST['note']
+						?? ''
+					)
+				);
+
+			$expenseDate =
+				JalaliDate::parseInputToGregorianYmd(
+					$dateInput
+				);
+
+			if (
+				$title === ''
+				|| $rawAmount === ''
+				|| $expenseDate === null
+			) {
 				$this->redirectError();
 			}
 
-			$expenseDate = JalaliDate::parseInputToGregorianYmd(
-				$expenseDateInput
-			);
+			$currency =
+				Currency::storeCode();
 
-			if ($expenseDate === null) {
+			$precision =
+				Currency::precision();
+
+			$storeAmount =
+				Currency::displayInputToStoreDecimal(
+					$rawAmount,
+					$currency,
+					$precision
+				);
+
+			if ($storeAmount === '') {
 				$this->redirectError();
 			}
 
-			$date = DateTimeImmutable::createFromFormat(
-				'!Y-m-d',
-				$expenseDate,
-				wp_timezone()
-			);
+			$money =
+				$this->moneyFactory
+					 ->fromWooCommerceAmount(
+						 $storeAmount,
+						 $currency,
+						 $precision
+					 );
 
-			if (! $date || $date->format('Y-m-d') !== $expenseDate) {
-				$this->redirectError();
-			}
-
-			$currency = Currency::storeCode();
-			$precision = Currency::precision();
-
-			$storeDecimalAmount = Currency::displayInputToStoreDecimal(
-				$rawAmount,
-				$currency,
-				$precision
-			);
-
-			if ($storeDecimalAmount === '') {
-				$this->redirectError();
-			}
-
-			$money = $this->moneyFactory->fromWooCommerceAmount(
-				$storeDecimalAmount,
-				$currency,
-				$precision
-			);
-
-			if ($money->isNegative() || $money->isZero()) {
+			if (
+				$money->isZero()
+				|| $money->isNegative()
+			) {
 				$this->redirectError();
 			}
 
 			$this->repository->add(
 				$title,
-				$category,
+				$categoryId,
+				(string) (
+					$category['name']
+					?? 'سایر'
+				),
 				$money,
 				$expenseDate,
 				$note,
@@ -458,7 +687,9 @@ final class ExpensesPage
 			);
 
 			wp_safe_redirect(
-				admin_url('admin.php?page=hashieban-expenses&hb_saved=1')
+				admin_url(
+					'admin.php?page=hashieban-expenses&hb_saved=1'
+				)
 			);
 
 			exit;
@@ -466,26 +697,38 @@ final class ExpensesPage
 
 		public function handleDelete(): void
 		{
-			if (! current_user_can('manage_woocommerce')) {
+			if (
+				! current_user_can(
+					'manage_woocommerce'
+				)
+			) {
 				wp_die('Access denied.');
 			}
 
-			$expenseId = isset($_GET['expense_id'])
-            ? absint($_GET['expense_id'])
-					   : 0;
+			$expenseId =
+				isset($_GET['expense_id'])
+            ? absint(
+                $_GET['expense_id']
+            )
+                : 0;
 
 			if ($expenseId < 1) {
 				$this->redirectError();
 			}
 
 			check_admin_referer(
-				'hashieban_delete_expense_' . $expenseId
+				'hashieban_delete_expense_'
+              . $expenseId
 			);
 
-			$this->repository->delete($expenseId);
+			$this->repository->delete(
+				$expenseId
+			);
 
 			wp_safe_redirect(
-				admin_url('admin.php?page=hashieban-expenses&hb_deleted=1')
+				admin_url(
+					'admin.php?page=hashieban-expenses&hb_deleted=1'
+				)
 			);
 
 			exit;
@@ -494,7 +737,9 @@ final class ExpensesPage
 		private function redirectError(): void
 		{
 			wp_safe_redirect(
-				admin_url('admin.php?page=hashieban-expenses&hb_error=1')
+				admin_url(
+					'admin.php?page=hashieban-expenses&hb_error=1'
+				)
 			);
 
 			exit;

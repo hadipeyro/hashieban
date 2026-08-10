@@ -16,13 +16,9 @@
     gap: 16px;
     padding: 14px 16px;
     margin-bottom: 16px;
+    background: #f6f7f7;
     border: 1px solid #dcdcde;
     border-radius: 10px;
-    background: #f6f7f7;
-}
-
-.hashieban-direct-cost-summary span {
-    font-weight: 600;
 }
 
 .hashieban-direct-cost-summary strong {
@@ -31,10 +27,12 @@
 
 .hashieban-direct-cost-row {
     display: grid;
+
     grid-template-columns:
-        minmax(180px, 1.1fr)
+        minmax(150px, 0.8fr)
+        minmax(160px, 1fr)
         minmax(140px, 0.7fr)
-        minmax(220px, 1.4fr)
+        minmax(180px, 1.2fr)
         auto;
 
     gap: 12px;
@@ -43,10 +41,10 @@
     padding: 14px;
     margin-bottom: 12px;
 
-    border: 1px solid #e2e4e7;
-    border-radius: 10px;
-
     background: #f8f9fa;
+
+    border: 1px solid #e2e4e7;
+    border-radius: 12px;
 }
 
 .hashieban-direct-cost-field label {
@@ -55,9 +53,33 @@
     font-weight: 600;
 }
 
-.hashieban-direct-cost-field input {
+.hashieban-direct-cost-field input,
+.hashieban-direct-cost-field select {
     width: 100%;
-    min-height: 38px;
+    min-height: 40px;
+}
+
+.hb-order-category-select {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+}
+
+.hb-order-category-dot {
+    flex: 0 0 13px;
+
+    width: 13px;
+    height: 13px;
+
+    border-radius: 50%;
+
+    box-shadow:
+        0 0 0 3px
+        rgba(0, 0, 0, 0.05);
+}
+
+.hb-order-category-select select {
+    flex: 1;
 }
 
 .hashieban-direct-cost-actions {
@@ -70,28 +92,28 @@
     border-color: #dba7a7 !important;
 }
 
-.hashieban-remove-direct-cost:hover {
-    color: #8a2424 !important;
-    border-color: #b32d2e !important;
+.hb-order-cost-footer {
+    display: flex;
+    align-items: center;
+    flex-wrap: wrap;
+    gap: 14px;
+    margin-top: 8px;
 }
 
-#hashieban-add-direct-cost {
-    margin-top: 4px;
+.hb-order-cost-footer a {
+    text-decoration: none;
 }
 
-@media (max-width: 1000px) {
+@media (max-width: 1200px) {
     .hashieban-direct-cost-row {
-        grid-template-columns: 1fr 1fr;
+        grid-template-columns:
+            1fr
+            1fr;
     }
 }
 
 @media (max-width: 782px) {
     .hashieban-direct-cost-row {
         grid-template-columns: 1fr;
-    }
-
-    .hashieban-direct-cost-summary {
-        align-items: flex-start;
-        flex-direction: column;
     }
 }
