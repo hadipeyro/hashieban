@@ -14,5 +14,9 @@
     "config": {
         "optimize-autoloader": true,
         "sort-packages": true
+    },
+    "scripts": {
+        "test": "@php tests/run.php",
+        "qa": "@php tools/qa.php"
     }
 }
