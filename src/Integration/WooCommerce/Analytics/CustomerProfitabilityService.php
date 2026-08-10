@@ -35,11 +35,6 @@ final class CustomerProfitabilityService
         $currency = get_woocommerce_currency();
         $precision = wc_get_price_decimals();
 
-        $globalCostPerOrder = $this->globalCosts->total(
-            $currency,
-            $precision
-        );
-
         $customers = array();
         $totalRevenueMinor = 0;
         $totalProfitMinor = 0;
@@ -91,9 +86,14 @@ final class CustomerProfitabilityService
                 }
 
                 $financial = $this->orderAdapter->fromOrder($order);
+                $orderGlobalCost = $this->globalCosts->totalForOrder(
+                    $order,
+                    $currency,
+                    $precision
+                );
                 $profitResult = $this->profitEngine->calculateOrder(
                     $financial,
-                    $globalCostPerOrder
+                    $orderGlobalCost
                 );
                 $breakdown = $profitResult->breakdown();
 

@@ -135,6 +135,87 @@ final class StoreExpenseRepository
         return (int) $wpdb->insert_id;
     }
 
+    public function find(
+        int $id
+    ): ?array {
+        global $wpdb;
+
+        $row =
+            $wpdb->get_row(
+                $wpdb->prepare(
+                    "
+                    SELECT *
+                    FROM {$this->tableName()}
+                    WHERE id = %d
+                    LIMIT 1
+                    ",
+                    $id
+                ),
+                ARRAY_A
+            );
+
+        return is_array($row)
+            ? $row
+            : null;
+    }
+
+    public function update(
+        int $id,
+        string $title,
+        string $categoryId,
+        string $categorySnapshot,
+        Money $amount,
+        string $expenseDate,
+        string $note
+    ): void {
+        global $wpdb;
+
+        $wpdb->update(
+            $this->tableName(),
+            array(
+                'title' =>
+                    $title,
+
+                'category_id' =>
+                    $categoryId,
+
+                'category' =>
+                    $categorySnapshot,
+
+                'amount_minor' =>
+                    $amount->minorAmount(),
+
+                'currency' =>
+                    $amount->currency(),
+
+                'precision_value' =>
+                    $amount->precision(),
+
+                'expense_date' =>
+                    $expenseDate,
+
+                'note' =>
+                    $note,
+            ),
+            array(
+                'id' => $id,
+            ),
+            array(
+                '%s',
+                '%s',
+                '%s',
+                '%d',
+                '%s',
+                '%d',
+                '%s',
+                '%s',
+            ),
+            array(
+                '%d',
+            )
+        );
+    }
+
     public function delete(
         int $id
     ): void {

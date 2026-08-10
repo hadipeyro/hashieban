@@ -2,7 +2,7 @@
 /**
  * Plugin Name:       حاشیه‌بان
  * Description:       هوش مالی، تحلیل سودآوری و گزارش‌های مدیریتی برای فروشگاه‌های ووکامرس.
- * Version:           0.6.0
+ * Version:           0.7.0
  * Requires at least: 6.7
  * Requires PHP:      7.4
  * Requires Plugins:  woocommerce
@@ -18,7 +18,7 @@ declare(strict_types=1);
 
 defined('ABSPATH') || exit;
 
-define('HASHIEBAN_VERSION', '0.6.0');
+define('HASHIEBAN_VERSION', '0.7.0');
 define('HASHIEBAN_FILE', __FILE__);
 define('HASHIEBAN_PATH', plugin_dir_path(__FILE__));
 

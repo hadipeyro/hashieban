@@ -6,6 +6,7 @@ namespace Hashieban\Integration\WooCommerce\Tools;
 
 use Hashieban\Integration\WooCommerce\Compatibility;
 use Hashieban\Integration\WooCommerce\Geo\GeoAddressCapture;
+use Hashieban\Integration\WooCommerce\Snapshot\ProfitSnapshotService;
 use WC_Order;
 use WC_Product;
 
@@ -13,13 +14,16 @@ final class BulkToolsService
 {
     private Compatibility $compatibility;
     private GeoAddressCapture $geoCapture;
+    private ProfitSnapshotService $profitSnapshots;
 
     public function __construct(
         Compatibility $compatibility,
-        GeoAddressCapture $geoCapture
+        GeoAddressCapture $geoCapture,
+        ProfitSnapshotService $profitSnapshots
     ) {
         $this->compatibility = $compatibility;
         $this->geoCapture = $geoCapture;
+        $this->profitSnapshots = $profitSnapshots;
     }
 
     public function isCogsEnabled(): bool
@@ -293,6 +297,100 @@ final class BulkToolsService
 
         if ($page < $maxPages) {
             $summary['next_page'] = $page + 1;
+        }
+
+        return $summary;
+    }
+
+
+    public function backfillProfitSnapshotsBatch(
+        int $page,
+        int $batchSize = 100
+    ): array {
+        $page = max(1, $page);
+        $batchSize = max(
+            20,
+            min(250, $batchSize)
+        );
+
+        $query = wc_get_orders(
+            array(
+                'status' => array(
+                    'processing',
+                    'completed',
+                    'refunded',
+                ),
+                'limit' => $batchSize,
+                'page' => $page,
+                'paginate' => true,
+                'orderby' => 'date',
+                'order' => 'ASC',
+            )
+        );
+
+        $summary = array(
+            'page' => $page,
+            'processed' => 0,
+            'created' => 0,
+            'existing' => 0,
+            'skipped' => 0,
+            'max_pages' => 1,
+            'next_page' => null,
+        );
+
+        if (
+            ! is_object($query)
+            || ! isset($query->orders)
+        ) {
+            return $summary;
+        }
+
+        $maxPages =
+            isset($query->max_num_pages)
+        ? max(
+            1,
+            (int) $query->max_num_pages
+        )
+            : 1;
+
+        $summary['max_pages'] =
+            $maxPages;
+
+        foreach (
+            (array) $query->orders
+            as $order
+        ) {
+            if (! $order instanceof WC_Order) {
+                continue;
+            }
+
+            $result =
+                $this->profitSnapshots
+                     ->captureMissing(
+                         $order,
+                         'legacy-backfill'
+                     );
+
+            $summary['processed']++;
+
+            $status =
+                (string) (
+                    $result['status']
+                    ?? 'skipped'
+                );
+
+            if (
+                ! isset($summary[$status])
+            ) {
+                $status = 'skipped';
+            }
+
+            $summary[$status]++;
+        }
+
+        if ($page < $maxPages) {
+            $summary['next_page'] =
+                $page + 1;
         }
 
         return $summary;

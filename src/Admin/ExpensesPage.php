@@ -42,6 +42,11 @@ final class ExpensesPage
         );
 
         add_action(
+            'admin_post_hashieban_update_expense',
+            array($this, 'handleUpdate')
+        );
+
+        add_action(
             'admin_post_hashieban_delete_expense',
             array($this, 'handleDelete')
         );
@@ -108,6 +113,80 @@ final class ExpensesPage
                 wp_timezone()
             );
 
+        $editExpenseId =
+            isset($_GET['edit_expense'])
+                ? absint($_GET['edit_expense'])
+                : 0;
+
+        $editingExpense =
+            $editExpenseId > 0
+                ? $this->repository->find(
+                    $editExpenseId
+                )
+                : null;
+
+        $formTitle =
+            is_array($editingExpense)
+                ? (string) ($editingExpense['title'] ?? '')
+                : '';
+
+        $formCategoryId =
+            is_array($editingExpense)
+                ? (string) ($editingExpense['category_id'] ?? '')
+                : '';
+
+        $formAmount =
+            is_array($editingExpense)
+                ? Currency::minorToDisplayInput(
+                    (int) ($editingExpense['amount_minor'] ?? 0),
+                    (string) ($editingExpense['currency'] ?? $currency),
+                    (int) ($editingExpense['precision_value'] ?? $precision)
+                )
+                : '';
+
+        $formExpenseDate =
+            JalaliDate::numeric(
+                $today
+            );
+
+        if (
+            is_array($editingExpense)
+            && ! empty($editingExpense['expense_date'])
+        ) {
+            $storedDate =
+                DateTimeImmutable::createFromFormat(
+                    '!Y-m-d',
+                    (string) $editingExpense['expense_date'],
+                    wp_timezone()
+                );
+
+            if ($storedDate instanceof DateTimeImmutable) {
+                $formExpenseDate =
+                    JalaliDate::numeric(
+                        $storedDate
+                    );
+            }
+        }
+
+        $formNote =
+            is_array($editingExpense)
+                ? (string) ($editingExpense['note'] ?? '')
+                : '';
+
+        $activeCategoryIds =
+            array_values(
+                array_filter(
+                    array_map(
+                        static function ($category): string {
+                            return is_array($category)
+                                ? (string) ($category['id'] ?? '')
+                                : '';
+                        },
+                        $categories
+                    )
+                )
+            );
+
         ?>
         <div class="wrap hashieban-finance-page">
 
@@ -149,13 +228,62 @@ final class ExpensesPage
 
             <?php endif; ?>
 
+            <?php if (
+                isset($_GET['hb_updated'])
+            ) : ?>
+
+                <div class="notice notice-success is-dismissible">
+                    <p>
+                        هزینه با موفقیت ویرایش شد و محاسبات مالی با مبلغ جدید به‌روزرسانی شدند.
+                    </p>
+                </div>
+
+            <?php endif; ?>
+
+            <?php if (
+                isset($_GET['hb_deleted'])
+            ) : ?>
+
+                <div class="notice notice-success is-dismissible">
+                    <p>
+                        هزینه حذف شد.
+                    </p>
+                </div>
+
+            <?php endif; ?>
+
+            <?php if (
+                isset($_GET['hb_error'])
+            ) : ?>
+
+                <div class="notice notice-error is-dismissible">
+                    <p>
+                        اطلاعات هزینه معتبر نیست. لطفاً دوباره بررسی کنید.
+                    </p>
+                </div>
+
+            <?php endif; ?>
+
             <div class="hashieban-expense-layout">
 
-                <section class="hashieban-finance-card">
+                <section
+                    class="hashieban-finance-card"
+                    id="hashieban-expense-form"
+                >
 
                     <h2>
-                        ثبت هزینه جدید
+                        <?php
+                        echo is_array($editingExpense)
+                            ? 'ویرایش هزینه'
+                            : 'ثبت هزینه جدید';
+                        ?>
                     </h2>
+
+                    <?php if (is_array($editingExpense)) : ?>
+                        <p>
+                            تغییرات این هزینه بلافاصله روی سود خالص بازه‌های مرتبط اعمال می‌شود.
+                        </p>
+                    <?php endif; ?>
 
                     <form
                         method="post"
@@ -171,15 +299,40 @@ final class ExpensesPage
                         <input
                             type="hidden"
                             name="action"
-                            value="hashieban_add_expense"
+                            value="<?php
+                            echo esc_attr(
+                                is_array($editingExpense)
+                                    ? 'hashieban_update_expense'
+                                    : 'hashieban_add_expense'
+                            );
+                            ?>"
                         >
 
-                        <?php
-                        wp_nonce_field(
-                            'hashieban_add_expense',
-                            'hashieban_expense_nonce'
-                        );
-                        ?>
+                        <?php if (is_array($editingExpense)) : ?>
+
+                            <input
+                                type="hidden"
+                                name="expense_id"
+                                value="<?php echo esc_attr((string) $editExpenseId); ?>"
+                            >
+
+                            <?php
+                            wp_nonce_field(
+                                'hashieban_update_expense_' . $editExpenseId,
+                                'hashieban_expense_nonce'
+                            );
+                            ?>
+
+                        <?php else : ?>
+
+                            <?php
+                            wp_nonce_field(
+                                'hashieban_add_expense',
+                                'hashieban_expense_nonce'
+                            );
+                            ?>
+
+                        <?php endif; ?>
 
                         <div class="hashieban-form-field">
 
@@ -190,6 +343,7 @@ final class ExpensesPage
                             <input
                                 type="text"
                                 name="title"
+                                value="<?php echo esc_attr($formTitle); ?>"
                                 required
                                 placeholder="مثلاً خرید پاکت پستی"
                             >
@@ -216,6 +370,12 @@ final class ExpensesPage
 
                                     <option
                                         value="<?php echo esc_attr($category['id']); ?>"
+                                        <?php
+                                        selected(
+                                            $formCategoryId,
+                                            (string) $category['id']
+                                        );
+                                        ?>
                                     >
                                         <?php
                                         echo esc_html(
@@ -225,6 +385,49 @@ final class ExpensesPage
                                     </option>
 
                                 <?php endforeach; ?>
+
+                                <?php
+                                if (
+                                    is_array($editingExpense)
+                                    && $formCategoryId !== ''
+                                    && ! in_array(
+                                        $formCategoryId,
+                                        $activeCategoryIds,
+                                        true
+                                    )
+                                ) :
+                                    $historicalCategory =
+                                        $this->categories->find(
+                                            $formCategoryId
+                                        );
+
+                                    $historicalCategoryName =
+                                        is_array($historicalCategory)
+                                            ? (string) ($historicalCategory['name'] ?? '')
+                                            : '';
+
+                                    if ($historicalCategoryName === '') {
+                                        $historicalCategoryName =
+                                            (string) (
+                                                $editingExpense['category']
+                                                ?? 'دسته تاریخی'
+                                            );
+                                    }
+                                    ?>
+
+                                    <option
+                                        value="<?php echo esc_attr($formCategoryId); ?>"
+                                        selected
+                                    >
+                                        <?php
+                                        echo esc_html(
+                                            $historicalCategoryName
+                                            . ' (غیرفعال)'
+                                        );
+                                        ?>
+                                    </option>
+
+                                <?php endif; ?>
 
                             </select>
 
@@ -254,6 +457,7 @@ final class ExpensesPage
                             <input
                                 type="number"
                                 name="amount"
+                                value="<?php echo esc_attr($formAmount); ?>"
                                 min="0"
                                 step="any"
                                 required
@@ -272,13 +476,7 @@ final class ExpensesPage
                             <input
                                 type="text"
                                 name="expense_date"
-                                value="<?php
-                                echo esc_attr(
-                                    JalaliDate::numeric(
-                                        $today
-                                    )
-                                );
-                                ?>"
+                                value="<?php echo esc_attr($formExpenseDate); ?>"
                                 required
                                 autocomplete="off"
                                 data-jdp
@@ -296,7 +494,7 @@ final class ExpensesPage
                                 name="note"
                                 rows="3"
                                 placeholder="اختیاری"
-                            ></textarea>
+                            ><?php echo esc_textarea($formNote); ?></textarea>
 
                         </div>
 
@@ -304,8 +502,27 @@ final class ExpensesPage
                             type="submit"
                             class="button button-primary button-large"
                         >
-                            ثبت و اعمال در سود خالص
+                            <?php
+                            echo is_array($editingExpense)
+                                ? 'ذخیره تغییرات هزینه'
+                                : 'ثبت و اعمال در سود خالص';
+                            ?>
                         </button>
+
+                        <?php if (is_array($editingExpense)) : ?>
+                            <a
+                                class="button button-large"
+                                href="<?php
+                                echo esc_url(
+                                    admin_url(
+                                        'admin.php?page=hashieban-expenses'
+                                    )
+                                );
+                                ?>"
+                            >
+                                انصراف
+                            </a>
+                        <?php endif; ?>
 
                     </form>
 
@@ -471,6 +688,23 @@ final class ExpensesPage
 
                                             <td>
                                                 <?php
+                                                $editUrl =
+                                                    add_query_arg(
+                                                        array(
+                                                            'page' =>
+                                                                'hashieban-expenses',
+
+                                                            'edit_expense' =>
+                                                                (int) $expense['id'],
+                                                        ),
+                                                        admin_url(
+                                                            'admin.php'
+                                                        )
+                                                    );
+
+                                                $editUrl .=
+                                                    '#hashieban-expense-form';
+
                                                 $deleteUrl =
                                                     wp_nonce_url(
                                                         add_query_arg(
@@ -493,6 +727,14 @@ final class ExpensesPage
                                                             ]
                                                     );
                                                 ?>
+
+                                                <a
+                                                    href="<?php echo esc_url($editUrl); ?>"
+                                                    class="button button-small"
+                                                    style="margin-left:6px;"
+                                                >
+                                                    ویرایش
+                                                </a>
 
                                                 <a
                                                     href="<?php echo esc_url($deleteUrl); ?>"
@@ -689,6 +931,179 @@ final class ExpensesPage
 			wp_safe_redirect(
 				admin_url(
 					'admin.php?page=hashieban-expenses&hb_saved=1'
+				)
+			);
+
+			exit;
+		}
+
+
+		public function handleUpdate(): void
+		{
+			if (
+				! current_user_can(
+					'manage_woocommerce'
+				)
+			) {
+				wp_die('Access denied.');
+			}
+
+			$expenseId =
+				isset($_POST['expense_id'])
+					? absint($_POST['expense_id'])
+					: 0;
+
+			if ($expenseId < 1) {
+				$this->redirectError();
+			}
+
+			check_admin_referer(
+				'hashieban_update_expense_' . $expenseId,
+				'hashieban_expense_nonce'
+			);
+
+			$existing =
+				$this->repository->find(
+					$expenseId
+				);
+
+			if (! is_array($existing)) {
+				$this->redirectError();
+			}
+
+			$title = sanitize_text_field(
+				wp_unslash(
+					$_POST['title']
+					?? ''
+				)
+			);
+
+			$categoryId = sanitize_key(
+				wp_unslash(
+					$_POST['category_id']
+					?? ''
+				)
+			);
+
+			$category =
+				$this->categories
+					 ->find($categoryId);
+
+			$existingCategoryId =
+				(string) (
+					$existing['category_id']
+					?? ''
+				);
+
+			/*
+			 * یک هزینه تاریخی می‌تواند به دسته‌ای غیرفعال متصل باشد.
+			 * در زمان ویرایش، همان دسته تاریخی را معتبر نگه می‌داریم؛
+			 * اما انتخاب یک دسته غیرفعال دیگر مجاز نیست.
+			 */
+			if (
+				! $category
+				|| (
+					empty($category['active'])
+					&& $categoryId !== $existingCategoryId
+				)
+			) {
+				$categoryId =
+					$this->categories
+						 ->fallbackId();
+
+				$category =
+					$this->categories
+						 ->find($categoryId);
+			}
+
+			$rawAmount =
+				sanitize_text_field(
+					wp_unslash(
+						$_POST['amount']
+						?? ''
+					)
+				);
+
+			$dateInput =
+				sanitize_text_field(
+					wp_unslash(
+						$_POST['expense_date']
+						?? ''
+					)
+				);
+
+			$note =
+				sanitize_textarea_field(
+					wp_unslash(
+						$_POST['note']
+						?? ''
+					)
+				);
+
+			$expenseDate =
+				JalaliDate::parseInputToGregorianYmd(
+					$dateInput
+				);
+
+			if (
+				$title === ''
+				|| $rawAmount === ''
+				|| $expenseDate === null
+			) {
+				$this->redirectError();
+			}
+
+			$currency =
+				Currency::storeCode();
+
+			$precision =
+				Currency::precision();
+
+			$storeAmount =
+				Currency::displayInputToStoreDecimal(
+					$rawAmount,
+					$currency,
+					$precision
+				);
+
+			if ($storeAmount === '') {
+				$this->redirectError();
+			}
+
+			$money =
+				$this->moneyFactory
+					 ->fromWooCommerceAmount(
+						 $storeAmount,
+						 $currency,
+						 $precision
+					 );
+
+			if (
+				$money->isZero()
+				|| $money->isNegative()
+			) {
+				$this->redirectError();
+			}
+
+			$this->repository->update(
+				$expenseId,
+				$title,
+				$categoryId,
+				(string) (
+					$category['name']
+					?? (
+						$existing['category']
+						?? 'سایر'
+					)
+				),
+				$money,
+				$expenseDate,
+				$note
+			);
+
+			wp_safe_redirect(
+				admin_url(
+					'admin.php?page=hashieban-expenses&hb_updated=1'
 				)
 			);
 

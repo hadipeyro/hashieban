@@ -55,11 +55,6 @@ final class OrderProfitCenterService
             $precision
         );
 
-        $globalOrderCost = $this->globalCosts->total(
-            $currency,
-            $precision
-        );
-
         $statuses = array('processing', 'completed', 'refunded');
 
         if (
@@ -104,9 +99,14 @@ final class OrderProfitCenterService
 
                 try {
                     $financial = $this->orderAdapter->fromOrder($order);
+                    $orderGlobalCost = $this->globalCosts->totalForOrder(
+                        $order,
+                        $currency,
+                        $precision
+                    );
                     $profitResult = $this->profitEngine->calculateOrder(
                         $financial,
-                        $globalOrderCost
+                        $orderGlobalCost
                     );
                 } catch (Throwable $exception) {
                     continue;
@@ -210,7 +210,8 @@ final class OrderProfitCenterService
 
         $currency = $order->get_currency();
         $precision = wc_get_price_decimals();
-        $globalOrderCost = $this->globalCosts->total(
+        $globalOrderCost = $this->globalCosts->totalForOrder(
+            $order,
             $currency,
             $precision
         );

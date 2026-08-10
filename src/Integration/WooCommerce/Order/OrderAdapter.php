@@ -5,7 +5,9 @@ declare(strict_types=1);
 namespace Hashieban\Integration\WooCommerce\Order;
 
 use Hashieban\Domain\Money\Money;
+use DateTimeImmutable;
 use Hashieban\Integration\WooCommerce\Refund\RefundEngine;
+use Hashieban\Integration\WooCommerce\Snapshot\ProfitSnapshotRepository;
 use RuntimeException;
 use WC_Order;
 use WC_Order_Item_Product;
@@ -15,15 +17,18 @@ final class OrderAdapter
     private MoneyFactory $moneyFactory;
     private DirectCostRepository $directCostRepository;
     private RefundEngine $refundEngine;
+    private ProfitSnapshotRepository $snapshots;
 
     public function __construct(
         MoneyFactory $moneyFactory,
         DirectCostRepository $directCostRepository,
-        RefundEngine $refundEngine
+        RefundEngine $refundEngine,
+        ProfitSnapshotRepository $snapshots
     ) {
         $this->moneyFactory = $moneyFactory;
         $this->directCostRepository = $directCostRepository;
         $this->refundEngine = $refundEngine;
+        $this->snapshots = $snapshots;
     }
 
     public function fromOrderId(
@@ -39,6 +44,22 @@ final class OrderAdapter
     }
 
     public function fromOrder(
+        WC_Order $order
+    ): OrderFinancialData {
+        $snapshot = $this->snapshots->current($order);
+
+        if ($snapshot !== null) {
+            $financial = $this->financialFromSnapshot($snapshot);
+
+            if ($financial !== null) {
+                return $financial;
+            }
+        }
+
+        return $this->fromOrderLive($order);
+    }
+
+    public function fromOrderLive(
         WC_Order $order
     ): OrderFinancialData {
         $currency = $order->get_currency();
@@ -275,4 +296,200 @@ final class OrderAdapter
 
         return array($total, $missingData);
     }
+
+    private function financialFromSnapshot(
+        array $snapshot
+    ): ?OrderFinancialData {
+        $data = isset($snapshot['financial'])
+            && is_array($snapshot['financial'])
+        ? $snapshot['financial']
+            : null;
+
+        if ($data === null) {
+            return null;
+        }
+
+        $currency = strtoupper(
+            trim(
+                (string) (
+                    $data['currency']
+                    ?? ''
+                )
+            )
+        );
+
+        $precision = (int) (
+            $data['precision']
+            ?? -1
+        );
+
+        if (
+            $currency === ''
+            || $precision < 0
+            || $precision > 6
+        ) {
+            return null;
+        }
+
+        $money = static function (
+            array $source,
+            string $key
+        ) use (
+            $currency,
+            $precision
+        ): Money {
+            return new Money(
+                (int) (
+                    $source[$key]
+                    ?? 0
+                ),
+                $currency,
+                $precision
+            );
+        };
+
+        return new OrderFinancialData(
+            (int) (
+                $data['order_id']
+                ?? 0
+            ),
+            (string) (
+                $data['order_number']
+                ?? ''
+            ),
+            (string) (
+                $data['status']
+                ?? ''
+            ),
+            $currency,
+            $money(
+                $data,
+                'product_revenue_minor'
+            ),
+            $money(
+                $data,
+                'shipping_revenue_minor'
+            ),
+            $money(
+                $data,
+                'fee_revenue_minor'
+            ),
+            $money(
+                $data,
+                'fee_discounts_minor'
+            ),
+            $money(
+                $data,
+                'refund_amount_minor'
+            ),
+            $money(
+                $data,
+                'refunded_tax_minor'
+            ),
+            $money(
+                $data,
+                'tax_charged_minor'
+            ),
+            $money(
+                $data,
+                'order_total_minor'
+            ),
+            $money(
+                $data,
+                'cogs_minor'
+            ),
+            $money(
+                $data,
+                'original_cogs_minor'
+            ),
+            $money(
+                $data,
+                'recovered_cogs_minor'
+            ),
+            $money(
+                $data,
+                'refunded_cogs_minor'
+            ),
+            $money(
+                $data,
+                'unrecovered_refunded_cogs_minor'
+            ),
+            $money(
+                $data,
+                'unallocated_refund_minor'
+            ),
+            $money(
+                $data,
+                'direct_costs_minor'
+            ),
+            (int) (
+                $data['refund_count']
+                ?? 0
+            ),
+            (int) (
+                $data['refunded_quantity']
+                ?? 0
+            ),
+            (int) (
+                $data['restocked_quantity']
+                ?? 0
+            ),
+            $this->restoreSnapshotValue(
+                isset($data['refund_events'])
+                && is_array($data['refund_events'])
+            ? $data['refund_events']
+                : array()
+            ),
+            isset($data['refund_items'])
+            && is_array($data['refund_items'])
+            ? $data['refund_items']
+                : array(),
+            isset($data['refund_warnings'])
+            && is_array($data['refund_warnings'])
+            ? $data['refund_warnings']
+                : array(),
+            isset($data['missing_data'])
+            && is_array($data['missing_data'])
+            ? $data['missing_data']
+                : array()
+        );
+    }
+
+    private function restoreSnapshotValue(
+        $value
+    ) {
+        if (
+            is_array($value)
+            && count($value) === 1
+            && isset(
+                $value['__hashieban_datetime']
+            )
+        ) {
+            try {
+                return new DateTimeImmutable(
+                    (string) $value[
+                        '__hashieban_datetime'
+                    ]
+                );
+            } catch (\Throwable $exception) {
+                return null;
+            }
+        }
+
+        if (! is_array($value)) {
+            return $value;
+        }
+
+        $restored = array();
+
+        foreach ($value as $key => $item) {
+            $restored[$key] =
+                $this->restoreSnapshotValue(
+                    $item
+                );
+        }
+
+        return $restored;
+    }
+
 }

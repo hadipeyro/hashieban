@@ -145,11 +145,19 @@ final class AnalyticsService
                     $this->orderAdapter
                          ->fromOrder($order);
 
+                $orderGlobalCost =
+                    $this->globalCosts
+                         ->totalForOrder(
+                             $order,
+                             $currency,
+                             $precision
+                         );
+
                 $profitResult =
                     $this->profitEngine
                          ->calculateOrder(
                              $financial,
-                             $globalCostPerOrder
+                             $orderGlobalCost
                          );
 
                 $breakdown =

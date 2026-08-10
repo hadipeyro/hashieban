@@ -42,8 +42,6 @@ final class GeoIntelligenceService
     ): array {
         $currency = get_woocommerce_currency();
         $precision = wc_get_price_decimals();
-        $globalCostPerOrder = $this->globalCosts->total($currency, $precision);
-
         $provinces = array();
         $cities = array();
         $allCustomers = array();
@@ -110,9 +108,14 @@ final class GeoIntelligenceService
 
                 try {
                     $financial = $this->orderAdapter->fromOrder($order);
+                    $orderGlobalCost = $this->globalCosts->totalForOrder(
+                        $order,
+                        $currency,
+                        $precision
+                    );
                     $profitResult = $this->profitEngine->calculateOrder(
                         $financial,
-                        $globalCostPerOrder
+                        $orderGlobalCost
                     );
                 } catch (Throwable $exception) {
                     $calculationErrors++;

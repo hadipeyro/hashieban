@@ -32,6 +32,11 @@ final class BulkToolsPage
             'admin_post_hashieban_geo_backfill',
             array($this, 'backfillGeo')
         );
+
+        add_action(
+            'admin_post_hashieban_profit_snapshot_backfill',
+            array($this, 'backfillProfitSnapshots')
+        );
     }
 
     public function render(): void
@@ -42,6 +47,7 @@ final class BulkToolsPage
 
         $importResult = $this->pullResult('cogs_import');
         $geoResult = $this->pullResult('geo_backfill');
+        $snapshotResult = $this->pullResult('profit_snapshot_backfill');
         $currency = get_woocommerce_currency();
         $storeUnit = Currency::storeLabel($currency);
         ?>
@@ -68,6 +74,7 @@ final class BulkToolsPage
 
             <?php $this->renderImportResult($importResult); ?>
             <?php $this->renderGeoResult($geoResult); ?>
+            <?php $this->renderSnapshotResult($snapshotResult); ?>
 
             <section class="hb-bulk-tools-grid">
                 <article class="hb-bulk-tools-card hb-bulk-tools-card--accent">
@@ -125,6 +132,35 @@ final class BulkToolsPage
 
                     <div class="hb-bulk-tools-help">
                         پردازش به‌صورت Batch صدتایی انجام می‌شود تا فروشگاه بزرگ در یک Request همه سفارش‌ها را لود نکند.
+                    </div>
+                </article>
+
+                <article class="hb-bulk-tools-card hb-bulk-tools-card--accent">
+                    <div class="hb-bulk-tools-card__icon">PRO</div>
+                    <h2>قفل کردن سود تاریخی سفارش‌ها</h2>
+                    <p>
+                        برای سفارش‌های قدیمی یک Snapshot نسخه‌دار از درآمد، COGS، هزینه‌های همان سفارش،
+                        هزینه ثابت سفارش، Refund و سود ثبت می‌شود تا تغییر تنظیمات یا قیمت خرید آینده
+                        گزارش تاریخی را بازنویسی نکند.
+                    </p>
+
+                    <?php
+                    $snapshotNextPage = is_array($snapshotResult) && ! empty($snapshotResult['next_page'])
+                        ? (int) $snapshotResult['next_page']
+                        : 1;
+                    ?>
+
+                    <form action="<?php echo esc_url(admin_url('admin-post.php')); ?>" method="post">
+                        <input type="hidden" name="action" value="hashieban_profit_snapshot_backfill">
+                        <input type="hidden" name="page_number" value="<?php echo esc_attr((string) $snapshotNextPage); ?>">
+                        <?php wp_nonce_field('hashieban_profit_snapshot_backfill'); ?>
+                        <button type="submit" class="button button-primary">
+                            <?php echo $snapshotNextPage > 1 ? 'ادامه ساخت Snapshotهای مالی' : 'شروع قفل کردن سود تاریخی'; ?>
+                        </button>
+                    </form>
+
+                    <div class="hb-bulk-tools-help">
+                        فقط سفارش‌های processing/completed/refunded بررسی می‌شوند. Snapshot موجود دوباره ساخته نمی‌شود و پردازش Batch صدتایی است.
                     </div>
                 </article>
             </section>
@@ -209,6 +245,31 @@ final class BulkToolsPage
 
         $result = $this->tools->backfillGeoBatch($page, 100);
         $this->storeResult('geo_backfill', $result);
+        $this->redirectToPage();
+    }
+
+    public function backfillProfitSnapshots(): void
+    {
+        if (! current_user_can('manage_woocommerce')) {
+            wp_die(esc_html('شما اجازه اجرای مهاجرت مالی را ندارید.'));
+        }
+
+        check_admin_referer('hashieban_profit_snapshot_backfill');
+
+        $page = isset($_POST['page_number'])
+            ? max(1, absint((string) $_POST['page_number']))
+            : 1;
+
+        $result = $this->tools->backfillProfitSnapshotsBatch(
+            $page,
+            100
+        );
+
+        $this->storeResult(
+            'profit_snapshot_backfill',
+            $result
+        );
+
         $this->redirectToPage();
     }
 
@@ -308,4 +369,35 @@ final class BulkToolsPage
         </section>
         <?php
     }
+
+    private function renderSnapshotResult(
+        ?array $result
+    ): void {
+        if ($result === null) {
+            return;
+        }
+
+        $nextPage =
+            isset($result['next_page'])
+            && $result['next_page'] !== null
+        ? (int) $result['next_page']
+            : null;
+        ?>
+        <section class="hb-bulk-tools-result hb-bulk-tools-result--success">
+            <h2>نتیجه Batch سود تاریخی</h2>
+            <div class="hb-bulk-tools-result__stats">
+                <span><strong><?php echo esc_html(number_format_i18n((int) ($result['processed'] ?? 0))); ?></strong> بررسی‌شده</span>
+                <span><strong><?php echo esc_html(number_format_i18n((int) ($result['created'] ?? 0))); ?></strong> Snapshot جدید</span>
+                <span><strong><?php echo esc_html(number_format_i18n((int) ($result['existing'] ?? 0))); ?></strong> از قبل قفل‌شده</span>
+                <span><strong><?php echo esc_html(number_format_i18n((int) ($result['skipped'] ?? 0))); ?></strong> ردشده</span>
+            </div>
+            <p>
+                Batch <?php echo esc_html(number_format_i18n((int) ($result['page'] ?? 1))); ?> از
+                <?php echo esc_html(number_format_i18n((int) ($result['max_pages'] ?? 1))); ?> انجام شد.
+                <?php echo $nextPage !== null ? 'برای ادامه، دوباره دکمه ادامه را بزن.' : 'Snapshot سفارش‌های قابل تحلیل کامل شد.'; ?>
+            </p>
+        </section>
+        <?php
+    }
+
 }

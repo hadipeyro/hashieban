@@ -45,6 +45,8 @@ use Hashieban\Integration\WooCommerce\Order\MoneyFactory;
 use Hashieban\Integration\WooCommerce\Order\OrderAdapter;
 use Hashieban\Integration\WooCommerce\Tools\BulkToolsService;
 use Hashieban\Integration\WooCommerce\Refund\RefundEngine;
+use Hashieban\Integration\WooCommerce\Snapshot\ProfitSnapshotRepository;
+use Hashieban\Integration\WooCommerce\Snapshot\ProfitSnapshotService;
 
 final class Plugin
 {
@@ -129,12 +131,26 @@ final class Plugin
                 $moneyFactory
             );
 
+        $profitSnapshotRepository =
+            new ProfitSnapshotRepository();
+
         $orderAdapter =
             new OrderAdapter(
                 $moneyFactory,
                 $directCostRepository,
-                $refundEngine
+                $refundEngine,
+                $profitSnapshotRepository
             );
+
+        $profitSnapshots =
+            new ProfitSnapshotService(
+                $profitSnapshotRepository,
+                $orderAdapter,
+                $globalOrderCosts,
+                $profitEngine
+            );
+
+        $profitSnapshots->register();
 
         $analytics =
             new AnalyticsService(
@@ -288,7 +304,8 @@ final class Plugin
         $bulkTools =
             new BulkToolsService(
                 $compatibility,
-                $geoAddressCapture
+                $geoAddressCapture,
+                $profitSnapshots
             );
 
         $bulkToolsPage =

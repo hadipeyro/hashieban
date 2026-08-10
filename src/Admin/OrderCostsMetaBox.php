@@ -544,6 +544,11 @@ final class OrderCostsMetaBox
 				$order,
 				$rows
 			);
+
+			do_action(
+				'hashieban_order_direct_costs_updated',
+				$order->get_id()
+			);
 		}
 
 		public function enqueueAssets(): void
