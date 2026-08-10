@@ -99,7 +99,9 @@ final class Plugin
                 $orderAdapter,
                 $storeExpenseRepository,
                 $globalOrderCosts,
-                $profitEngine
+                $profitEngine,
+                $directCostRepository,
+                $expenseCategories
             );
 
         $dashboard =

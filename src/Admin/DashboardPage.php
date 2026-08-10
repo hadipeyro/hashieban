@@ -416,6 +416,87 @@ final class DashboardPage
             );
         }
 
+        $compositionLabels = array();
+        $compositionValues = array();
+        $compositionColors = array();
+
+        $this->appendCompositionItem(
+            $compositionLabels,
+            $compositionValues,
+            $compositionColors,
+            'قیمت خرید کالاها',
+            (int) $data['cogs_minor'],
+            '#2563eb',
+            $currency,
+            $precision
+        );
+
+        $this->appendCompositionItem(
+            $compositionLabels,
+            $compositionValues,
+            $compositionColors,
+            'هزینه ثابت سفارش',
+            (int) ($data['global_order_costs_minor'] ?? 0),
+            '#7c3aed',
+            $currency,
+            $precision
+        );
+
+        $categorizedMinor = 0;
+
+        foreach (
+            ($data['expense_category_breakdown'] ?? array())
+            as $category
+        ) {
+            if (! is_array($category)) {
+                continue;
+            }
+
+            $amountMinor =
+                (int) ($category['amount_minor'] ?? 0);
+
+            if ($amountMinor <= 0) {
+                continue;
+            }
+
+            $categorizedMinor +=
+                $amountMinor;
+
+            $color = sanitize_hex_color(
+                (string) ($category['color'] ?? '')
+            );
+
+            $this->appendCompositionItem(
+                $compositionLabels,
+                $compositionValues,
+                $compositionColors,
+                (string) ($category['name'] ?? 'سایر'),
+                $amountMinor,
+                $color ?: '#64748b',
+                $currency,
+                $precision
+            );
+        }
+
+        $manualCostsMinor =
+            (int) $data['direct_costs_minor']
+            + (int) $data['store_expenses_minor'];
+
+        $uncategorizedMinor =
+            $manualCostsMinor
+            - $categorizedMinor;
+
+        $this->appendCompositionItem(
+            $compositionLabels,
+            $compositionValues,
+            $compositionColors,
+            'هزینه‌های دسته‌بندی‌نشده',
+            max(0, $uncategorizedMinor),
+            '#64748b',
+            $currency,
+            $precision
+        );
+
         return array(
             'currencyLabel' => Currency::label($currency),
             'trend' => array(
@@ -425,34 +506,9 @@ final class DashboardPage
                 'expenses' => $expenses,
             ),
             'composition' => array(
-                'labels' => array(
-                    'قیمت خرید کالاها',
-                    'هزینه سفارش‌ها',
-                    'هزینه ثابت سفارش',
-                    'هزینه‌های کلی فروشگاه',
-                ),
-                'values' => array(
-                    Currency::minorToDisplayNumber(
-                        (int) $data['cogs_minor'],
-                        $currency,
-                        $precision
-                    ),
-                    Currency::minorToDisplayNumber(
-                        (int) $data['direct_costs_minor'],
-                        $currency,
-                        $precision
-                    ),
-                    Currency::minorToDisplayNumber(
-                        (int) ($data['global_order_costs_minor'] ?? 0),
-                        $currency,
-                        $precision
-                    ),
-                    Currency::minorToDisplayNumber(
-                        (int) $data['store_expenses_minor'],
-                        $currency,
-                        $precision
-                    ),
-                ),
+                'labels' => $compositionLabels,
+                'values' => $compositionValues,
+                'colors' => $compositionColors,
             ),
             'summary' => array(
                 'labels' => array(
@@ -484,6 +540,30 @@ final class DashboardPage
                 ),
             ),
         );
+    }
+
+    private function appendCompositionItem(
+        array &$labels,
+        array &$values,
+        array &$colors,
+        string $label,
+        int $amountMinor,
+        string $color,
+        string $currency,
+        int $precision
+    ): void {
+        if ($amountMinor <= 0) {
+            return;
+        }
+
+        $labels[] = $label;
+        $values[] =
+            Currency::minorToDisplayNumber(
+                $amountMinor,
+                $currency,
+                $precision
+            );
+        $colors[] = $color;
     }
 
     private function renderRangeFilters(

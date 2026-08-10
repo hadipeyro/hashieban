@@ -8,8 +8,10 @@ use DateTimeImmutable;
 use DateTimeInterface;
 use Hashieban\Domain\Money\Money;
 use Hashieban\Domain\Profit\ProfitEngine;
+use Hashieban\Finance\ExpenseCategoryRepository;
 use Hashieban\Finance\GlobalOrderCostRepository;
 use Hashieban\Finance\StoreExpenseRepository;
+use Hashieban\Integration\WooCommerce\Order\DirectCostRepository;
 use Hashieban\Integration\WooCommerce\Order\OrderAdapter;
 use Hashieban\Support\JalaliDate;
 use WC_Order;
@@ -20,12 +22,16 @@ final class AnalyticsService
     private StoreExpenseRepository $expenseRepository;
     private GlobalOrderCostRepository $globalCosts;
     private ProfitEngine $profitEngine;
+    private DirectCostRepository $directCosts;
+    private ExpenseCategoryRepository $categories;
 
     public function __construct(
         OrderAdapter $orderAdapter,
         StoreExpenseRepository $expenseRepository,
         GlobalOrderCostRepository $globalCosts,
-        ProfitEngine $profitEngine
+        ProfitEngine $profitEngine,
+        DirectCostRepository $directCosts,
+        ExpenseCategoryRepository $categories
     ) {
         $this->orderAdapter =
             $orderAdapter;
@@ -38,6 +44,12 @@ final class AnalyticsService
 
         $this->profitEngine =
             $profitEngine;
+
+        $this->directCosts =
+            $directCosts;
+
+        $this->categories =
+            $categories;
     }
 
     public function getDashboardData(
@@ -66,6 +78,7 @@ final class AnalyticsService
 
         $recentOrders = array();
         $buckets = array();
+        $categoryTotals = array();
 
         $bucketMode =
             $this->resolveBucketMode(
@@ -175,6 +188,18 @@ final class AnalyticsService
 
                 $directCostsMinor +=
                     $directCosts;
+
+                foreach (
+                    $this->directCosts
+                         ->totalsByCategory($order)
+                    as $categoryId => $amountMinor
+                ) {
+                    $this->addCategoryAmount(
+                        $categoryTotals,
+                        (string) $categoryId,
+                        (int) $amountMinor
+                    );
+                }
 
                 $globalCostsMinor +=
                     $globalOrderCosts;
@@ -326,6 +351,41 @@ final class AnalyticsService
                      $currency
                  );
 
+        $expenseCategoryRows =
+            $this->expenseRepository
+                 ->totalsByCategoryBetween(
+                     $start,
+                     $end,
+                     $currency
+                 );
+
+        foreach (
+            $expenseCategoryRows
+            as $expenseCategory
+        ) {
+            $categoryId = sanitize_key(
+                (string) (
+                    $expenseCategory['category_id']
+                    ?? ''
+                )
+            );
+
+            if ($categoryId === '') {
+                $categoryId =
+                    $this->categories
+                         ->fallbackId();
+            }
+
+            $this->addCategoryAmount(
+                $categoryTotals,
+                $categoryId,
+                (int) (
+                    $expenseCategory['amount_minor']
+                    ?? 0
+                )
+            );
+        }
+
         foreach ($expenseRows as $expense) {
             if (
                 empty(
@@ -422,6 +482,44 @@ final class AnalyticsService
             $storeProfit
                 ->breakdown();
 
+        $categoryBreakdown = array();
+
+        foreach (
+            $categoryTotals
+            as $categoryId => $amountMinor
+        ) {
+            if ((int) $amountMinor <= 0) {
+                continue;
+            }
+
+            $category =
+                $this->categories
+                     ->find((string) $categoryId);
+
+            $categoryBreakdown[] = array(
+                'id' => (string) $categoryId,
+                'name' => $category
+                ? (string) ($category['name'] ?? 'سایر')
+                      : 'سایر',
+                'color' => $category
+                ? (string) ($category['color'] ?? '#64748b')
+                       : '#64748b',
+                'amount_minor' =>
+                    (int) $amountMinor,
+            );
+        }
+
+        usort(
+            $categoryBreakdown,
+            static function (
+                array $left,
+                array $right
+            ): int {
+                return $right['amount_minor']
+                <=> $left['amount_minor'];
+            }
+        );
+
         return array(
             'currency' =>
                 $currency,
@@ -495,6 +593,9 @@ final class AnalyticsService
 
             'bucket_mode' =>
                 $bucketMode,
+
+            'expense_category_breakdown' =>
+                $categoryBreakdown,
         );
     }
 
@@ -506,6 +607,33 @@ final class AnalyticsService
             $start,
             $end
         );
+    }
+
+    private function addCategoryAmount(
+        array &$totals,
+        string $categoryId,
+        int $amountMinor
+    ): void {
+        if ($amountMinor <= 0) {
+            return;
+        }
+
+        $categoryId = sanitize_key(
+            $categoryId
+        );
+
+        if ($categoryId === '') {
+            $categoryId =
+                $this->categories
+                     ->fallbackId();
+        }
+
+        if (! isset($totals[$categoryId])) {
+            $totals[$categoryId] = 0;
+        }
+
+        $totals[$categoryId] +=
+            $amountMinor;
     }
 
     private function resolveBucketMode(

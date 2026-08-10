@@ -102,6 +102,11 @@ document.addEventListener('DOMContentLoaded', function () {
             ? composition.values
             : [];
 
+    const compositionColors =
+        Array.isArray(composition.colors)
+            ? composition.colors
+            : [];
+
     const summaryLabels =
         Array.isArray(summary.labels)
             ? summary.labels
@@ -353,12 +358,26 @@ document.addEventListener('DOMContentLoaded', function () {
                             data:
                                 compositionValues,
 
-                            backgroundColor: [
-                                palette.revenue,
-                                palette.amber,
-                                palette.purple,
-                                palette.pink
-                            ],
+                            backgroundColor:
+                                compositionColors.length
+                                === compositionValues.length
+                                    ? compositionColors
+                                    : compositionValues.map(
+                                        function (value, index) {
+                                            const fallback = [
+                                                palette.revenue,
+                                                palette.amber,
+                                                palette.purple,
+                                                palette.pink,
+                                                palette.cyan,
+                                                palette.expenses
+                                            ];
+
+                                            return fallback[
+                                                index % fallback.length
+                                            ];
+                                        }
+                                    ),
 
                             borderColor:
                                 '#ffffff',
@@ -401,12 +420,38 @@ document.addEventListener('DOMContentLoaded', function () {
                             callbacks: {
                                 label:
                                     function (context) {
+                                        const values =
+                                            context.dataset.data || [];
+
+                                        const total = values.reduce(
+                                            function (sum, value) {
+                                                const numeric =
+                                                    Number(value);
+
+                                                return sum
+                                                    + (Number.isFinite(numeric)
+                                                        ? numeric
+                                                        : 0);
+                                            },
+                                            0
+                                        );
+
+                                        const current =
+                                            Number(context.raw);
+
+                                        const percent =
+                                            total > 0
+                                            && Number.isFinite(current)
+                                                ? (current / total) * 100
+                                                : 0;
+
                                         return (
                                             context.label
                                             + ': '
-                                            + formatMoney(
-                                                context.raw
-                                            )
+                                            + formatMoney(context.raw)
+                                            + ' ('
+                                            + formatter.format(percent)
+                                            + '٪)'
                                         );
                                     }
                             }
