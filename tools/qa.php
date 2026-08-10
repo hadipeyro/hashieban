@@ -125,6 +125,9 @@ $requiredRuntimeFiles = array(
     '/assets/admin/css/hashieban-dashboard.css',
     '/src/Licensing/LicenseManager.php',
     '/src/Licensing/ZhaketLicenseClient.php',
+    '/CHANGELOG.md',
+    '/readme.txt',
+    '/docs/QA-CHECKLIST-FA.md',
 );
 
 foreach ($requiredRuntimeFiles as $relative) {
@@ -142,6 +145,60 @@ if (
     && preg_match('/http:\/\/guard\.zhaket\./i', $licensingSource) === 1
 ) {
     $failures[] = 'Licensing transport must not use insecure HTTP endpoints.';
+}
+
+
+$pluginMain = file_get_contents($root . '/hashieban.php');
+
+if (is_string($pluginMain)) {
+    preg_match('/^ \* Version:\s+([^\r\n]+)/m', $pluginMain, $headerVersion);
+    preg_match("/define\('HASHIEBAN_VERSION',\s*'([^']+)'\);/", $pluginMain, $constantVersion);
+
+    if (
+        ! isset($headerVersion[1], $constantVersion[1])
+        || trim((string) $headerVersion[1]) !== trim((string) $constantVersion[1])
+    ) {
+        $failures[] = 'Plugin header version and HASHIEBAN_VERSION do not match.';
+    }
+}
+
+$runtimePhp = array_merge(
+    qaFiles($root . '/src', 'php'),
+    array($root . '/hashieban.php')
+);
+
+$forbiddenPhp74Patterns = array(
+    '/\?->/' => 'PHP 8 nullsafe operator',
+    '/\bmatch\s*\(/' => 'PHP 8 match expression',
+    '/\#\[/' => 'PHP 8 attributes',
+    '/\breadonly\s+/' => 'PHP 8 readonly keyword',
+    '/\benum\s+[A-Za-z_]/' => 'PHP 8 enum keyword',
+);
+
+$debugPatterns = array(
+    '/\bvar_dump\s*\(/' => 'var_dump',
+    '/\bprint_r\s*\(/' => 'print_r',
+    '/\berror_log\s*\(/' => 'error_log',
+);
+
+foreach ($runtimePhp as $file) {
+    $source = file_get_contents($file);
+
+    if (! is_string($source)) {
+        continue;
+    }
+
+    foreach ($forbiddenPhp74Patterns as $pattern => $label) {
+        if (preg_match($pattern, $source) === 1) {
+            $failures[] = $label . ' detected in runtime source: ' . $file;
+        }
+    }
+
+    foreach ($debugPatterns as $pattern => $label) {
+        if (preg_match($pattern, $source) === 1) {
+            $failures[] = 'Debug call ' . $label . ' detected in runtime source: ' . $file;
+        }
+    }
 }
 
 $output = array();

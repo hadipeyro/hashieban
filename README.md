@@ -1,61 +1,48 @@
-# Hashieban
+# Hashieban / حاشیه‌بان
 
-Hashieban is a WooCommerce profit and margin management plugin designed for Iranian online stores.
+حاشیه‌بان یک افزونه هوش مالی و تحلیل مدیریتی برای فروشگاه‌های ووکامرس است که به فروشنده کمک می‌کند فروش، هزینه، سود، محصولات، مشتریان، سفارش‌ها، موجودی و پراکندگی جغرافیایی فروش را ساده‌تر تحلیل کند.
 
 ## Project status
 
-**Pre-alpha**
+**Release Candidate — 0.99.0**
 
-The plugin is currently under active development and is not ready for production use.
+این نسخه هنوز انتشار عمومی نهایی نیست. هدف آن تست گسترده روی سناریوهای واقعی، یافتن باگ‌ها، ساده‌سازی رابط فارسی و بررسی آخرین پیشنهادهای توسعه قبل از نسخه 1.0.0 است.
 
-## Main goal
+## قابلیت‌های اصلی فعلی
 
-Hashieban helps WooCommerce store owners understand the actual profitability of their sales.
+- محاسبه فروش، هزینه خرید کالا و سود
+- هزینه‌های مستقیم سفارش و هزینه‌های عمومی فروشگاه
+- تحلیل محصول، مشتری، سفارش و زمان
+- مرجوعی و بازگشت وجه
+- هشدارهای مدیریتی و سلامت داده
+- نقشه فروش ایران و تحلیل استان/شهر
+- شاخص‌های مدیریتی کسب‌وکار
+- تحلیل موجودی و پیشنهاد خرید مجدد
+- قفل سود تاریخی سفارش‌ها
+- شاخص سریع گزارش‌ها برای فروشگاه‌های بزرگ
+- ابزارهای گروهی، خروجی CSV و ورود هزینه خرید
+- تجربه کاربری فارسی، دسترسی‌های تفکیک‌شده و لایسنس مارکت‌پلیس
 
-The plugin is designed to help store managers:
+## اصول توسعه
 
-- Calculate real order profit
-- Understand product and order margins
-- Track direct order costs
-- Detect low-margin sales
-- Identify loss-making orders
-- Detect incomplete financial data
-- Make better pricing and sales decisions
+- صحت مالی قبل از ظاهر
+- حفظ تاریخچه مالی سفارش‌های قدیمی
+- سازگاری با HPOS و APIهای رسمی WooCommerce
+- رابط فارسی و قابل‌فهم برای کاربر غیرمتخصص
+- وابستگی حداقلی و Assetهای محلی
+- تست خودکار + تست دستی سناریوهای واقعی قبل از انتشار
 
-## Development principles
+## QA
 
-- Incremental and testable development
-- Clear separation between business logic and WordPress integration
-- Compatibility with modern WooCommerce order storage
-- Use of official WordPress and WooCommerce APIs
-- Secure handling of administrative actions and financial data
-- Localization-ready implementation
-- Minimal external dependencies
-- No unnecessary external services
-- No Docker dependency
-- Financial correctness before visual complexity
+```bash
+composer qa
+composer release:check
+```
 
-## Architecture direction
+برای ساخت بسته تمیز انتشار بعد از تأیید تست‌ها:
 
-Hashieban will keep financial and profit calculation logic separated from WordPress and WooCommerce integration as much as possible.
+```bash
+composer release:build
+```
 
-The project will gradually be divided into areas such as:
-
-- Domain logic
-- WooCommerce integration
-- Persistence
-- Administration
-- Reporting
-- Tests
-
-The goal is to keep the core profit-calculation logic independently testable and maintainable.
-
-## Current phase
-
-Repository initialization and product specification.
-
-## Development status
-
-The project is currently being developed incrementally.
-
-Each development task should result in a small, meaningful Git commit.
+نسخه 1.0.0 فقط بعد از عبور از QA نهایی و تأیید تست‌های دستی منتشر می‌شود.

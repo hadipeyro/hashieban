@@ -17,6 +17,8 @@
     },
     "scripts": {
         "test": "@php tests/run.php",
-        "qa": "@php tools/qa.php"
+        "qa": "@php tools/qa.php",
+        "release:check": "@php tools/release-audit.php",
+        "release:build": "@php tools/build-release.php"
     }
 }
