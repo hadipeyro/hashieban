@@ -19,6 +19,8 @@ final class AdminMenu
 
     private ProductProfitabilityPage $productProfitabilityPage;
 
+    private InventoryPurchaseInsightPage $inventoryPurchaseInsightPage;
+
     private CustomerProfitabilityPage $customerProfitabilityPage;
 
     private TimeIntelligencePage $timeIntelligencePage;
@@ -49,6 +51,7 @@ final class AdminMenu
         AnalyticsHubPage $analyticsHubPage,
         BusinessKpisPage $businessKpisPage,
         ProductProfitabilityPage $productProfitabilityPage,
+        InventoryPurchaseInsightPage $inventoryPurchaseInsightPage,
         CustomerProfitabilityPage $customerProfitabilityPage,
         TimeIntelligencePage $timeIntelligencePage,
         OrderProfitCenterPage $orderProfitCenterPage,
@@ -76,6 +79,9 @@ final class AdminMenu
 
         $this->productProfitabilityPage =
             $productProfitabilityPage;
+
+        $this->inventoryPurchaseInsightPage =
+            $inventoryPurchaseInsightPage;
 
         $this->customerProfitabilityPage =
             $customerProfitabilityPage;
@@ -192,6 +198,18 @@ final class AdminMenu
             'hashieban-products',
             array(
                 $this->productProfitabilityPage,
+                'render'
+            )
+        );
+
+        add_submenu_page(
+            'hashieban',
+            'هوش موجودی و تصمیم خرید',
+            'هوش موجودی',
+            'manage_woocommerce',
+            'hashieban-inventory',
+            array(
+                $this->inventoryPurchaseInsightPage,
                 'render'
             )
         );
@@ -368,6 +386,7 @@ final class AdminMenu
         <style id="hashieban-admin-navigation-css">
             #toplevel_page_hashieban .wp-submenu li:has(a[href*="page=hashieban-kpis"]),
             #toplevel_page_hashieban .wp-submenu li:has(a[href*="page=hashieban-products"]),
+            #toplevel_page_hashieban .wp-submenu li:has(a[href*="page=hashieban-inventory"]),
             #toplevel_page_hashieban .wp-submenu li:has(a[href*="page=hashieban-customers"]),
             #toplevel_page_hashieban .wp-submenu li:has(a[href*="page=hashieban-time"]),
             #toplevel_page_hashieban .wp-submenu li:has(a[href*="page=hashieban-reports"]),
@@ -544,6 +563,38 @@ final class AdminMenu
                 'hashieban-product-profitability',
                 plugins_url(
                     'assets/admin/js/hashieban-product-profitability.js',
+                    HASHIEBAN_FILE
+                ),
+                array(
+                    'hashieban-chartjs'
+                ),
+                HASHIEBAN_VERSION,
+                true
+            );
+        }
+
+        if (
+            strpos(
+                $hook,
+                'hashieban-inventory'
+            ) !== false
+        ) {
+            wp_enqueue_style(
+                'hashieban-inventory-intelligence',
+                plugins_url(
+                    'assets/admin/css/hashieban-inventory-intelligence.css',
+                    HASHIEBAN_FILE
+                ),
+                array(
+                    'hashieban-admin'
+                ),
+                HASHIEBAN_VERSION
+            );
+
+            wp_enqueue_script(
+                'hashieban-inventory-intelligence',
+                plugins_url(
+                    'assets/admin/js/hashieban-inventory-intelligence.js',
                     HASHIEBAN_FILE
                 ),
                 array(

@@ -32,6 +32,12 @@ final class AnalyticsHubPage
                         'url' => admin_url('admin.php?page=hashieban-products'),
                     ),
                     array(
+                        'title' => 'هوش موجودی و تصمیم خرید',
+                        'description' => 'موجودی، سرعت فروش، نقطه سفارش و پیشنهاد تقریبی خرید مجدد.',
+                        'icon' => 'dashicons-archive',
+                        'url' => admin_url('admin.php?page=hashieban-inventory'),
+                    ),
+                    array(
                         'title' => 'سودآوری مشتریان',
                         'description' => 'مشتریان ارزشمند، تکرار خرید و سهم از سود.',
                         'icon' => 'dashicons-groups',

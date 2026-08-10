@@ -3,6 +3,7 @@
 
     var hiddenPages = [
         'hashieban-products',
+        'hashieban-inventory',
         'hashieban-customers',
         'hashieban-time',
         'hashieban-reports',

@@ -15,6 +15,7 @@ use Hashieban\Admin\DataHealthPage;
 use Hashieban\Admin\ExpenseCategoriesPage;
 use Hashieban\Admin\ExpenseIntelligencePage;
 use Hashieban\Admin\GeoIntelligencePage;
+use Hashieban\Admin\InventoryPurchaseInsightPage;
 use Hashieban\Admin\ExpensesPage;
 use Hashieban\Admin\OrderCostsMetaBox;
 use Hashieban\Admin\OrderProfitCenterPage;
@@ -34,6 +35,7 @@ use Hashieban\Integration\WooCommerce\Analytics\CustomerProfitabilityService;
 use Hashieban\Integration\WooCommerce\Analytics\DataHealthService;
 use Hashieban\Integration\WooCommerce\Analytics\ExpenseIntelligenceService;
 use Hashieban\Integration\WooCommerce\Analytics\GeoIntelligenceService;
+use Hashieban\Integration\WooCommerce\Analytics\InventoryPurchaseInsightService;
 use Hashieban\Integration\WooCommerce\Analytics\MarginGuardService;
 use Hashieban\Integration\WooCommerce\Analytics\ProductProfitabilityService;
 use Hashieban\Integration\WooCommerce\Analytics\OrderProfitCenterService;
@@ -229,6 +231,17 @@ final class Plugin
                 $productProfitability
             );
 
+        $inventoryPurchaseInsight =
+            new InventoryPurchaseInsightService(
+                $productProfitability,
+                $moneyFactory
+            );
+
+        $inventoryPurchaseInsightPage =
+            new InventoryPurchaseInsightPage(
+                $inventoryPurchaseInsight
+            );
+
         $customerProfitability =
             new CustomerProfitabilityService(
                 $orderAdapter,
@@ -363,6 +376,7 @@ final class Plugin
                 $analyticsHubPage,
                 $businessKpisPage,
                 $productProfitabilityPage,
+                $inventoryPurchaseInsightPage,
                 $customerProfitabilityPage,
                 $timeIntelligencePage,
                 $orderProfitCenterPage,
