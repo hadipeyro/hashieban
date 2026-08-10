@@ -21,6 +21,10 @@ final class AdminMenu
 
     private OrderProfitCenterPage $orderProfitCenterPage;
 
+    private MarginGuardPage $marginGuardPage;
+
+    private ReportsHubPage $reportsHubPage;
+
     private ExpensesPage $expensesPage;
 
     private ExpenseCategoriesPage $categoriesPage;
@@ -34,6 +38,8 @@ final class AdminMenu
         CustomerProfitabilityPage $customerProfitabilityPage,
         TimeIntelligencePage $timeIntelligencePage,
         OrderProfitCenterPage $orderProfitCenterPage,
+        MarginGuardPage $marginGuardPage,
+        ReportsHubPage $reportsHubPage,
         ExpensesPage $expensesPage,
         ExpenseCategoriesPage $categoriesPage,
         SettingsPage $settingsPage
@@ -55,6 +61,12 @@ final class AdminMenu
 
         $this->orderProfitCenterPage =
             $orderProfitCenterPage;
+
+        $this->marginGuardPage =
+            $marginGuardPage;
+
+        $this->reportsHubPage =
+            $reportsHubPage;
 
         $this->expensesPage =
             $expensesPage;
@@ -150,6 +162,30 @@ final class AdminMenu
             'hashieban-orders',
             array(
                 $this->orderProfitCenterPage,
+                'render'
+            )
+        );
+
+        add_submenu_page(
+            'hashieban',
+            'نگهبان سود و هشدارهای مدیریتی',
+            'هشدارهای مدیریتی',
+            'manage_woocommerce',
+            'hashieban-alerts',
+            array(
+                $this->marginGuardPage,
+                'render'
+            )
+        );
+
+        add_submenu_page(
+            'hashieban',
+            'مرکز گزارش‌های مدیریتی',
+            'گزارش‌ها',
+            'manage_woocommerce',
+            'hashieban-reports',
+            array(
+                $this->reportsHubPage,
                 'render'
             )
         );
@@ -400,6 +436,70 @@ final class AdminMenu
                 'hashieban-orders',
                 plugins_url(
                     'assets/admin/js/hashieban-orders.js',
+                    HASHIEBAN_FILE
+                ),
+                array(
+                    'hashieban-chartjs'
+                ),
+                HASHIEBAN_VERSION,
+                true
+            );
+        }
+
+        if (
+            strpos(
+                $hook,
+                'hashieban-alerts'
+            ) !== false
+        ) {
+            wp_enqueue_style(
+                'hashieban-margin-guard',
+                plugins_url(
+                    'assets/admin/css/hashieban-margin-guard.css',
+                    HASHIEBAN_FILE
+                ),
+                array(
+                    'hashieban-admin'
+                ),
+                HASHIEBAN_VERSION
+            );
+
+            wp_enqueue_script(
+                'hashieban-margin-guard',
+                plugins_url(
+                    'assets/admin/js/hashieban-margin-guard.js',
+                    HASHIEBAN_FILE
+                ),
+                array(
+                    'hashieban-chartjs'
+                ),
+                HASHIEBAN_VERSION,
+                true
+            );
+        }
+
+        if (
+            strpos(
+                $hook,
+                'hashieban-reports'
+            ) !== false
+        ) {
+            wp_enqueue_style(
+                'hashieban-reports',
+                plugins_url(
+                    'assets/admin/css/hashieban-reports.css',
+                    HASHIEBAN_FILE
+                ),
+                array(
+                    'hashieban-admin'
+                ),
+                HASHIEBAN_VERSION
+            );
+
+            wp_enqueue_script(
+                'hashieban-reports',
+                plugins_url(
+                    'assets/admin/js/hashieban-reports.js',
                     HASHIEBAN_FILE
                 ),
                 array(

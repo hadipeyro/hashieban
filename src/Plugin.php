@@ -6,12 +6,14 @@ namespace Hashieban;
 
 use Hashieban\Admin\AdminMenu;
 use Hashieban\Admin\CustomerProfitabilityPage;
+use Hashieban\Admin\MarginGuardPage;
 use Hashieban\Admin\DashboardPage;
 use Hashieban\Admin\ExpenseCategoriesPage;
 use Hashieban\Admin\ExpensesPage;
 use Hashieban\Admin\OrderCostsMetaBox;
 use Hashieban\Admin\OrderProfitCenterPage;
 use Hashieban\Admin\ProductProfitabilityPage;
+use Hashieban\Admin\ReportsHubPage;
 use Hashieban\Admin\SettingsPage;
 use Hashieban\Admin\TimeIntelligencePage;
 use Hashieban\Domain\Profit\ProfitEngine;
@@ -20,8 +22,10 @@ use Hashieban\Finance\GlobalOrderCostRepository;
 use Hashieban\Finance\StoreExpenseRepository;
 use Hashieban\Integration\WooCommerce\Analytics\AnalyticsService;
 use Hashieban\Integration\WooCommerce\Analytics\CustomerProfitabilityService;
+use Hashieban\Integration\WooCommerce\Analytics\MarginGuardService;
 use Hashieban\Integration\WooCommerce\Analytics\ProductProfitabilityService;
 use Hashieban\Integration\WooCommerce\Analytics\OrderProfitCenterService;
+use Hashieban\Integration\WooCommerce\Analytics\ReportsHubService;
 use Hashieban\Integration\WooCommerce\Analytics\TimeIntelligenceService;
 use Hashieban\Integration\WooCommerce\Compatibility;
 use Hashieban\Integration\WooCommerce\Order\DirectCostRepository;
@@ -175,6 +179,33 @@ final class Plugin
                 $orderProfitCenter
             );
 
+        $marginGuard =
+            new MarginGuardService(
+                $productProfitability,
+                $orderProfitCenter,
+                $timeIntelligence
+            );
+
+        $marginGuardPage =
+            new MarginGuardPage(
+                $marginGuard
+            );
+
+        $reportsHub =
+            new ReportsHubService(
+                $productProfitability,
+                $customerProfitability,
+                $timeIntelligence,
+                $orderProfitCenter
+            );
+
+        $reportsHubPage =
+            new ReportsHubPage(
+                $reportsHub
+            );
+
+        $reportsHubPage->register();
+
         $adminMenu =
             new AdminMenu(
                 $compatibility,
@@ -183,6 +214,8 @@ final class Plugin
                 $customerProfitabilityPage,
                 $timeIntelligencePage,
                 $orderProfitCenterPage,
+                $marginGuardPage,
+                $reportsHubPage,
                 $expensesPage,
                 $expenseCategoriesPage,
                 $settingsPage
