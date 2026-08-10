@@ -15,6 +15,8 @@ final class AdminMenu
 
     private ProductProfitabilityPage $productProfitabilityPage;
 
+    private CustomerProfitabilityPage $customerProfitabilityPage;
+
     private ExpensesPage $expensesPage;
 
     private ExpenseCategoriesPage $categoriesPage;
@@ -25,6 +27,7 @@ final class AdminMenu
         Compatibility $compatibility,
         DashboardPage $dashboard,
         ProductProfitabilityPage $productProfitabilityPage,
+        CustomerProfitabilityPage $customerProfitabilityPage,
         ExpensesPage $expensesPage,
         ExpenseCategoriesPage $categoriesPage,
         SettingsPage $settingsPage
@@ -37,6 +40,9 @@ final class AdminMenu
 
         $this->productProfitabilityPage =
             $productProfitabilityPage;
+
+        $this->customerProfitabilityPage =
+            $customerProfitabilityPage;
 
         $this->expensesPage =
             $expensesPage;
@@ -96,6 +102,18 @@ final class AdminMenu
             'hashieban-products',
             array(
                 $this->productProfitabilityPage,
+                'render'
+            )
+        );
+
+        add_submenu_page(
+            'hashieban',
+            'تحلیل سودآوری مشتریان',
+            'سودآوری مشتریان',
+            'manage_woocommerce',
+            'hashieban-customers',
+            array(
+                $this->customerProfitabilityPage,
                 'render'
             )
         );
@@ -250,6 +268,38 @@ final class AdminMenu
                 'hashieban-product-profitability',
                 plugins_url(
                     'assets/admin/js/hashieban-product-profitability.js',
+                    HASHIEBAN_FILE
+                ),
+                array(
+                    'hashieban-chartjs'
+                ),
+                HASHIEBAN_VERSION,
+                true
+            );
+        }
+
+        if (
+            strpos(
+                $hook,
+                'hashieban-customers'
+            ) !== false
+        ) {
+            wp_enqueue_style(
+                'hashieban-customer-profitability',
+                plugins_url(
+                    'assets/admin/css/hashieban-customer-profitability.css',
+                    HASHIEBAN_FILE
+                ),
+                array(
+                    'hashieban-admin'
+                ),
+                HASHIEBAN_VERSION
+            );
+
+            wp_enqueue_script(
+                'hashieban-customer-profitability',
+                plugins_url(
+                    'assets/admin/js/hashieban-customer-profitability.js',
                     HASHIEBAN_FILE
                 ),
                 array(

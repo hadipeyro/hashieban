@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace Hashieban;
 
 use Hashieban\Admin\AdminMenu;
+use Hashieban\Admin\CustomerProfitabilityPage;
 use Hashieban\Admin\DashboardPage;
 use Hashieban\Admin\ExpenseCategoriesPage;
 use Hashieban\Admin\ExpensesPage;
@@ -16,6 +17,7 @@ use Hashieban\Finance\ExpenseCategoryRepository;
 use Hashieban\Finance\GlobalOrderCostRepository;
 use Hashieban\Finance\StoreExpenseRepository;
 use Hashieban\Integration\WooCommerce\Analytics\AnalyticsService;
+use Hashieban\Integration\WooCommerce\Analytics\CustomerProfitabilityService;
 use Hashieban\Integration\WooCommerce\Analytics\ProductProfitabilityService;
 use Hashieban\Integration\WooCommerce\Compatibility;
 use Hashieban\Integration\WooCommerce\Order\DirectCostRepository;
@@ -121,11 +123,24 @@ final class Plugin
                 $productProfitability
             );
 
+        $customerProfitability =
+            new CustomerProfitabilityService(
+                $orderAdapter,
+                $globalOrderCosts,
+                $profitEngine
+            );
+
+        $customerProfitabilityPage =
+            new CustomerProfitabilityPage(
+                $customerProfitability
+            );
+
         $adminMenu =
             new AdminMenu(
                 $compatibility,
                 $dashboard,
                 $productProfitabilityPage,
+                $customerProfitabilityPage,
                 $expensesPage,
                 $expenseCategoriesPage,
                 $settingsPage
