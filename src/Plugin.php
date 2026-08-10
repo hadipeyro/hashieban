@@ -11,6 +11,7 @@ use Hashieban\Admin\DashboardPage;
 use Hashieban\Admin\DataHealthPage;
 use Hashieban\Admin\ExpenseCategoriesPage;
 use Hashieban\Admin\ExpenseIntelligencePage;
+use Hashieban\Admin\GeoIntelligencePage;
 use Hashieban\Admin\ExpensesPage;
 use Hashieban\Admin\OrderCostsMetaBox;
 use Hashieban\Admin\OrderProfitCenterPage;
@@ -27,6 +28,7 @@ use Hashieban\Integration\WooCommerce\Analytics\AnalyticsService;
 use Hashieban\Integration\WooCommerce\Analytics\CustomerProfitabilityService;
 use Hashieban\Integration\WooCommerce\Analytics\DataHealthService;
 use Hashieban\Integration\WooCommerce\Analytics\ExpenseIntelligenceService;
+use Hashieban\Integration\WooCommerce\Analytics\GeoIntelligenceService;
 use Hashieban\Integration\WooCommerce\Analytics\MarginGuardService;
 use Hashieban\Integration\WooCommerce\Analytics\ProductProfitabilityService;
 use Hashieban\Integration\WooCommerce\Analytics\OrderProfitCenterService;
@@ -255,6 +257,20 @@ final class Plugin
                 $dataHealth
             );
 
+        $geoIntelligence =
+            new GeoIntelligenceService(
+                $orderAdapter,
+                $globalOrderCosts,
+                $profitEngine,
+                $geoAddressResolver,
+                $moneyFactory
+            );
+
+        $geoIntelligencePage =
+            new GeoIntelligencePage(
+                $geoIntelligence
+            );
+
         $adminMenu =
             new AdminMenu(
                 $compatibility,
@@ -267,6 +283,7 @@ final class Plugin
                 $reportsHubPage,
                 $expenseIntelligencePage,
                 $dataHealthPage,
+                $geoIntelligencePage,
                 $expensesPage,
                 $expenseCategoriesPage,
                 $settingsPage

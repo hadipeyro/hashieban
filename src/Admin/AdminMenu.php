@@ -29,6 +29,8 @@ final class AdminMenu
 
     private DataHealthPage $dataHealthPage;
 
+    private GeoIntelligencePage $geoIntelligencePage;
+
     private ExpensesPage $expensesPage;
 
     private ExpenseCategoriesPage $categoriesPage;
@@ -46,6 +48,7 @@ final class AdminMenu
         ReportsHubPage $reportsHubPage,
         ExpenseIntelligencePage $expenseIntelligencePage,
         DataHealthPage $dataHealthPage,
+        GeoIntelligencePage $geoIntelligencePage,
         ExpensesPage $expensesPage,
         ExpenseCategoriesPage $categoriesPage,
         SettingsPage $settingsPage
@@ -79,6 +82,9 @@ final class AdminMenu
 
         $this->dataHealthPage =
             $dataHealthPage;
+
+        $this->geoIntelligencePage =
+            $geoIntelligencePage;
 
         $this->expensesPage =
             $expensesPage;
@@ -222,6 +228,18 @@ final class AdminMenu
             'hashieban-data-health',
             array(
                 $this->dataHealthPage,
+                'render'
+            )
+        );
+
+        add_submenu_page(
+            'hashieban',
+            'نقشه هوشمند فروش و سود ایران',
+            'نقشه فروش ایران',
+            'manage_woocommerce',
+            'hashieban-geo',
+            array(
+                $this->geoIntelligencePage,
                 'render'
             )
         );
@@ -600,6 +618,38 @@ final class AdminMenu
                 'hashieban-data-health',
                 plugins_url(
                     'assets/admin/js/hashieban-data-health.js',
+                    HASHIEBAN_FILE
+                ),
+                array(
+                    'hashieban-chartjs'
+                ),
+                HASHIEBAN_VERSION,
+                true
+            );
+        }
+
+        if (
+            strpos(
+                $hook,
+                'hashieban-geo'
+            ) !== false
+        ) {
+            wp_enqueue_style(
+                'hashieban-geo-intelligence',
+                plugins_url(
+                    'assets/admin/css/hashieban-geo-intelligence.css',
+                    HASHIEBAN_FILE
+                ),
+                array(
+                    'hashieban-admin'
+                ),
+                HASHIEBAN_VERSION
+            );
+
+            wp_enqueue_script(
+                'hashieban-geo-intelligence',
+                plugins_url(
+                    'assets/admin/js/hashieban-geo-intelligence.js',
                     HASHIEBAN_FILE
                 ),
                 array(
