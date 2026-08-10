@@ -35,6 +35,10 @@ final class GeoAddressCapture
 
     public function requireIranGeoFields(array $locales): array
     {
+        if (is_admin() && ! wp_doing_ajax()) {
+            return $locales;
+        }
+
         if (! isset($locales[GeoAddressResolver::COUNTRY_IRAN])) {
             $locales[GeoAddressResolver::COUNTRY_IRAN] = array();
         }
@@ -60,6 +64,11 @@ final class GeoAddressCapture
 
     public function snapshotCheckoutOrder(WC_Order $order): void
     {
+        $this->snapshotOrder($order);
+    }
+
+    public function snapshotOrder(WC_Order $order): array
+    {
         $geo = $this->resolver->resolve($order);
 
         $order->update_meta_data('_hashieban_geo_source', (string) $geo['source']);
@@ -71,5 +80,7 @@ final class GeoAddressCapture
         $order->update_meta_data('_hashieban_geo_complete', ! empty($geo['complete']) ? 'yes' : 'no');
         $order->update_meta_data('_hashieban_geo_schema', '1');
         $order->save_meta_data();
+
+        return $geo;
     }
 }

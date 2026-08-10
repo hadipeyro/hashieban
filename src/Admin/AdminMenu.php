@@ -31,6 +31,8 @@ final class AdminMenu
 
     private GeoIntelligencePage $geoIntelligencePage;
 
+    private BulkToolsPage $bulkToolsPage;
+
     private ExpensesPage $expensesPage;
 
     private ExpenseCategoriesPage $categoriesPage;
@@ -49,6 +51,7 @@ final class AdminMenu
         ExpenseIntelligencePage $expenseIntelligencePage,
         DataHealthPage $dataHealthPage,
         GeoIntelligencePage $geoIntelligencePage,
+        BulkToolsPage $bulkToolsPage,
         ExpensesPage $expensesPage,
         ExpenseCategoriesPage $categoriesPage,
         SettingsPage $settingsPage
@@ -85,6 +88,9 @@ final class AdminMenu
 
         $this->geoIntelligencePage =
             $geoIntelligencePage;
+
+        $this->bulkToolsPage =
+            $bulkToolsPage;
 
         $this->expensesPage =
             $expensesPage;
@@ -240,6 +246,18 @@ final class AdminMenu
             'hashieban-geo',
             array(
                 $this->geoIntelligencePage,
+                'render'
+            )
+        );
+
+        add_submenu_page(
+            'hashieban',
+            'ابزارهای گروهی و مهاجرت داده',
+            'ابزارهای گروهی',
+            'manage_woocommerce',
+            'hashieban-bulk-tools',
+            array(
+                $this->bulkToolsPage,
                 'render'
             )
         );
@@ -657,6 +675,25 @@ final class AdminMenu
                 ),
                 HASHIEBAN_VERSION,
                 true
+            );
+        }
+
+        if (
+            strpos(
+                $hook,
+                'hashieban-bulk-tools'
+            ) !== false
+        ) {
+            wp_enqueue_style(
+                'hashieban-bulk-tools',
+                plugins_url(
+                    'assets/admin/css/hashieban-bulk-tools.css',
+                    HASHIEBAN_FILE
+                ),
+                array(
+                    'hashieban-admin'
+                ),
+                HASHIEBAN_VERSION
             );
         }
 

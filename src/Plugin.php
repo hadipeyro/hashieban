@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace Hashieban;
 
 use Hashieban\Admin\AdminMenu;
+use Hashieban\Admin\BulkToolsPage;
 use Hashieban\Admin\CustomerProfitabilityPage;
 use Hashieban\Admin\MarginGuardPage;
 use Hashieban\Admin\DashboardPage;
@@ -40,6 +41,7 @@ use Hashieban\Integration\WooCommerce\Geo\GeoAddressResolver;
 use Hashieban\Integration\WooCommerce\Order\DirectCostRepository;
 use Hashieban\Integration\WooCommerce\Order\MoneyFactory;
 use Hashieban\Integration\WooCommerce\Order\OrderAdapter;
+use Hashieban\Integration\WooCommerce\Tools\BulkToolsService;
 use Hashieban\Integration\WooCommerce\Refund\RefundEngine;
 
 final class Plugin
@@ -271,6 +273,19 @@ final class Plugin
                 $geoIntelligence
             );
 
+        $bulkTools =
+            new BulkToolsService(
+                $compatibility,
+                $geoAddressCapture
+            );
+
+        $bulkToolsPage =
+            new BulkToolsPage(
+                $bulkTools
+            );
+
+        $bulkToolsPage->register();
+
         $adminMenu =
             new AdminMenu(
                 $compatibility,
@@ -284,6 +299,7 @@ final class Plugin
                 $expenseIntelligencePage,
                 $dataHealthPage,
                 $geoIntelligencePage,
+                $bulkToolsPage,
                 $expensesPage,
                 $expenseCategoriesPage,
                 $settingsPage
