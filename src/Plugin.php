@@ -45,6 +45,7 @@ use Hashieban\Integration\WooCommerce\Order\MoneyFactory;
 use Hashieban\Integration\WooCommerce\Order\OrderAdapter;
 use Hashieban\Integration\WooCommerce\Performance\OrderMetricsIndexer;
 use Hashieban\Integration\WooCommerce\Performance\OrderMetricsRepository;
+use Hashieban\Integration\WooCommerce\Performance\PerformanceIndexScheduler;
 use Hashieban\Integration\WooCommerce\Tools\BulkToolsService;
 use Hashieban\Integration\WooCommerce\Refund\RefundEngine;
 use Hashieban\Integration\WooCommerce\Snapshot\ProfitSnapshotRepository;
@@ -326,6 +327,14 @@ final class Plugin
                 $profitSnapshots,
                 $orderMetricsIndexer
             );
+
+        $performanceIndexScheduler =
+            new PerformanceIndexScheduler(
+                $orderMetricsIndexer,
+                $bulkTools
+            );
+
+        $performanceIndexScheduler->register();
 
         $bulkToolsPage =
             new BulkToolsPage(

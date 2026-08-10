@@ -119,6 +119,12 @@ final class AdminMenu
             'admin_enqueue_scripts',
             array($this, 'enqueueAssets')
         );
+
+        add_action(
+            'admin_head',
+            array($this, 'printNavigationCss'),
+            1
+        );
     }
 
     public function registerMenu(): void
@@ -335,6 +341,25 @@ final class AdminMenu
          * from the sidebar; the Analytics Hub remains their visible entry
          * point.
          */
+    }
+
+
+    public function printNavigationCss(): void
+    {
+        ?>
+        <style id="hashieban-admin-navigation-css">
+            #toplevel_page_hashieban .wp-submenu li:has(a[href*="page=hashieban-products"]),
+            #toplevel_page_hashieban .wp-submenu li:has(a[href*="page=hashieban-customers"]),
+            #toplevel_page_hashieban .wp-submenu li:has(a[href*="page=hashieban-time"]),
+            #toplevel_page_hashieban .wp-submenu li:has(a[href*="page=hashieban-reports"]),
+            #toplevel_page_hashieban .wp-submenu li:has(a[href*="page=hashieban-expense-intelligence"]),
+            #toplevel_page_hashieban .wp-submenu li:has(a[href*="page=hashieban-data-health"]),
+            #toplevel_page_hashieban .wp-submenu li:has(a[href*="page=hashieban-expense-categories"]),
+            #toplevel_page_hashieban .wp-submenu li:has(a[href*="page=hashieban-status"]) {
+                display: none !important;
+            }
+        </style>
+        <?php
     }
 
     public function enqueueAssets(
