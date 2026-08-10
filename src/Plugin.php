@@ -56,6 +56,9 @@ use Hashieban\Integration\WooCommerce\Refund\RefundEngine;
 use Hashieban\Integration\WooCommerce\Snapshot\ProfitSnapshotRepository;
 use Hashieban\Integration\WooCommerce\Snapshot\ProfitSnapshotService;
 use Hashieban\Security\AccessControl;
+use Hashieban\Licensing\LicenseManager;
+use Hashieban\Licensing\LicenseRepository;
+use Hashieban\Licensing\ZhaketLicenseClient;
 
 final class Plugin
 {
@@ -65,6 +68,20 @@ final class Plugin
             new AccessControl();
 
         $accessControl->register();
+
+        $licenseRepository =
+            new LicenseRepository();
+
+        $licenseProvider =
+            new ZhaketLicenseClient();
+
+        $licenseManager =
+            new LicenseManager(
+                $licenseRepository,
+                $licenseProvider
+            );
+
+        $licenseManager->register();
 
         $compatibility =
             new Compatibility();
@@ -135,7 +152,8 @@ final class Plugin
         $settingsPage =
             new SettingsPage(
                 $globalOrderCosts,
-                $moneyFactory
+                $moneyFactory,
+                $licenseManager
             );
 
         $settingsPage->register();

@@ -123,12 +123,25 @@ $requiredRuntimeFiles = array(
     '/assets/admin/js/hashieban-dashboard.js',
     '/assets/admin/js/hashieban-settings.js',
     '/assets/admin/css/hashieban-dashboard.css',
+    '/src/Licensing/LicenseManager.php',
+    '/src/Licensing/ZhaketLicenseClient.php',
 );
 
 foreach ($requiredRuntimeFiles as $relative) {
     if (! is_readable($root . $relative)) {
         $failures[] = 'Missing runtime asset: ' . $relative;
     }
+}
+
+$licensingSource = file_get_contents(
+    $root . '/src/Licensing/ZhaketLicenseClient.php'
+);
+
+if (
+    is_string($licensingSource)
+    && preg_match('/http:\/\/guard\.zhaket\./i', $licensingSource) === 1
+) {
+    $failures[] = 'Licensing transport must not use insecure HTTP endpoints.';
 }
 
 $output = array();
