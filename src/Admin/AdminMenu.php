@@ -17,6 +17,8 @@ final class AdminMenu
 
     private CustomerProfitabilityPage $customerProfitabilityPage;
 
+    private TimeIntelligencePage $timeIntelligencePage;
+
     private ExpensesPage $expensesPage;
 
     private ExpenseCategoriesPage $categoriesPage;
@@ -28,6 +30,7 @@ final class AdminMenu
         DashboardPage $dashboard,
         ProductProfitabilityPage $productProfitabilityPage,
         CustomerProfitabilityPage $customerProfitabilityPage,
+        TimeIntelligencePage $timeIntelligencePage,
         ExpensesPage $expensesPage,
         ExpenseCategoriesPage $categoriesPage,
         SettingsPage $settingsPage
@@ -43,6 +46,9 @@ final class AdminMenu
 
         $this->customerProfitabilityPage =
             $customerProfitabilityPage;
+
+        $this->timeIntelligencePage =
+            $timeIntelligencePage;
 
         $this->expensesPage =
             $expensesPage;
@@ -114,6 +120,18 @@ final class AdminMenu
             'hashieban-customers',
             array(
                 $this->customerProfitabilityPage,
+                'render'
+            )
+        );
+
+        add_submenu_page(
+            'hashieban',
+            'هوش زمانی فروش و سود',
+            'تحلیل زمانی',
+            'manage_woocommerce',
+            'hashieban-time',
+            array(
+                $this->timeIntelligencePage,
                 'render'
             )
         );
@@ -300,6 +318,38 @@ final class AdminMenu
                 'hashieban-customer-profitability',
                 plugins_url(
                     'assets/admin/js/hashieban-customer-profitability.js',
+                    HASHIEBAN_FILE
+                ),
+                array(
+                    'hashieban-chartjs'
+                ),
+                HASHIEBAN_VERSION,
+                true
+            );
+        }
+
+        if (
+            strpos(
+                $hook,
+                'hashieban-time'
+            ) !== false
+        ) {
+            wp_enqueue_style(
+                'hashieban-time-intelligence',
+                plugins_url(
+                    'assets/admin/css/hashieban-time-intelligence.css',
+                    HASHIEBAN_FILE
+                ),
+                array(
+                    'hashieban-admin'
+                ),
+                HASHIEBAN_VERSION
+            );
+
+            wp_enqueue_script(
+                'hashieban-time-intelligence',
+                plugins_url(
+                    'assets/admin/js/hashieban-time-intelligence.js',
                     HASHIEBAN_FILE
                 ),
                 array(

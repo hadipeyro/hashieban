@@ -198,8 +198,9 @@ final class ProductProfitabilityPage
                     <div class="hb-product-card__header">
                         <div>
                             <h2>بیشترین فروش محصول</h2>
-                            <p>۱۰ محصول برتر بر اساس مبلغ فروش در بازه انتخابی</p>
+                            <p>۱۰ محصول برتر بر اساس مبلغ فروش؛ روی ستون محصول کلیک کن.</p>
                         </div>
+                        <span class="hb-product-chart-hint">کلیک = باز کردن محصول</span>
                     </div>
                     <div class="hb-product-chart-wrap">
                         <canvas id="hashieban-product-revenue-chart"></canvas>
@@ -212,9 +213,35 @@ final class ProductProfitabilityPage
                             <h2>بیشترین سود محصول</h2>
                             <p>۱۰ محصول برتر بر اساس سود حاصل از فروش کالا</p>
                         </div>
+                        <span class="hb-product-chart-hint">کلیک = باز کردن محصول</span>
                     </div>
                     <div class="hb-product-chart-wrap">
                         <canvas id="hashieban-product-profit-chart"></canvas>
+                    </div>
+                </div>
+
+                <div class="hb-product-card hb-product-card--chart">
+                    <div class="hb-product-card__header">
+                        <div>
+                            <h2>فروش در برابر Margin</h2>
+                            <p>محصولات با فروش بالا و حاشیه سود ضعیف را سریع پیدا کن.</p>
+                        </div>
+                        <span class="hb-product-chart-hint">هر نقطه = یک محصول</span>
+                    </div>
+                    <div class="hb-product-chart-wrap">
+                        <canvas id="hashieban-product-margin-scatter"></canvas>
+                    </div>
+                </div>
+
+                <div class="hb-product-card hb-product-card--chart">
+                    <div class="hb-product-card__header">
+                        <div>
+                            <h2>تمرکز سود محصولات</h2>
+                            <p>سهم ۵ محصول پرسود از کل سود مثبت محصولات</p>
+                        </div>
+                    </div>
+                    <div class="hb-product-chart-wrap hb-product-chart-wrap--doughnut">
+                        <canvas id="hashieban-product-contribution-chart"></canvas>
                     </div>
                 </div>
             </section>
@@ -440,7 +467,10 @@ final class ProductProfitabilityPage
                         $precision
                     )
                     : 'داده‌ای وجود ندارد',
-                'sales'
+                'sales',
+                is_array($topRevenue)
+                    ? (string) ($topRevenue['edit_url'] ?? '')
+                    : ''
             );
 
             $this->renderInsight(
@@ -455,7 +485,10 @@ final class ProductProfitabilityPage
                         $precision
                     )
                     : 'داده‌ای وجود ندارد',
-                'profit'
+                'profit',
+                is_array($topProfit)
+                    ? (string) ($topProfit['edit_url'] ?? '')
+                    : ''
             );
 
             $this->renderInsight(
@@ -466,7 +499,10 @@ final class ProductProfitabilityPage
                 is_array($topQuantity)
                     ? number_format_i18n((int) $topQuantity['quantity']) . ' عدد'
                     : 'داده‌ای وجود ندارد',
-                'quantity'
+                'quantity',
+                is_array($topQuantity)
+                    ? (string) ($topQuantity['edit_url'] ?? '')
+                    : ''
             );
             ?>
         </section>
@@ -477,12 +513,21 @@ final class ProductProfitabilityPage
         string $label,
         string $name,
         string $value,
-        string $type
+        string $type,
+        string $url = ''
     ): void {
         ?>
         <div class="hb-product-insight hb-product-insight--<?php echo esc_attr($type); ?>">
             <span><?php echo esc_html($label); ?></span>
-            <strong><?php echo esc_html($name); ?></strong>
+            <?php if ($url !== '') : ?>
+                <strong>
+                    <a class="hb-product-entity-link" href="<?php echo esc_url($url); ?>">
+                        <?php echo esc_html($name); ?>
+                    </a>
+                </strong>
+            <?php else : ?>
+                <strong><?php echo esc_html($name); ?></strong>
+            <?php endif; ?>
             <small><?php echo esc_html($value); ?></small>
         </div>
         <?php
@@ -528,7 +573,15 @@ final class ProductProfitabilityPage
                         <div class="hb-product-ranking-row hb-product-ranking-row--<?php echo esc_attr($type); ?>">
                             <span class="hb-product-ranking-number"><?php echo esc_html(number_format_i18n($rank)); ?></span>
                             <div>
-                                <strong><?php echo esc_html((string) $row['name']); ?></strong>
+                                <?php if ((string) ($row['edit_url'] ?? '') !== '') : ?>
+                                    <strong>
+                                        <a class="hb-product-entity-link" href="<?php echo esc_url((string) $row['edit_url']); ?>">
+                                            <?php echo esc_html((string) $row['name']); ?>
+                                        </a>
+                                    </strong>
+                                <?php else : ?>
+                                    <strong><?php echo esc_html((string) $row['name']); ?></strong>
+                                <?php endif; ?>
                                 <small>
                                     <?php echo esc_html(number_format_i18n((int) $row['quantity'])); ?> فروش
                                     · Margin <?php echo esc_html($this->formatPercentage($row['margin_percentage'])); ?>
@@ -628,8 +681,11 @@ final class ProductProfitabilityPage
     ): array {
         $revenueLabels = array();
         $revenueValues = array();
+        $revenueUrls = array();
         $profitLabels = array();
         $profitValues = array();
+        $profitUrls = array();
+        $scatter = array();
 
         foreach ($report['top_by_revenue'] as $row) {
             $revenueLabels[] = (string) $row['name'];
@@ -638,6 +694,7 @@ final class ProductProfitabilityPage
                 $currency,
                 $precision
             );
+            $revenueUrls[] = (string) ($row['edit_url'] ?? '');
         }
 
         foreach ($report['top_by_profit'] as $row) {
@@ -647,6 +704,83 @@ final class ProductProfitabilityPage
                 $currency,
                 $precision
             );
+            $profitUrls[] = (string) ($row['edit_url'] ?? '');
+        }
+
+        foreach ($report['products'] as $row) {
+            if ($row['margin_percentage'] === null) {
+                continue;
+            }
+
+            $scatter[] = array(
+                'x' => Currency::minorToDisplayNumber(
+                    (int) $row['revenue_minor'],
+                    $currency,
+                    $precision
+                ),
+                'y' => round((float) $row['margin_percentage'], 2),
+                'name' => (string) $row['name'],
+                'url' => (string) ($row['edit_url'] ?? ''),
+                'profit' => Currency::minorToDisplayNumber(
+                    (int) $row['profit_minor'],
+                    $currency,
+                    $precision
+                ),
+            );
+        }
+
+        usort(
+            $scatter,
+            static function (array $a, array $b): int {
+                return (float) $b['x'] <=> (float) $a['x'];
+            }
+        );
+
+        $scatter = array_slice($scatter, 0, 30);
+
+        $contributionRows = array_values(
+            array_filter(
+                $report['top_by_profit'],
+                static function (array $row): bool {
+                    return (int) $row['profit_minor'] > 0;
+                }
+            )
+        );
+        $contributionRows = array_slice($contributionRows, 0, 5);
+
+        $contributionLabels = array();
+        $contributionValues = array();
+        $contributionUrls = array();
+        $topProfitMinor = 0;
+
+        foreach ($contributionRows as $row) {
+            $valueMinor = (int) $row['profit_minor'];
+            $topProfitMinor += $valueMinor;
+            $contributionLabels[] = (string) $row['name'];
+            $contributionValues[] = Currency::minorToDisplayNumber(
+                $valueMinor,
+                $currency,
+                $precision
+            );
+            $contributionUrls[] = (string) ($row['edit_url'] ?? '');
+        }
+
+        $positiveProfitMinor = 0;
+        foreach ($report['products'] as $row) {
+            if ((int) $row['profit_minor'] > 0) {
+                $positiveProfitMinor += (int) $row['profit_minor'];
+            }
+        }
+
+        $otherProfitMinor = max(0, $positiveProfitMinor - $topProfitMinor);
+        if ($otherProfitMinor > 0) {
+            $contributionLabels[] = 'سایر محصولات';
+            $contributionValues[] = Currency::minorToDisplayNumber(
+                $otherProfitMinor,
+                $currency,
+                $precision
+            );
+            $contributionUrls[] = '';
         }
 
         return array(
@@ -654,10 +788,18 @@ final class ProductProfitabilityPage
             'revenue' => array(
                 'labels' => $revenueLabels,
                 'values' => $revenueValues,
+                'urls' => $revenueUrls,
             ),
             'profit' => array(
                 'labels' => $profitLabels,
                 'values' => $profitValues,
+                'urls' => $profitUrls,
+            ),
+            'scatter' => $scatter,
+            'contribution' => array(
+                'labels' => $contributionLabels,
+                'values' => $contributionValues,
+                'urls' => $contributionUrls,
             ),
         );
     }
@@ -846,177 +988,177 @@ final class ProductProfitabilityPage
                 </strong>
 
                 <?php if ($currentPage < $totalPages) : ?>
-                  <a href="<?php echo esc_url(add_query_arg(
-                           array_merge(
-                               $baseArgs,
-                               array('paged' => $currentPage + 1)
-                           ),
-                           admin_url('admin.php')
-						   )); ?>">بعدی</a>
+                    <a href="<?php echo esc_url(add_query_arg(
+                        array_merge(
+                            $baseArgs,
+                            array('paged' => $currentPage + 1)
+                        ),
+                        admin_url('admin.php')
+                    )); ?>">بعدی</a>
                 <?php endif; ?>
             </div>
         </div>
         <?php
-		}
+    }
 
-		private function formatPercentage(
-			$value
-		): string {
-			if ($value === null) {
-				return '—';
-			}
+    private function formatPercentage(
+        $value
+    ): string {
+        if ($value === null) {
+            return '—';
+        }
 
-			return number_format_i18n(
-				(float) $value,
-				1
-			) . '٪';
-		}
+        return number_format_i18n(
+            (float) $value,
+            1
+        ) . '٪';
+    }
 
-		private function resolveDateRange(): array
-		{
-			$timezone = wp_timezone();
-			$now = new DateTimeImmutable('now', $timezone);
-			$end = $now->setTime(23, 59, 59);
+    private function resolveDateRange(): array
+    {
+        $timezone = wp_timezone();
+        $now = new DateTimeImmutable('now', $timezone);
+        $end = $now->setTime(23, 59, 59);
 
-			$range = isset($_GET['range'])
+        $range = isset($_GET['range'])
             ? sanitize_key(wp_unslash($_GET['range']))
-				   : '30d';
+            : '30d';
 
-			switch ($range) {
-				case '7d':
-					$start = $now->modify('-6 days')->setTime(0, 0, 0);
-					break;
+        switch ($range) {
+            case '7d':
+                $start = $now->modify('-6 days')->setTime(0, 0, 0);
+                break;
 
-				case '90d':
-					$start = $now->modify('-89 days')->setTime(0, 0, 0);
-					break;
+            case '90d':
+                $start = $now->modify('-89 days')->setTime(0, 0, 0);
+                break;
 
-				case '6m':
-					$start = $now->modify('-6 months')->setTime(0, 0, 0);
-					break;
+            case '6m':
+                $start = $now->modify('-6 months')->setTime(0, 0, 0);
+                break;
 
-				case 'year':
-					$start = $now->modify('-1 year')->setTime(0, 0, 0);
-					break;
+            case 'year':
+                $start = $now->modify('-1 year')->setTime(0, 0, 0);
+                break;
 
-				case '2y':
-					$start = $now->modify('-2 years')->setTime(0, 0, 0);
-					break;
+            case '2y':
+                $start = $now->modify('-2 years')->setTime(0, 0, 0);
+                break;
 
-				case '3y':
-					$start = $now->modify('-3 years')->setTime(0, 0, 0);
-					break;
+            case '3y':
+                $start = $now->modify('-3 years')->setTime(0, 0, 0);
+                break;
 
-				case 'all':
-					$start = $this->resolveAllTimeStart($now);
-					break;
+            case 'all':
+                $start = $this->resolveAllTimeStart($now);
+                break;
 
-				case 'custom':
-					$custom = $this->resolveCustomRange();
+            case 'custom':
+                $custom = $this->resolveCustomRange();
 
-					if ($custom !== null) {
-						return array(
-							$custom[0],
-							$custom[1],
-							'custom',
-						);
-					}
+                if ($custom !== null) {
+                    return array(
+                        $custom[0],
+                        $custom[1],
+                        'custom',
+                    );
+                }
 
-					$range = '30d';
-					$start = $now->modify('-29 days')->setTime(0, 0, 0);
-					break;
+                $range = '30d';
+                $start = $now->modify('-29 days')->setTime(0, 0, 0);
+                break;
 
-				case '30d':
-				default:
-					$range = '30d';
-					$start = $now->modify('-29 days')->setTime(0, 0, 0);
-					break;
-			}
+            case '30d':
+            default:
+                $range = '30d';
+                $start = $now->modify('-29 days')->setTime(0, 0, 0);
+                break;
+        }
 
-			return array(
-				$start,
-				$end,
-				$range,
-			);
-		}
+        return array(
+            $start,
+            $end,
+            $range,
+        );
+    }
 
-		private function resolveCustomRange(): ?array
-		{
-			$startValue = isset($_GET['start_date'])
+    private function resolveCustomRange(): ?array
+    {
+        $startValue = isset($_GET['start_date'])
             ? sanitize_text_field(wp_unslash($_GET['start_date']))
-						: '';
+            : '';
 
-			$endValue = isset($_GET['end_date'])
+        $endValue = isset($_GET['end_date'])
             ? sanitize_text_field(wp_unslash($_GET['end_date']))
-					  : '';
+            : '';
 
-			if ($startValue === '' || $endValue === '') {
-				return null;
-			}
+        if ($startValue === '' || $endValue === '') {
+            return null;
+        }
 
-			$gregorianStart = JalaliDate::parseInputToGregorianYmd($startValue);
-			$gregorianEnd = JalaliDate::parseInputToGregorianYmd($endValue);
+        $gregorianStart = JalaliDate::parseInputToGregorianYmd($startValue);
+        $gregorianEnd = JalaliDate::parseInputToGregorianYmd($endValue);
 
-			if ($gregorianStart === null || $gregorianEnd === null) {
-				return null;
-			}
+        if ($gregorianStart === null || $gregorianEnd === null) {
+            return null;
+        }
 
-			$start = DateTimeImmutable::createFromFormat(
-				'!Y-m-d',
-				$gregorianStart,
-				wp_timezone()
-			);
+        $start = DateTimeImmutable::createFromFormat(
+            '!Y-m-d',
+            $gregorianStart,
+            wp_timezone()
+        );
 
-			$end = DateTimeImmutable::createFromFormat(
-				'!Y-m-d',
-				$gregorianEnd,
-				wp_timezone()
-			);
+        $end = DateTimeImmutable::createFromFormat(
+            '!Y-m-d',
+            $gregorianEnd,
+            wp_timezone()
+        );
 
-			if (! $start || ! $end || $start > $end) {
-				return null;
-			}
+        if (! $start || ! $end || $start > $end) {
+            return null;
+        }
 
-			return array(
-				$start->setTime(0, 0, 0),
-				$end->setTime(23, 59, 59),
-			);
-		}
+        return array(
+            $start->setTime(0, 0, 0),
+            $end->setTime(23, 59, 59),
+        );
+    }
 
-		private function resolveAllTimeStart(
-			DateTimeImmutable $fallback
-		): DateTimeImmutable {
-			$orders = wc_get_orders(
-				array(
-					'status' => array(
-						'processing',
-						'completed',
-					),
-					'limit' => 1,
-					'orderby' => 'date',
-					'order' => 'ASC',
-				)
-			);
+    private function resolveAllTimeStart(
+        DateTimeImmutable $fallback
+    ): DateTimeImmutable {
+        $orders = wc_get_orders(
+            array(
+                'status' => array(
+                    'processing',
+                    'completed',
+                ),
+                'limit' => 1,
+                'orderby' => 'date',
+                'order' => 'ASC',
+            )
+        );
 
-			if (
-				is_array($orders)
-				&& isset($orders[0])
-				&& $orders[0] instanceof \WC_Order
-			) {
-				$date = $orders[0]->get_date_created();
+        if (
+            is_array($orders)
+            && isset($orders[0])
+            && $orders[0] instanceof \WC_Order
+        ) {
+            $date = $orders[0]->get_date_created();
 
-				if ($date) {
-					return (new DateTimeImmutable(
-						'@' . $date->getTimestamp()
-					))
-								   ->setTimezone(wp_timezone())
-								   ->setTime(0, 0, 0);
-				}
-			}
+            if ($date) {
+                return (new DateTimeImmutable(
+                    '@' . $date->getTimestamp()
+                ))
+                    ->setTimezone(wp_timezone())
+                    ->setTime(0, 0, 0);
+            }
+        }
 
-			return $fallback
+        return $fallback
             ->modify('-3 years')
             ->setTime(0, 0, 0);
-		}
+    }
 
-		}
+}

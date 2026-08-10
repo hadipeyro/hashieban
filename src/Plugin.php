@@ -12,6 +12,7 @@ use Hashieban\Admin\ExpensesPage;
 use Hashieban\Admin\OrderCostsMetaBox;
 use Hashieban\Admin\ProductProfitabilityPage;
 use Hashieban\Admin\SettingsPage;
+use Hashieban\Admin\TimeIntelligencePage;
 use Hashieban\Domain\Profit\ProfitEngine;
 use Hashieban\Finance\ExpenseCategoryRepository;
 use Hashieban\Finance\GlobalOrderCostRepository;
@@ -19,6 +20,7 @@ use Hashieban\Finance\StoreExpenseRepository;
 use Hashieban\Integration\WooCommerce\Analytics\AnalyticsService;
 use Hashieban\Integration\WooCommerce\Analytics\CustomerProfitabilityService;
 use Hashieban\Integration\WooCommerce\Analytics\ProductProfitabilityService;
+use Hashieban\Integration\WooCommerce\Analytics\TimeIntelligenceService;
 use Hashieban\Integration\WooCommerce\Compatibility;
 use Hashieban\Integration\WooCommerce\Order\DirectCostRepository;
 use Hashieban\Integration\WooCommerce\Order\MoneyFactory;
@@ -135,12 +137,26 @@ final class Plugin
                 $customerProfitability
             );
 
+        $timeIntelligence =
+            new TimeIntelligenceService(
+                $orderAdapter,
+                $storeExpenseRepository,
+                $globalOrderCosts,
+                $profitEngine
+            );
+
+        $timeIntelligencePage =
+            new TimeIntelligencePage(
+                $timeIntelligence
+            );
+
         $adminMenu =
             new AdminMenu(
                 $compatibility,
                 $dashboard,
                 $productProfitabilityPage,
                 $customerProfitabilityPage,
+                $timeIntelligencePage,
                 $expensesPage,
                 $expenseCategoriesPage,
                 $settingsPage
