@@ -46,10 +46,10 @@ final class ReportsHubPage
         <div class="wrap hb-reports-page">
             <section class="hb-reports-hero">
                 <div>
-                    <span class="hb-reports-hero__eyebrow">حاشیه‌بان BI · Reports Hub</span>
+                    <span class="hb-reports-hero__eyebrow">حاشیه‌بان · مرکز گزارش‌ها</span>
                     <h1>مرکز گزارش‌های مدیریتی</h1>
                     <p>
-                        نمای یکپارچه فروش، سود، محصول، مشتری، سفارش، زمان و Refund؛
+                        نمای یکپارچه فروش، سود، محصول، مشتری، سفارش، زمان و مرجوعی؛
                         برای اینکه مدیر فروشگاه به‌جای جابه‌جایی بین چند صفحه، تصویر کل کسب‌وکار را یکجا ببیند.
                     </p>
                     <div class="hb-reports-hero__meta">
@@ -72,16 +72,16 @@ final class ReportsHubPage
                     'فروش خالص',
                     Currency::formatMinor((int) $report['revenue_minor'], $currency, $precision),
                     $comparison['revenue_change_percentage'] ?? null,
-                    'درآمد خالص سفارش‌ها پس از Refund'
+                    'درآمد خالص سفارش‌ها پس از کسر بازگشت وجه'
                 );
                 $this->renderKpi(
                     'سود خالص',
                     Currency::formatMinor((int) $report['profit_minor'], $currency, $precision),
                     $comparison['profit_change_percentage'] ?? null,
-                    'پس از COGS و همه هزینه‌های ثبت‌شده'
+                    'پس از هزینه خرید کالا و همه هزینه‌های ثبت‌شده'
                 );
                 $this->renderKpi(
-                    'Margin',
+                    'درصد سود',
                     $this->percentage($report['margin_percentage']),
                     null,
                     'حاشیه سود خالص در بازه'
@@ -111,7 +111,7 @@ final class ReportsHubPage
                 <?php
                 $this->renderModule(
                     'سودآوری محصولات',
-                    'پرفروش، پرسود، Margin، مرجوعی و سهم هر محصول از سود.',
+                    'پرفروش، پرسود، درصد سود، مرجوعی و سهم هر محصول از سود.',
                     'hashieban-products',
                     'products',
                     $start,
@@ -120,7 +120,7 @@ final class ReportsHubPage
                 );
                 $this->renderModule(
                     'سودآوری مشتریان',
-                    'AOV، تعداد سفارش، سود مشتری و سهم از فروش و سود.',
+                    'میانگین مبلغ سفارش، تعداد سفارش، سود مشتری و سهم از فروش و سود.',
                     'hashieban-customers',
                     'customers',
                     $start,
@@ -129,7 +129,7 @@ final class ReportsHubPage
                 );
                 $this->renderModule(
                     'مرکز سفارش‌ها',
-                    'سود/زیان، Margin، هزینه‌ها، Refund و Drill-down سفارش.',
+                    'سود و زیان، درصد سود، هزینه‌ها، مرجوعی و جزئیات سفارش.',
                     'hashieban-orders',
                     'orders',
                     $start,
@@ -215,7 +215,7 @@ final class ReportsHubPage
                 </div>
                 <div class="hb-reports-statement">
                     <?php $this->statementRow('فروش خالص', (int) $report['revenue_minor'], $currency, $precision, 'positive'); ?>
-                    <?php $this->statementRow('قیمت خرید کالاها (COGS)', -1 * (int) $report['cogs_minor'], $currency, $precision, 'cost'); ?>
+                    <?php $this->statementRow('هزینه خرید کالاها', -1 * (int) $report['cogs_minor'], $currency, $precision, 'cost'); ?>
                     <?php $this->statementRow('هزینه‌های مستقیم سفارش', -1 * (int) $report['direct_costs_minor'], $currency, $precision, 'cost'); ?>
                     <?php $this->statementRow('هزینه ثابت هر سفارش', -1 * (int) $report['global_order_costs_minor'], $currency, $precision, 'cost'); ?>
                     <?php $this->statementRow('هزینه‌های کلی فروشگاه', -1 * (int) $report['store_expenses_minor'], $currency, $precision, 'cost'); ?>
@@ -446,7 +446,7 @@ final class ReportsHubPage
             <small>
                 <?php echo esc_html(
                     number_format_i18n((int) $report['refund_order_count'])
-                    . ' سفارش دارای Refund'
+                    . ' سفارش دارای مرجوعی'
                 ); ?>
             </small>
         </article>

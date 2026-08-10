@@ -85,10 +85,10 @@ final class OrderProfitCenterPage
         <div class="wrap hb-orders-page">
             <section class="hb-orders-hero">
                 <div>
-                    <div class="hb-orders-hero__eyebrow">حاشیه‌بان BI · Order Intelligence</div>
+                    <div class="hb-orders-hero__eyebrow">حاشیه‌بان · تحلیل سفارش‌ها</div>
                     <h1>مرکز سودآوری سفارش‌ها</h1>
                     <p>
-                        هر سفارش را با درآمد، بهای کالا، هزینه‌های مستقیم، هزینه ثابت، سود و Margin ببین؛
+                        هر سفارش را با درآمد، بهای کالا، هزینه‌های مستقیم، هزینه ثابت، سود و درصد سود ببین؛
                         بدون پیدا کردن یا تایپ شناسه داخلی سفارش.
                     </p>
 
@@ -127,18 +127,18 @@ final class OrderProfitCenterPage
                 $this->renderKpi(
                     'فروش قابل انتساب',
                     Currency::formatMinor((int) $report['total_revenue_minor'], $currency, $precision),
-                    'محصول + ارسال + Fee مثبت − Fee کاهشی − Refund بدون مالیات'
+                    'محصول + ارسال + افزایش درآمد − کاهش درآمد − بازگشت وجه بدون مالیات'
                 );
 
                 $this->renderKpi(
                     'سود سفارش‌ها',
                     Currency::formatMinor((int) $report['total_profit_minor'], $currency, $precision),
-                    'پس از COGS، هزینه مستقیم و هزینه ثابت هر سفارش',
+                    'پس از هزینه خرید کالا، هزینه مستقیم و هزینه ثابت هر سفارش',
                     (int) $report['total_profit_minor'] < 0
                 );
 
                 $this->renderKpi(
-                    'Margin وزنی',
+                    'میانگین درصد سود',
                     $this->formatPercentage($report['weighted_margin_percentage']),
                     'سود کل سفارش‌ها نسبت به فروش قابل انتساب'
                 );
@@ -153,7 +153,7 @@ final class OrderProfitCenterPage
                 $this->renderKpi(
                     'داده مالی ناقص',
                     number_format_i18n((int) $report['incomplete_count']),
-                    'عمدتاً COGS ناقص یا غیرقابل اتکا',
+                    'عمدتاً هزینه خرید ناقص یا غیرقابل اتکا',
                     (int) $report['incomplete_count'] > 0
                 );
                 ?>
@@ -171,14 +171,14 @@ final class OrderProfitCenterPage
                     <small>برای تطبیق نمایش داده می‌شود و وارد درآمد سودآوری نمی‌شود.</small>
                 </article>
                 <article class="hb-orders-semantic-card hb-orders-semantic-card--fee">
-                    <span>Fee خالص</span>
+                    <span>اثر خالص کارمزدها</span>
                     <strong><?php echo esc_html(Currency::formatMinor((int) $report['total_net_fee_revenue_minor'], $currency, $precision)); ?></strong>
-                    <small>Fee مثبت منهای Fee کاهشی؛ از Double Counting جلوگیری می‌کند.</small>
+                    <small>افزایش درآمد منهای کاهش درآمد؛ از Double Counting جلوگیری می‌کند.</small>
                 </article>
                 <article class="hb-orders-semantic-card hb-orders-semantic-card--refund">
-                    <span>Refund و بازگشت کالا</span>
+                    <span>مرجوعی و بازگشت وجه</span>
                     <strong><?php echo esc_html(Currency::formatMinor((int) $report['total_refund_minor'], $currency, $precision)); ?></strong>
-                    <small><?php echo esc_html(number_format_i18n((int) $report['refund_order_count'])); ?> سفارش · COGS بازیابی‌شده: <?php echo esc_html(Currency::formatMinor((int) $report['total_recovered_cogs_minor'], $currency, $precision)); ?></small>
+                    <small><?php echo esc_html(number_format_i18n((int) $report['refund_order_count'])); ?> سفارش · هزینه خرید برگشتی: <?php echo esc_html(Currency::formatMinor((int) $report['total_recovered_cogs_minor'], $currency, $precision)); ?></small>
                 </article>
             </section>
 
@@ -200,7 +200,7 @@ final class OrderProfitCenterPage
                 <article class="hb-orders-card hb-orders-card--chart">
                     <div class="hb-orders-card__header">
                         <div>
-                            <h2>توزیع Margin</h2>
+                            <h2>توزیع درصد سود</h2>
                             <p>چند سفارش در هر محدوده حاشیه سود قرار گرفته‌اند؟</p>
                         </div>
                     </div>
@@ -213,8 +213,8 @@ final class OrderProfitCenterPage
             <section class="hb-orders-card hb-orders-card--chart hb-orders-card--wide">
                 <div class="hb-orders-card__header">
                     <div>
-                        <h2>نقشه ارزش سفارش در برابر Margin</h2>
-                        <p>هر نقطه یک سفارش است؛ سفارش‌های بزرگ با Margin ضعیف سریع دیده می‌شوند.</p>
+                        <h2>ارزش سفارش در برابر درصد سود</h2>
+                        <p>هر نقطه یک سفارش است؛ سفارش‌های بزرگ با درصد سود پایین سریع دیده می‌شوند.</p>
                     </div>
                     <?php if (! empty($report['chart_sampled'])) : ?>
                         <span class="hb-orders-chip">نمونه نمایشی نمودار</span>
@@ -243,11 +243,11 @@ final class OrderProfitCenterPage
                                 <th>مشتری</th>
                                 <th>اقلام</th>
                                 <th>فروش</th>
-                                <th>COGS</th>
+                                <th>هزینه خرید کالا</th>
                                 <th>هزینه سفارش</th>
                                 <th>هزینه ثابت</th>
                                 <th>سود</th>
-                                <th>Margin</th>
+                                <th>درصد سود</th>
                                 <th>وضعیت</th>
                                 <th>داده</th>
                                 <th>عملیات</th>
@@ -348,7 +348,7 @@ final class OrderProfitCenterPage
         <div class="wrap hb-orders-page hb-orders-detail-page">
             <div class="hb-orders-detail-toolbar">
                 <a class="button" href="<?php echo esc_url(add_query_arg(array('page' => 'hashieban-orders'), admin_url('admin.php'))); ?>">← بازگشت به سفارش‌ها</a>
-                <a class="button button-primary" href="<?php echo esc_url((string) $detail['order_edit_url']); ?>">باز کردن سفارش در WooCommerce</a>
+                <a class="button button-primary" href="<?php echo esc_url((string) $detail['order_edit_url']); ?>">باز کردن سفارش در ووکامرس</a>
             </div>
 
             <section class="hb-orders-hero hb-orders-hero--detail">
@@ -378,7 +378,7 @@ final class OrderProfitCenterPage
                 <div class="hb-orders-hero__profit <?php echo (int) $detail['profit_minor'] < 0 ? 'is-negative' : ''; ?>">
                     <span>سود این سفارش</span>
                     <strong><?php echo esc_html(Currency::formatMinor((int) $detail['profit_minor'], $currency, $precision)); ?></strong>
-                    <small>Margin: <?php echo esc_html($this->formatPercentage($detail['margin_percentage'])); ?></small>
+                    <small>درصد سود: <?php echo esc_html($this->formatPercentage($detail['margin_percentage'])); ?></small>
                 </div>
             </section>
 
@@ -395,14 +395,14 @@ final class OrderProfitCenterPage
 
             <?php if ((int) $detail['refund_minor'] > 0) : ?>
                 <div class="hb-orders-notice hb-orders-notice--refund">
-                    <strong>Refund & Returns Engine:</strong>
-                    Refund این سفارش در درآمد اعمال شده و COGS فقط به اندازه کالایی که واقعاً به موجودی برگشته آزاد شده است.
+                    <strong>محاسبه مرجوعی و بازگشت وجه:</strong>
+                    بازگشت وجه این سفارش از درآمد کم شده و هزینه خرید فقط به اندازه کالایی که واقعاً به موجودی برگشته اصلاح شده است.
                 </div>
             <?php endif; ?>
 
             <?php if (! empty($detail['refund_warnings'])) : ?>
                 <div class="hb-orders-notice hb-orders-notice--warning">
-                    <strong>نکات تخصیص Refund:</strong>
+                    <strong>نکات تخصیص مرجوعی:</strong>
                     <ul>
                         <?php foreach ((array) $detail['refund_warnings'] as $message) : ?>
                             <li><?php echo esc_html((string) $message); ?></li>
@@ -413,12 +413,12 @@ final class OrderProfitCenterPage
 
             <section class="hb-orders-kpis hb-orders-kpis--detail">
                 <?php
-                $this->renderKpi('فروش قابل انتساب', Currency::formatMinor((int) $detail['revenue_minor'], $currency, $precision), 'محصول + ارسال + Fee مثبت − Fee کاهشی − Refund بدون مالیات');
-                $this->renderKpi('COGS مؤثر', Currency::formatMinor((int) $detail['cogs_minor'], $currency, $precision), 'COGS اولیه منهای بهای کالای مرجوعیِ برگشته به موجودی');
+                $this->renderKpi('فروش قابل انتساب', Currency::formatMinor((int) $detail['revenue_minor'], $currency, $precision), 'محصول + ارسال + افزایش درآمد − کاهش درآمد − بازگشت وجه بدون مالیات');
+                $this->renderKpi('هزینه خرید مؤثر', Currency::formatMinor((int) $detail['cogs_minor'], $currency, $precision), 'هزینه خرید اولیه منهای بهای کالای مرجوعیِ برگشته به موجودی');
                 $this->renderKpi('هزینه مستقیم سفارش', Currency::formatMinor((int) $detail['direct_costs_minor'], $currency, $precision), 'هزینه‌های اختصاصی ثبت‌شده برای سفارش');
                 $this->renderKpi('هزینه ثابت سفارش', Currency::formatMinor((int) $detail['global_order_costs_minor'], $currency, $precision), 'قواعد عمومی هزینه برای هر سفارش');
                 $this->renderKpi('سود سفارش', Currency::formatMinor((int) $detail['profit_minor'], $currency, $precision), 'پس از هزینه‌های قابل انتساب', (int) $detail['profit_minor'] < 0);
-                $this->renderKpi('Margin', $this->formatPercentage($detail['margin_percentage']), 'حاشیه سود این سفارش');
+                $this->renderKpi('درصد سود', $this->formatPercentage($detail['margin_percentage']), 'حاشیه سود این سفارش');
                 ?>
             </section>
 
@@ -427,7 +427,7 @@ final class OrderProfitCenterPage
                     <div class="hb-orders-card__header">
                         <div>
                             <h2>کالبدشکافی مالی سفارش</h2>
-                            <p>فروش، COGS، هزینه‌ها و سود کنار هم</p>
+                            <p>فروش، هزینه خرید، سایر هزینه‌ها و سود کنار هم</p>
                         </div>
                     </div>
                     <div class="hb-orders-chart-wrap hb-orders-chart-wrap--detail">
@@ -445,10 +445,10 @@ final class OrderProfitCenterPage
                     <div class="hb-orders-metric-list">
                         <div><span>فروش محصولات بدون مالیات</span><strong><?php echo esc_html(Currency::formatMinor((int) $detail['product_revenue_minor'], $currency, $precision)); ?></strong></div>
                         <div><span>ارسال دریافت‌شده از مشتری</span><strong><?php echo esc_html(Currency::formatMinor((int) $detail['shipping_revenue_minor'], $currency, $precision)); ?></strong></div>
-                        <div><span>Fee مثبت</span><strong><?php echo esc_html(Currency::formatMinor((int) $detail['fee_revenue_minor'], $currency, $precision)); ?></strong></div>
-                        <div><span>Fee کاهشی</span><strong><?php echo esc_html(Currency::formatMinor((int) $detail['fee_discount_minor'], $currency, $precision)); ?></strong></div>
-                        <div><span>Refund بدون مالیات</span><strong><?php echo esc_html(Currency::formatMinor((int) $detail['refund_minor'], $currency, $precision)); ?></strong></div>
-                        <div><span>مبلغ کل سفارش WooCommerce</span><strong><?php echo esc_html(Currency::formatMinor((int) $detail['order_total_minor'], $currency, $precision)); ?></strong></div>
+                        <div><span>افزایش درآمد</span><strong><?php echo esc_html(Currency::formatMinor((int) $detail['fee_revenue_minor'], $currency, $precision)); ?></strong></div>
+                        <div><span>کاهش درآمد</span><strong><?php echo esc_html(Currency::formatMinor((int) $detail['fee_discount_minor'], $currency, $precision)); ?></strong></div>
+                        <div><span>بازگشت وجه بدون مالیات</span><strong><?php echo esc_html(Currency::formatMinor((int) $detail['refund_minor'], $currency, $precision)); ?></strong></div>
+                        <div><span>مبلغ کل سفارش ووکامرس</span><strong><?php echo esc_html(Currency::formatMinor((int) $detail['order_total_minor'], $currency, $precision)); ?></strong></div>
                     </div>
                 </article>
             </section>
@@ -457,19 +457,19 @@ final class OrderProfitCenterPage
                 <section class="hb-orders-card hb-orders-refund-card">
                     <div class="hb-orders-card__header">
                         <div>
-                            <h2>Refund & Returns Intelligence</h2>
-                            <p>تفاوت «پول پس‌داده‌شده»، «کالای Refund شده» و «کالای واقعاً برگشته به موجودی» را جدا ببین.</p>
+                            <h2>تحلیل مرجوعی و بازگشت وجه</h2>
+                            <p>تفاوت «پول بازگشتی»، «کالای مرجوع‌شده» و «کالای واقعاً برگشته به موجودی» را جدا ببین.</p>
                         </div>
-                        <span class="hb-orders-chip"><?php echo esc_html(number_format_i18n((int) $detail['refund_count'])); ?> رویداد Refund</span>
+                        <span class="hb-orders-chip"><?php echo esc_html(number_format_i18n((int) $detail['refund_count'])); ?> رویداد مرجوعی</span>
                     </div>
 
                     <div class="hb-orders-refund-kpis">
-                        <div><span>Refund بدون مالیات</span><strong><?php echo esc_html(Currency::formatMinor((int) $detail['refund_minor'], $currency, $precision)); ?></strong></div>
-                        <div><span>تعداد Refund شده</span><strong><?php echo esc_html(number_format_i18n((int) $detail['refunded_quantity'])); ?></strong></div>
+                        <div><span>بازگشت وجه بدون مالیات</span><strong><?php echo esc_html(Currency::formatMinor((int) $detail['refund_minor'], $currency, $precision)); ?></strong></div>
+                        <div><span>تعداد مرجوع‌شده</span><strong><?php echo esc_html(number_format_i18n((int) $detail['refunded_quantity'])); ?></strong></div>
                         <div><span>برگشته به موجودی</span><strong><?php echo esc_html(number_format_i18n((int) $detail['restocked_quantity'])); ?></strong></div>
-                        <div><span>COGS اولیه</span><strong><?php echo esc_html(Currency::formatMinor((int) $detail['original_cogs_minor'], $currency, $precision)); ?></strong></div>
-                        <div><span>COGS بازیابی‌شده</span><strong class="is-positive"><?php echo esc_html(Currency::formatMinor((int) $detail['recovered_cogs_minor'], $currency, $precision)); ?></strong></div>
-                        <div><span>COGS کالای برنگشته</span><strong><?php echo esc_html(Currency::formatMinor((int) $detail['unrecovered_refunded_cogs_minor'], $currency, $precision)); ?></strong></div>
+                        <div><span>هزینه خرید اولیه</span><strong><?php echo esc_html(Currency::formatMinor((int) $detail['original_cogs_minor'], $currency, $precision)); ?></strong></div>
+                        <div><span>هزینه خرید برگشتی</span><strong class="is-positive"><?php echo esc_html(Currency::formatMinor((int) $detail['recovered_cogs_minor'], $currency, $precision)); ?></strong></div>
+                        <div><span>هزینه خرید کالای برنگشته</span><strong><?php echo esc_html(Currency::formatMinor((int) $detail['unrecovered_refunded_cogs_minor'], $currency, $precision)); ?></strong></div>
                     </div>
 
                     <?php if ((array) $detail['refund_events'] !== array()) : ?>
@@ -477,7 +477,7 @@ final class OrderProfitCenterPage
                             <?php foreach ((array) $detail['refund_events'] as $event) : ?>
                                 <div class="hb-orders-refund-event">
                                     <div>
-                                        <strong>Refund #<?php echo esc_html(number_format_i18n((int) $event['refund_id'])); ?></strong>
+                                        <strong>مرجوعی #<?php echo esc_html(number_format_i18n((int) $event['refund_id'])); ?></strong>
                                         <span>
                                             <?php if ($event['date'] instanceof DateTimeImmutable) : ?>
                                                 <?php echo esc_html(JalaliDate::format($event['date'])); ?>
@@ -519,7 +519,7 @@ final class OrderProfitCenterPage
                     </div>
                     <div class="hb-orders-semantic-numbers">
                         <div><span>مالیات ثبت‌شده</span><strong><?php echo esc_html(Currency::formatMinor((int) $detail['tax_charged_minor'], $currency, $precision)); ?></strong></div>
-                        <div><span>مالیات Refundشده</span><strong><?php echo esc_html(Currency::formatMinor((int) $detail['refunded_tax_minor'], $currency, $precision)); ?></strong></div>
+                        <div><span>مالیات بازگشتی</span><strong><?php echo esc_html(Currency::formatMinor((int) $detail['refunded_tax_minor'], $currency, $precision)); ?></strong></div>
                         <div><span>مالیات خالص</span><strong><?php echo esc_html(Currency::formatMinor((int) $detail['net_tax_minor'], $currency, $precision)); ?></strong></div>
                     </div>
                 </article>
@@ -527,14 +527,14 @@ final class OrderProfitCenterPage
                 <article class="hb-orders-card hb-orders-semantic-detail hb-orders-semantic-detail--fee">
                     <div class="hb-orders-card__header">
                         <div>
-                            <h2>Fee: افزایش و کاهش درآمد</h2>
-                            <p>Fee مثبت به درآمد اضافه و Fee منفی/کاهشی از درآمد کم می‌شود؛ هیچ Fee به‌صورت کورکورانه هزینه فرض نمی‌شود.</p>
+                            <h2>کارمزدها و تعدیل‌های سفارش</h2>
+                            <p>افزایش درآمد به درآمد اضافه و Fee منفی/کاهشی از درآمد کم می‌شود؛ هیچ Fee به‌صورت کورکورانه هزینه فرض نمی‌شود.</p>
                         </div>
                     </div>
                     <div class="hb-orders-semantic-numbers">
-                        <div><span>Fee مثبت</span><strong><?php echo esc_html(Currency::formatMinor((int) $detail['fee_revenue_minor'], $currency, $precision)); ?></strong></div>
-                        <div><span>Fee کاهشی</span><strong><?php echo esc_html(Currency::formatMinor((int) $detail['fee_discount_minor'], $currency, $precision)); ?></strong></div>
-                        <div><span>Fee خالص</span><strong class="<?php echo (int) $detail['net_fee_revenue_minor'] < 0 ? 'is-negative' : 'is-positive'; ?>"><?php echo esc_html(Currency::formatMinor((int) $detail['net_fee_revenue_minor'], $currency, $precision)); ?></strong></div>
+                        <div><span>افزایش درآمد</span><strong><?php echo esc_html(Currency::formatMinor((int) $detail['fee_revenue_minor'], $currency, $precision)); ?></strong></div>
+                        <div><span>کاهش درآمد</span><strong><?php echo esc_html(Currency::formatMinor((int) $detail['fee_discount_minor'], $currency, $precision)); ?></strong></div>
+                        <div><span>اثر خالص کارمزدها</span><strong class="<?php echo (int) $detail['net_fee_revenue_minor'] < 0 ? 'is-negative' : 'is-positive'; ?>"><?php echo esc_html(Currency::formatMinor((int) $detail['net_fee_revenue_minor'], $currency, $precision)); ?></strong></div>
                     </div>
                 </article>
             </section>
@@ -567,7 +567,7 @@ final class OrderProfitCenterPage
                                 <th>فروش خالص</th>
                                 <th>مرجوعی</th>
                                 <th>فروش</th>
-                                <th>COGS مؤثر</th>
+                                <th>هزینه خرید مؤثر</th>
                                 <th>سود کالا</th>
                             </tr>
                         </thead>
@@ -661,7 +661,7 @@ final class OrderProfitCenterPage
             array('title' => 'پرسودترین سفارش', 'row' => $report['best_order'], 'field' => 'profit_minor', 'type' => 'profit'),
             array('title' => 'کم‌سودترین / زیان‌ده', 'row' => $report['worst_order'], 'field' => 'profit_minor', 'type' => 'risk'),
             array('title' => 'بزرگ‌ترین سفارش', 'row' => $report['largest_order'], 'field' => 'revenue_minor', 'type' => 'revenue'),
-            array('title' => 'بالاترین Margin', 'row' => $report['highest_margin_order'], 'field' => 'margin_percentage', 'type' => 'margin'),
+            array('title' => 'بالاترین درصد سود', 'row' => $report['highest_margin_order'], 'field' => 'margin_percentage', 'type' => 'margin'),
         );
         ?>
         <section class="hb-orders-insights">
@@ -786,8 +786,8 @@ final class OrderProfitCenterPage
                     <option value="revenue_desc" <?php selected($filters['sort'], 'revenue_desc'); ?>>بیشترین مبلغ</option>
                     <option value="profit_desc" <?php selected($filters['sort'], 'profit_desc'); ?>>بیشترین سود</option>
                     <option value="profit_asc" <?php selected($filters['sort'], 'profit_asc'); ?>>کمترین سود</option>
-                    <option value="margin_desc" <?php selected($filters['sort'], 'margin_desc'); ?>>بیشترین Margin</option>
-                    <option value="margin_asc" <?php selected($filters['sort'], 'margin_asc'); ?>>کمترین Margin</option>
+                    <option value="margin_desc" <?php selected($filters['sort'], 'margin_desc'); ?>>بیشترین درصد سود</option>
+                    <option value="margin_asc" <?php selected($filters['sort'], 'margin_asc'); ?>>کمترین درصد سود</option>
                 </select>
             </label>
 
@@ -850,7 +850,7 @@ final class OrderProfitCenterPage
             'mode' => 'detail',
             'currencyLabel' => Currency::label($currency),
             'breakdown' => array(
-                'labels' => array('فروش', 'COGS', 'هزینه سفارش', 'هزینه ثابت', 'سود'),
+                'labels' => array('فروش', 'هزینه خرید کالا', 'هزینه سفارش', 'هزینه ثابت', 'سود'),
                 'values' => array(
                     Currency::minorToDisplayNumber((int) $detail['revenue_minor'], $currency, $precision),
                     Currency::minorToDisplayNumber((int) $detail['cogs_minor'], $currency, $precision),
@@ -860,7 +860,7 @@ final class OrderProfitCenterPage
                 ),
             ),
             'semantics' => array(
-                'labels' => array('محصول', 'ارسال مشتری', 'Fee مثبت', 'Fee کاهشی', 'Refund بدون مالیات', 'مالیات خالص'),
+                'labels' => array('محصول', 'ارسال مشتری', 'افزایش درآمد', 'کاهش درآمد', 'بازگشت وجه بدون مالیات', 'مالیات خالص'),
                 'values' => array(
                     Currency::minorToDisplayNumber((int) $detail['product_revenue_minor'], $currency, $precision),
                     Currency::minorToDisplayNumber((int) $detail['shipping_revenue_minor'], $currency, $precision),

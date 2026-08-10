@@ -52,15 +52,15 @@ final class MarginGuardPage
         <div class="wrap hb-guard-page">
             <section class="hb-guard-hero">
                 <div>
-                    <div class="hb-guard-hero__eyebrow">حاشیه‌بان BI · Margin Guard</div>
+                    <div class="hb-guard-hero__eyebrow">حاشیه‌بان · هشدارهای سود</div>
                     <h1>نگهبان سود و هشدارهای مدیریتی</h1>
                     <p>
                         حاشیه‌بان به‌صورت خودکار سفارش‌های زیان‌ده، محصولات کم‌حاشیه، افت سود،
-                        COGS ناقص و نرخ مرجوعی غیرعادی را از دل داده فروشگاه بیرون می‌کشد.
+                        هزینه خرید ناقص و نرخ مرجوعی غیرعادی را از دل داده فروشگاه بیرون می‌کشد.
                     </p>
                     <div class="hb-guard-hero__meta">
                         <span>بازه: <strong><?php echo esc_html(JalaliDate::format($start) . ' تا ' . JalaliDate::format($end)); ?></strong></span>
-                        <span>آستانه Margin: <strong><?php echo esc_html(number_format_i18n($marginThreshold, 1)); ?>٪</strong></span>
+                        <span>حداقل درصد سود: <strong><?php echo esc_html(number_format_i18n($marginThreshold, 1)); ?>٪</strong></span>
                     </div>
                 </div>
 
@@ -86,7 +86,7 @@ final class MarginGuardPage
                     <form method="post" class="hb-guard-threshold-form">
                         <?php wp_nonce_field('hashieban_margin_guard_save', 'hashieban_margin_guard_nonce'); ?>
                         <input type="hidden" name="hashieban_margin_guard_action" value="save">
-                        <label>حداقل Margin سالم
+                        <label>حداقل درصد سود قابل قبول
                             <input type="number" step="0.1" min="0" max="100" name="margin_threshold" value="<?php echo esc_attr((string) $marginThreshold); ?>"> ٪
                         </label>
                         <label>هشدار افت سود
@@ -107,7 +107,7 @@ final class MarginGuardPage
                 $counts = (array) $report['severity_counts'];
                 $this->renderKpi('هشدار بحرانی', number_format_i18n((int) $counts['critical']), 'نیازمند بررسی سریع', (int) $counts['critical'] > 0 ? 'danger' : 'good');
                 $this->renderKpi('هشدار مهم', number_format_i18n((int) $counts['warning']), 'ریسک‌هایی که بهتر است پیگیری شوند', (int) $counts['warning'] > 0 ? 'warning' : 'good');
-                $this->renderKpi('فروش در معرض Margin ضعیف', Currency::formatMinor((int) $report['risk_revenue_minor'], $currency, $precision), 'فروش محصولات کم‌حاشیه یا زیان‌ده', 'neutral');
+                $this->renderKpi('فروش با درصد سود پایین', Currency::formatMinor((int) $report['risk_revenue_minor'], $currency, $precision), 'فروش محصولات کم‌حاشیه یا زیان‌ده', 'neutral');
                 $this->renderKpi('تغییر سود', $this->formatDelta($report['profit_change_percentage']), 'در مقایسه با دوره هم‌اندازه قبل', $this->deltaClass($report['profit_change_percentage']));
                 ?>
             </section>
@@ -122,7 +122,7 @@ final class MarginGuardPage
 
                 <article class="hb-guard-card hb-guard-card--chart">
                     <div class="hb-guard-card__header">
-                        <div><h2>محصولات با Margin ضعیف</h2><p>پایین‌ترین Marginها نسبت به آستانه فعلی</p></div>
+                        <div><h2>محصولات با درصد سود پایین</h2><p>کمترین درصدهای سود نسبت به حد فعلی</p></div>
                     </div>
                     <div class="hb-guard-chart-wrap"><canvas id="hashieban-guard-margin-chart"></canvas></div>
                 </article>
@@ -156,7 +156,7 @@ final class MarginGuardPage
             </section>
 
             <section class="hb-guard-grid">
-                <?php $this->renderProductRiskTable('COGS ناقص', (array) $report['missing_cogs_products'], $currency, $precision, 'cogs'); ?>
+                <?php $this->renderProductRiskTable('هزینه خرید ناقص', (array) $report['missing_cogs_products'], $currency, $precision, 'cogs'); ?>
                 <?php $this->renderProductRiskTable('مرجوعی بالا', (array) $report['high_return_products'], $currency, $precision, 'returns'); ?>
             </section>
 
@@ -281,12 +281,12 @@ final class MarginGuardPage
     private function productRiskLabel(array $row, string $mode): string
     {
         if ($mode === 'cogs') {
-            return number_format_i18n((int) $row['missing_cogs_lines']) . ' ردیف COGS ناقص';
+            return number_format_i18n((int) $row['missing_cogs_lines']) . ' ردیف هزینه خرید ناقص';
         }
         if ($mode === 'returns') {
             return $this->formatPercentage($row['return_rate_percentage']) . ' مرجوعی';
         }
-        return $this->formatPercentage($row['margin_percentage']) . ' Margin';
+        return $this->formatPercentage($row['margin_percentage']) . ' درصد سود';
     }
 
     private function buildChartPayload(array $report): array

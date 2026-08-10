@@ -38,7 +38,7 @@ final class TimeIntelligencePage
         <div class="wrap hb-time-page">
             <section class="hb-time-hero">
                 <div>
-                    <span class="hb-time-hero__eyebrow">حاشیه‌بان BI · Time Intelligence</span>
+                    <span class="hb-time-hero__eyebrow">حاشیه‌بان · تحلیل زمانی</span>
                     <h1>هوش زمانی فروش و سود</h1>
                     <p>
                         روند واقعی فروش و سود را در طول زمان ببین، دوره فعلی را با دوره قبل مقایسه کن
@@ -60,8 +60,8 @@ final class TimeIntelligencePage
 
             <?php if ((int) $report['orders_with_refunds'] > 0) : ?>
                 <div class="hb-time-notice hb-time-notice--warning">
-                    <strong>Refund:</strong>
-                    <?php echo esc_html(number_format_i18n((int) $report['orders_with_refunds'])); ?> سفارش در این بازه بازپرداخت دارد؛ موتور کامل Refund در مرحله اختصاصی تکمیل می‌شود.
+                    <strong>مرجوعی:</strong>
+                    <?php echo esc_html(number_format_i18n((int) $report['orders_with_refunds'])); ?> سفارش در این بازه بازگشت وجه دارد.
                 </div>
             <?php endif; ?>
 
@@ -90,7 +90,7 @@ final class TimeIntelligencePage
                     'تعداد سفارش',
                     number_format_i18n((int) $report['order_count']),
                     $comparison['orders_change_percentage'],
-                    'سفارش‌های processing و completed'
+                    'سفارش‌های در حال انجام و تکمیل‌شده'
                 );
                 $this->renderKpi(
                     'حاشیه سود',
@@ -197,7 +197,7 @@ final class TimeIntelligencePage
                 <div class="hb-time-card__header">
                     <div>
                         <h2>دفتر زمانی عملکرد</h2>
-                        <p>جزئیات فروش، سود، سفارش و Margin در Bucketهای زمانی نمودار</p>
+                        <p>جزئیات فروش، سود، سفارش و درصد سود در Bucketهای زمانی نمودار</p>
                     </div>
                     <span class="hb-time-chip"><?php echo esc_html(number_format_i18n(count((array) $report['timeline']))); ?> بازه</span>
                 </div>
@@ -210,7 +210,7 @@ final class TimeIntelligencePage
                                 <th>فروش</th>
                                 <th>سود</th>
                                 <th>سفارش</th>
-                                <th>Margin</th>
+                                <th>درصد سود</th>
                             </tr>
                         </thead>
                         <tbody>

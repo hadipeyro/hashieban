@@ -83,7 +83,7 @@ final class CustomerProfitabilityPage
         <div class="wrap hb-customer-page">
             <section class="hb-customer-hero">
                 <div>
-                    <div class="hb-customer-hero__eyebrow">حاشیه‌بان BI</div>
+                    <div class="hb-customer-hero__eyebrow">حاشیه‌بان · تحلیل هوشمند</div>
                     <h1>تحلیل سودآوری مشتریان</h1>
                     <p>
                         ببین کدام مشتری فقط فروش ایجاد می‌کند، کدام مشتری سود واقعی می‌سازد
@@ -116,7 +116,7 @@ final class CustomerProfitabilityPage
                         ?>
                     </strong>
                     <small>
-                        شامل COGS، هزینه مستقیم سفارش و هزینه ثابت هر سفارش است؛ هزینه‌های عمومی فروشگاه بین مشتریان تخصیص داده نشده‌اند.
+                        شامل هزینه خرید کالا، هزینه مستقیم سفارش و هزینه ثابت هر سفارش است؛ هزینه‌های عمومی فروشگاه بین مشتریان تقسیم نشده‌اند.
                     </small>
                 </div>
             </section>
@@ -125,9 +125,9 @@ final class CustomerProfitabilityPage
 
             <?php if ((int) $report['orders_with_refunds'] > 0) : ?>
                 <div class="hb-customer-notice hb-customer-notice--warning">
-                    <strong>توجه به Refund:</strong>
+                    <strong>توجه به مرجوعی:</strong>
                     در این بازه <?php echo esc_html(number_format_i18n((int) $report['orders_with_refunds'])); ?> سفارش دارای بازپرداخت است.
-                    موتور کامل Refund در مرحله اختصاصی بازگشت وجه تکمیل می‌شود؛ بنابراین سود مشتریان دارای Refund را با احتیاط تفسیر کن.
+                    مرجوعی و بازگشت وجه در محاسبات لحاظ می‌شود؛ اگر اطلاعات مرجوعی ناقص باشد، سود مشتری را با احتیاط بررسی کن.
                 </div>
             <?php endif; ?>
 
@@ -147,7 +147,7 @@ final class CustomerProfitabilityPage
                         $currency,
                         $precision
                     ),
-                    'درآمد سفارش‌ها پس از Refund ثبت‌شده'
+                    'درآمد سفارش‌ها پس از کسر بازگشت وجه ثبت‌شده'
                 );
 
                 $this->renderKpi(
@@ -157,7 +157,7 @@ final class CustomerProfitabilityPage
                         $currency,
                         $precision
                     ),
-                    'پس از COGS و هزینه‌های مستقیم و ثابت سفارش'
+                    'پس از هزینه خرید کالا و هزینه‌های مستقیم و ثابت سفارش'
                 );
 
                 $this->renderKpi(
@@ -169,7 +169,7 @@ final class CustomerProfitabilityPage
                 $this->renderKpi(
                     'تعداد سفارش',
                     number_format_i18n((int) $report['total_orders']),
-                    'سفارش‌های processing و completed'
+                    'سفارش‌های در حال انجام و تکمیل‌شده'
                 );
 
                 $this->renderKpi(
@@ -179,7 +179,7 @@ final class CustomerProfitabilityPage
                         $currency,
                         $precision
                     ),
-                    'Average Order Value یا AOV'
+                    'میانگین مبلغ هر سفارش'
                 );
 
                 $this->renderKpi(
@@ -253,7 +253,7 @@ final class CustomerProfitabilityPage
                 <div class="hb-customer-card__header hb-customer-card__header--table">
                     <div>
                         <h2>دفتر سودآوری مشتریان</h2>
-                        <p>مقایسه خرید، سود، AOV، Margin و سهم هر مشتری</p>
+                        <p>مقایسه خرید، سود، میانگین مبلغ سفارش، درصد سود و سهم هر مشتری</p>
                     </div>
 
                     <form method="get" class="hb-customer-table-controls">
@@ -276,8 +276,8 @@ final class CustomerProfitabilityPage
                             <option value="profit_desc" <?php selected($sort, 'profit_desc'); ?>>بیشترین سود</option>
                             <option value="revenue_desc" <?php selected($sort, 'revenue_desc'); ?>>بیشترین خرید</option>
                             <option value="orders_desc" <?php selected($sort, 'orders_desc'); ?>>بیشترین سفارش</option>
-                            <option value="aov_desc" <?php selected($sort, 'aov_desc'); ?>>بیشترین AOV</option>
-                            <option value="margin_desc" <?php selected($sort, 'margin_desc'); ?>>بیشترین Margin</option>
+                            <option value="aov_desc" <?php selected($sort, 'aov_desc'); ?>>بیشترین میانگین مبلغ سفارش</option>
+                            <option value="margin_desc" <?php selected($sort, 'margin_desc'); ?>>بیشترین درصد سود</option>
                             <option value="profit_asc" <?php selected($sort, 'profit_asc'); ?>>کمترین سود</option>
                         </select>
 
@@ -292,9 +292,9 @@ final class CustomerProfitabilityPage
                                 <th>مشتری</th>
                                 <th>سفارش</th>
                                 <th>مجموع خرید</th>
-                                <th>AOV</th>
+                                <th>میانگین مبلغ سفارش</th>
                                 <th>سود</th>
-                                <th>Margin</th>
+                                <th>درصد سود</th>
                                 <th>سهم فروش</th>
                                 <th>سهم سود</th>
                                 <th>آخرین سفارش</th>
@@ -465,7 +465,7 @@ final class CustomerProfitabilityPage
                                 <strong><?php echo esc_html((string) $row['name']); ?></strong>
                                 <small>
                                     <?php echo esc_html(number_format_i18n((int) $row['order_count'])); ?> سفارش
-                                    · Margin <?php echo esc_html($this->formatPercentage($row['margin_percentage'])); ?>
+                                    · درصد سود <?php echo esc_html($this->formatPercentage($row['margin_percentage'])); ?>
                                 </small>
                             </div>
                             <b><?php echo esc_html(Currency::formatMinor((int) $row[$field], $currency, $precision)); ?></b>

@@ -95,7 +95,7 @@ final class InventoryPurchaseInsightPage
         <div class="wrap hb-inventory-page">
             <section class="hb-inventory-hero">
                 <div>
-                    <span class="hb-inventory-hero__eyebrow">Hashieban Inventory Intelligence</span>
+                    <span class="hb-inventory-hero__eyebrow">حاشیه‌بان · هوش موجودی و خرید</span>
                     <h1>هوش موجودی و تصمیم خرید</h1>
                     <p>
                         بفهم کدام کالا در آستانه اتمام است، کدام موجودی سرمایه را خوابانده
@@ -157,7 +157,7 @@ final class InventoryPurchaseInsightPage
             <div class="hb-inventory-notice">
                 <strong>نکته مدیریتی:</strong>
                 پیشنهاد خرید یک تخمین تصمیم‌یار است، نه سفارش خرید خودکار.
-                اگر موجودی یک محصول در WooCommerce ردیابی نشود یا COGS نداشته باشد،
+                اگر موجودی یک محصول در ووکامرس ردیابی نشود یا هزینه خرید نداشته باشد،
                 حاشیه‌بان آن را شفاف علامت می‌زند و عدد جعلی تولید نمی‌کند.
             </div>
 
@@ -170,7 +170,7 @@ final class InventoryPurchaseInsightPage
                         $currency,
                         $precision
                     ),
-                    'فقط کالاهای دارای موجودی و COGS قابل محاسبه'
+                    'فقط کالاهای دارای موجودی و هزینه خرید قابل محاسبه'
                 );
 
                 $this->renderKpi(
@@ -206,7 +206,7 @@ final class InventoryPurchaseInsightPage
                         $currency,
                         $precision
                     ),
-                    'فقط برای کالاهایی که COGS فعلی دارند'
+                    'فقط برای کالاهایی که هزینه خرید فعلی دارند'
                 );
 
                 $this->renderKpi(
@@ -218,7 +218,7 @@ final class InventoryPurchaseInsightPage
                 );
 
                 $this->renderKpi(
-                    'COGS ناقص',
+                    'هزینه خرید ناقص',
                     number_format_i18n(
                         (int) $summary['missing_cogs']
                     ),
@@ -457,7 +457,7 @@ final class InventoryPurchaseInsightPage
                                                 <small>
                                                     <?php
                                                     echo ! empty($row['cogs_missing'])
-                                                        ? esc_html('بودجه نامشخص؛ COGS ناقص')
+                                                        ? esc_html('بودجه نامشخص؛ هزینه خرید ناقص')
                                                         : esc_html(
                                                             Currency::formatMinor(
                                                                 (int) $row['suggested_purchase_value_minor'],

@@ -89,7 +89,7 @@
         },
         margin: {
             label: 'حاشیه سود',
-            shareLabel: 'Margin',
+            shareLabel: 'درصد سود',
             shareKey: null,
             value: function (row) { return row.margin === null ? 0 : number(row.margin); },
             format: percent
@@ -375,7 +375,7 @@
         if (!row) {
             title.textContent = 'کل ایران';
             if (subtitle) {
-                subtitle.textContent = 'برای Drill-down روی یک استان در نقشه یا رتبه‌بندی کلیک کن.';
+                subtitle.textContent = 'برای دیدن جزئیات، روی یک استان در نقشه یا رتبه‌بندی کلیک کن.';
             }
             metrics.innerHTML = '';
             insights.innerHTML = '';
@@ -392,7 +392,7 @@
             ['سود', money(row.profit)],
             ['سفارش', integer(row.orders)],
             ['مشتری', integer(row.customers)],
-            ['Margin', row.margin === null ? '—' : percent(row.margin)],
+            ['درصد سود', row.margin === null ? '—' : percent(row.margin)],
             ['میانگین سفارش', money(row.averageOrder)]
         ];
 

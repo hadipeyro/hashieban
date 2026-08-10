@@ -56,7 +56,7 @@ final class ExpenseIntelligencePage
         <div class="wrap hb-expense-intelligence-page">
             <section class="hb-expense-intelligence-hero">
                 <div>
-                    <span class="hb-expense-intelligence-hero__eyebrow">حاشیه‌بان BI · Expense Intelligence</span>
+                    <span class="hb-expense-intelligence-hero__eyebrow">حاشیه‌بان · تحلیل هزینه‌ها</span>
                     <h1>هوش هزینه‌ها</h1>
                     <p>
                         هزینه‌ها فقط عددی برای کم‌شدن از سود نیستند؛ این صفحه نشان می‌دهد پول کجا خرج می‌شود،
@@ -98,7 +98,7 @@ final class ExpenseIntelligencePage
                     'فشار هزینه بر سود ناخالص',
                     $this->percentage($report['expense_to_gross_profit_percentage']),
                     null,
-                    'هزینه عملیاتی در برابر سود بعد از COGS'
+                    'هزینه‌های عملیاتی در برابر سود بعد از هزینه خرید کالا'
                 );
                 $this->renderKpi(
                     'مصرف بودجه',
@@ -154,7 +154,7 @@ final class ExpenseIntelligencePage
 
                 <article class="hb-expense-intelligence-card">
                     <div class="hb-expense-intelligence-card__header">
-                        <div><h2>ساختار هزینه</h2><p>COGS در کنار هزینه‌های سفارش، ثابت و فروشگاه.</p></div>
+                        <div><h2>ساختار هزینه</h2><p>هزینه خرید کالا در کنار هزینه‌های سفارش، هزینه ثابت و هزینه‌های فروشگاه.</p></div>
                     </div>
                     <div class="hb-expense-intelligence-chart"><canvas id="hashieban-expense-structure-chart"></canvas></div>
                 </article>

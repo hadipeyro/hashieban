@@ -37,7 +37,7 @@ final class GeoIntelligencePage
         <div class="wrap hb-geo-page">
             <section class="hb-geo-hero">
                 <div>
-                    <div class="hb-geo-hero__eyebrow">حاشیه‌بان BI · Geo Intelligence</div>
+                    <div class="hb-geo-hero__eyebrow">حاشیه‌بان · تحلیل جغرافیایی فروش</div>
                     <h1>نقشه هوشمند فروش ایران</h1>
                     <p>
                         ببین فروش، سود، سفارش و مشتری‌های فروشگاه از کدام استان‌ها و شهرها می‌آیند؛
@@ -91,7 +91,7 @@ final class GeoIntelligencePage
                     $topCity ? (string) $topCity['name'] : '—',
                     $topCity
                         ? (string) $topCity['province'] . ' · ' . $this->formatPercentage($topCity['sales_share_percentage']) . ' سهم فروش'
-                        : 'برای این KPI شهر سفارش لازم است',
+                        : 'برای این شاخص، شهر سفارش لازم است',
                     'purple'
                 );
                 $this->renderKpi(
@@ -118,7 +118,7 @@ final class GeoIntelligencePage
                         <button type="button" data-metric="profit">سود</button>
                         <button type="button" data-metric="orders">سفارش</button>
                         <button type="button" data-metric="customers">مشتری</button>
-                        <button type="button" data-metric="margin">Margin</button>
+                        <button type="button" data-metric="margin">درصد سود</button>
                     </div>
 
                     <div class="hb-geo-map-shell" id="hashieban-iran-map">
@@ -147,7 +147,7 @@ final class GeoIntelligencePage
             <section class="hb-geo-card hb-geo-selected" id="hb-geo-selected-card">
                 <div class="hb-geo-card__header">
                     <div>
-                        <span class="hb-geo-selected__eyebrow">Drill-down منطقه</span>
+                        <span class="hb-geo-selected__eyebrow">جزئیات منطقه</span>
                         <h2 id="hb-geo-selected-title">یک استان را انتخاب کن</h2>
                         <p id="hb-geo-selected-subtitle">جزئیات فروش، سود، مشتری و شهرهای استان اینجا نمایش داده می‌شود.</p>
                     </div>
@@ -186,7 +186,7 @@ final class GeoIntelligencePage
             <section class="hb-geo-card hb-geo-methodology">
                 <div>
                     <strong>منبع موقعیت:</strong>
-                    <span>آدرس Shipping کامل در اولویت است؛ در غیر این صورت Billing استفاده می‌شود.</span>
+                    <span>ابتدا آدرس ارسال بررسی می‌شود؛ اگر کامل نباشد، آدرس صورتحساب استفاده می‌شود.</span>
                 </div>
                 <div>
                     <strong>سود منطقه‌ای:</strong>

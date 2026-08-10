@@ -64,11 +64,11 @@ final class BulkToolsPage
         <div class="wrap hb-bulk-tools-page">
             <section class="hb-bulk-tools-hero">
                 <div>
-                    <span class="hb-bulk-tools-hero__eyebrow">حاشیه‌بان BI · Bulk Tools</span>
+                    <span class="hb-bulk-tools-hero__eyebrow">حاشیه‌بان · ابزارهای گروهی</span>
                     <h1>ابزارهای گروهی و مهاجرت داده</h1>
                     <p>
                         برای فروشگاه‌های قدیمی و دیتای حجیم، اصلاح تک‌به‌تک منطقی نیست.
-                        این مرکز برای ورود و خروج گروهی COGS و آماده‌سازی امن سفارش‌های قدیمی برای تحلیل جغرافیایی ساخته شده است.
+                        این مرکز برای ویرایش گروهی هزینه خرید محصولات و آماده‌سازی امن سفارش‌های قدیمی برای گزارش‌ها ساخته شده است.
                     </p>
                 </div>
                 <div class="hb-bulk-tools-hero__badge">
@@ -79,7 +79,7 @@ final class BulkToolsPage
 
             <section class="hb-bulk-tools-notice">
                 <strong>قاعده سازگاری با فروشگاه‌های قدیمی:</strong>
-                اجباری بودن استان و شهر فقط برای Checkout جدید ایران اعمال می‌شود. سفارش‌های قبلی حتی اگر شهر یا استان نداشته باشند خطای ثبت/ویرایش نمی‌گیرند و فقط به‌صورت «آمادگی جغرافیایی ناقص» گزارش می‌شوند.
+                اجباری بودن استان و شهر فقط برای ثبت سفارش جدید ایران اعمال می‌شود. سفارش‌های قبلی حتی اگر شهر یا استان نداشته باشند خطای ثبت/ویرایش نمی‌گیرند و فقط به‌صورت «آمادگی جغرافیایی ناقص» گزارش می‌شوند.
             </section>
 
             <?php $this->renderImportResult($importResult); ?>
@@ -98,7 +98,7 @@ final class BulkToolsPage
 
                     <div class="hb-bulk-tools-actions">
                         <a class="button button-secondary" href="<?php echo esc_url($this->exportCogsUrl()); ?>">
-                            دریافت CSV محصولات و COGS
+                            دریافت فایل محصولات و هزینه خرید
                         </a>
                     </div>
 
@@ -109,11 +109,11 @@ final class BulkToolsPage
                         <label for="hashieban-cogs-csv">فایل CSV ویرایش‌شده</label>
                         <input id="hashieban-cogs-csv" type="file" name="cogs_csv" accept=".csv,text/csv" required>
 
-                        <button type="submit" class="button button-primary">اعمال گروهی COGS</button>
+                        <button type="submit" class="button button-primary">اعمال گروهی هزینه خرید</button>
                     </form>
 
                     <div class="hb-bulk-tools-help">
-                        <strong>امنیت Import:</strong>
+                        <strong>امنیت ورود فایل:</strong>
                         ID محصول اولویت دارد؛ اگر ID وجود نداشته باشد SKU بررسی می‌شود. ردیف نامعتبر رد می‌شود و محصول دیگری تغییر نمی‌کند.
                     </div>
                 </article>
@@ -122,7 +122,7 @@ final class BulkToolsPage
                     <div class="hb-bulk-tools-card__icon">IR</div>
                     <h2>آماده‌سازی سفارش‌های قدیمی برای نقشه ایران</h2>
                     <p>
-                        حاشیه‌بان آدرس Shipping را در اولویت و Billing را به‌عنوان fallback می‌خواند و داده موجود سفارش‌های قدیمی را به Snapshot استاندارد Geo تبدیل می‌کند.
+                        حاشیه‌بان ابتدا آدرس ارسال و در صورت ناقص بودن، آدرس صورتحساب را می‌خواند و اطلاعات سفارش‌های قدیمی را برای تحلیل جغرافیایی آماده می‌کند.
                         چیزی که در سفارش قدیمی وجود ندارد ساخته یا حدس زده نمی‌شود.
                     </p>
 
@@ -137,12 +137,12 @@ final class BulkToolsPage
                         <input type="hidden" name="page_number" value="<?php echo esc_attr((string) $nextPage); ?>">
                         <?php wp_nonce_field('hashieban_geo_backfill'); ?>
                         <button type="submit" class="button button-primary">
-                            <?php echo $nextPage > 1 ? 'ادامه پردازش سفارش‌های قدیمی' : 'شروع آماده‌سازی Geo'; ?>
+                            <?php echo $nextPage > 1 ? 'ادامه پردازش سفارش‌های قدیمی' : 'شروع آماده‌سازی اطلاعات جغرافیایی'; ?>
                         </button>
                     </form>
 
                     <div class="hb-bulk-tools-help">
-                        پردازش به‌صورت Batch صدتایی انجام می‌شود تا فروشگاه بزرگ در یک Request همه سفارش‌ها را لود نکند.
+                        سفارش‌ها هر بار در گروه‌های صدتایی پردازش می‌شوند تا فروشگاه‌های بزرگ کند نشوند.
                     </div>
                 </article>
 
@@ -150,8 +150,8 @@ final class BulkToolsPage
                     <div class="hb-bulk-tools-card__icon">PRO</div>
                     <h2>قفل کردن سود تاریخی سفارش‌ها</h2>
                     <p>
-                        برای سفارش‌های قدیمی یک Snapshot نسخه‌دار از درآمد، COGS، هزینه‌های همان سفارش،
-                        هزینه ثابت سفارش، Refund و سود ثبت می‌شود تا تغییر تنظیمات یا قیمت خرید آینده
+                        برای سفارش‌های قدیمی یک نسخه تاریخی از درآمد، هزینه خرید کالا و هزینه‌های همان سفارش،
+                        هزینه ثابت سفارش، مرجوعی و سود ثبت می‌شود تا تغییر تنظیمات یا قیمت خرید آینده
                         گزارش تاریخی را بازنویسی نکند.
                     </p>
 
@@ -166,12 +166,12 @@ final class BulkToolsPage
                         <input type="hidden" name="page_number" value="<?php echo esc_attr((string) $snapshotNextPage); ?>">
                         <?php wp_nonce_field('hashieban_profit_snapshot_backfill'); ?>
                         <button type="submit" class="button button-primary">
-                            <?php echo $snapshotNextPage > 1 ? 'ادامه ساخت Snapshotهای مالی' : 'شروع قفل کردن سود تاریخی'; ?>
+                            <?php echo $snapshotNextPage > 1 ? 'ادامه ثبت نسخه‌های تاریخی مالی' : 'شروع قفل کردن سود تاریخی'; ?>
                         </button>
                     </form>
 
                     <div class="hb-bulk-tools-help">
-                        فقط سفارش‌های processing/completed/refunded بررسی می‌شوند. Snapshot موجود دوباره ساخته نمی‌شود و پردازش Batch صدتایی است.
+                        فقط سفارش‌های در حال انجام، تکمیل‌شده و بازپرداخت‌شده بررسی می‌شوند. نسخه تاریخی موجود دوباره ساخته نمی‌شود و سفارش‌ها هر بار در گروه‌های صدتایی پردازش می‌شوند.
                     </div>
                 </article>
 
@@ -229,7 +229,7 @@ final class BulkToolsPage
                 <div class="hb-bulk-tools-rules">
                     <div><strong>سفارش قدیمی</strong><span>به‌خاطر نبود شهر یا استان Block نمی‌شود.</span></div>
                     <div><strong>آدرس مشتری</strong><span>Backfill فقط داده موجود را Normalize می‌کند و آدرس را حدس نمی‌زند.</span></div>
-                    <div><strong>COGS سفارش تاریخی</strong><span>Import این صفحه COGS محصول فعلی را تغییر می‌دهد؛ تاریخچه سفارش قبلی را بازنویسی نمی‌کند.</span></div>
+                    <div><strong>هزینه خرید سفارش تاریخی</strong><span>ورود فایل، هزینه خرید فعلی محصول را تغییر می‌دهد؛ تاریخچه سفارش‌های قبلی بازنویسی نمی‌شود.</span></div>
                     <div><strong>HPOS</strong><span>سفارش‌ها فقط از API/CRUD ووکامرس خوانده و ذخیره می‌شوند.</span></div>
                 </div>
             </section>
@@ -250,7 +250,7 @@ final class BulkToolsPage
     public function importProductCogs(): void
     {
         if (! Capabilities::can(Capabilities::MANAGE_TOOLS)) {
-            wp_die(esc_html('شما اجازه تغییر COGS را ندارید.'));
+            wp_die(esc_html('شما اجازه تغییر هزینه خرید محصولات را ندارید.'));
         }
 
         check_admin_referer('hashieban_import_product_cogs');
@@ -408,7 +408,7 @@ final class BulkToolsPage
         $hasErrors = (array) ($result['errors'] ?? array()) !== array();
         ?>
         <section class="hb-bulk-tools-result <?php echo $hasErrors ? 'hb-bulk-tools-result--warning' : 'hb-bulk-tools-result--success'; ?>">
-            <h2>نتیجه Import COGS</h2>
+            <h2>نتیجه ورود گروهی هزینه خرید</h2>
             <div class="hb-bulk-tools-result__stats">
                 <span><strong><?php echo esc_html(number_format_i18n((int) ($result['updated'] ?? 0))); ?></strong> به‌روزرسانی</span>
                 <span><strong><?php echo esc_html(number_format_i18n((int) ($result['unchanged'] ?? 0))); ?></strong> بدون تغییر</span>
@@ -436,7 +436,7 @@ final class BulkToolsPage
             : null;
         ?>
         <section class="hb-bulk-tools-result hb-bulk-tools-result--success">
-            <h2>نتیجه Batch جغرافیایی</h2>
+            <h2>نتیجه پردازش جغرافیایی</h2>
             <div class="hb-bulk-tools-result__stats">
                 <span><strong><?php echo esc_html(number_format_i18n((int) ($result['processed'] ?? 0))); ?></strong> پردازش‌شده</span>
                 <span><strong><?php echo esc_html(number_format_i18n((int) ($result['complete'] ?? 0))); ?></strong> ایرانِ کامل</span>
@@ -466,17 +466,17 @@ final class BulkToolsPage
             : null;
         ?>
         <section class="hb-bulk-tools-result hb-bulk-tools-result--success">
-            <h2>نتیجه Batch سود تاریخی</h2>
+            <h2>نتیجه ثبت سود تاریخی</h2>
             <div class="hb-bulk-tools-result__stats">
                 <span><strong><?php echo esc_html(number_format_i18n((int) ($result['processed'] ?? 0))); ?></strong> بررسی‌شده</span>
-                <span><strong><?php echo esc_html(number_format_i18n((int) ($result['created'] ?? 0))); ?></strong> Snapshot جدید</span>
+                <span><strong><?php echo esc_html(number_format_i18n((int) ($result['created'] ?? 0))); ?></strong> نسخه تاریخی جدید</span>
                 <span><strong><?php echo esc_html(number_format_i18n((int) ($result['existing'] ?? 0))); ?></strong> از قبل قفل‌شده</span>
                 <span><strong><?php echo esc_html(number_format_i18n((int) ($result['skipped'] ?? 0))); ?></strong> ردشده</span>
             </div>
             <p>
                 Batch <?php echo esc_html(number_format_i18n((int) ($result['page'] ?? 1))); ?> از
                 <?php echo esc_html(number_format_i18n((int) ($result['max_pages'] ?? 1))); ?> انجام شد.
-                <?php echo $nextPage !== null ? 'برای ادامه، دوباره دکمه ادامه را بزن.' : 'Snapshot سفارش‌های قابل تحلیل کامل شد.'; ?>
+                <?php echo $nextPage !== null ? 'برای ادامه، دوباره دکمه ادامه را بزن.' : 'ثبت وضعیت تاریخی سفارش‌های قابل تحلیل کامل شد.'; ?>
             </p>
         </section>
         <?php

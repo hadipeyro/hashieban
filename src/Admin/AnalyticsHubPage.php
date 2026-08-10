@@ -22,7 +22,7 @@ final class AnalyticsHubPage
                 'items' => array(
                     array(
                         'title' => 'نبض کسب‌وکار',
-                        'description' => 'KPIهای مدیریتی، رشد، AOV، تکرار خرید، هزینه و امتیاز عملکرد.',
+                        'description' => 'شاخص‌های مدیریتی، رشد، میانگین مبلغ سفارش، تکرار خرید، هزینه و امتیاز عملکرد.',
                         'icon' => 'dashicons-chart-area',
                         'url' => admin_url('admin.php?page=hashieban-kpis'),
                     ),
@@ -64,7 +64,7 @@ final class AnalyticsHubPage
                 'items' => array(
                     array(
                         'title' => 'شروع سریع و راه‌اندازی',
-                        'description' => 'بررسی چند دقیقه‌ای COGS، واحد پول، نقشه ایران و آمادگی گزارش‌ها.',
+                        'description' => 'بررسی چند دقیقه‌ای هزینه خرید، واحد پول، نقشه ایران و آمادگی گزارش‌ها.',
                         'icon' => 'dashicons-lightbulb',
                         'url' => admin_url('admin.php?page=hashieban-onboarding'),
                     ),
@@ -76,7 +76,7 @@ final class AnalyticsHubPage
                     ),
                     array(
                         'title' => 'سلامت داده',
-                        'description' => 'COGS ناقص، داده مشکوک و آمادگی تحلیل.',
+                        'description' => 'هزینه خرید ناقص، داده مشکوک و آمادگی تحلیل.',
                         'icon' => 'dashicons-shield-alt',
                         'url' => admin_url('admin.php?page=hashieban-data-health'),
                     ),
@@ -99,7 +99,7 @@ final class AnalyticsHubPage
         <div class="wrap hb-analytics-hub">
             <section class="hb-analytics-hub__hero">
                 <div>
-                    <span class="hb-analytics-hub__eyebrow">Hashieban BI</span>
+                    <span class="hb-analytics-hub__eyebrow">حاشیه‌بان · مرکز تحلیل‌ها</span>
                     <h1>مرکز تحلیل‌های حاشیه‌بان</h1>
                     <p>
                         گزارش‌های تخصصی را از اینجا باز کنید؛ منوی کناری عمداً ساده نگه داشته شده تا حاشیه‌بان با بزرگ‌تر شدن شلوغ نشود.

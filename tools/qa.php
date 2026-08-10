@@ -48,6 +48,47 @@ foreach (qaFiles($root . '/src', 'php') as $file) {
 
     if ($status !== 0) {
         $failures[] = 'PHP lint: ' . $file . ' => ' . implode(' ', $output);
+        continue;
+    }
+
+    $source = file_get_contents($file);
+
+    if (! is_string($source)) {
+        $failures[] = 'Unable to read PHP source: ' . $file;
+        continue;
+    }
+
+    foreach (token_get_all($source) as $token) {
+        if (! is_array($token)) {
+            continue;
+        }
+
+        $identifierTokens = array(T_STRING);
+
+        if (defined('T_NAME_QUALIFIED')) {
+            $identifierTokens[] = T_NAME_QUALIFIED;
+        }
+
+        if (defined('T_NAME_FULLY_QUALIFIED')) {
+            $identifierTokens[] = T_NAME_FULLY_QUALIFIED;
+        }
+
+        if (defined('T_NAME_RELATIVE')) {
+            $identifierTokens[] = T_NAME_RELATIVE;
+        }
+
+        if (! in_array($token[0], $identifierTokens, true)) {
+            continue;
+        }
+
+        if (preg_match('/[^\x00-\x7F]/u', $token[1]) === 1) {
+            $failures[] = sprintf(
+                'Localized PHP identifier detected: %s:%d => %s',
+                $file,
+                $token[2],
+                $token[1]
+            );
+        }
     }
 }
 

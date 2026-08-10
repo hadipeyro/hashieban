@@ -142,7 +142,7 @@
                 y: {
                     title: {
                         display: true,
-                        text: 'Margin %'
+                        text: 'درصد سود'
                     },
                     grid: {
                         color: 'rgba(148,163,184,.13)'
@@ -167,7 +167,7 @@
                     var raw = context.raw || {};
                     return [
                         'فروش: ' + money(raw.x),
-                        'Margin: ' + numberFormatter.format(raw.y || 0) + '٪',
+                        'درصد سود: ' + numberFormatter.format(raw.y || 0) + '٪',
                         'سود: ' + money(raw.profit)
                     ];
                 }

@@ -187,7 +187,7 @@ final class AdminMenu
 
         add_submenu_page(
             'hashieban',
-            'نبض کسب‌وکار و KPIهای مدیریتی',
+            'نبض کسب‌وکار و شاخص‌های مدیریتی',
             'نبض کسب‌وکار',
             Capabilities::VIEW_REPORTS,
             'hashieban-kpis',

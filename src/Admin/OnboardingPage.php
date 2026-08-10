@@ -203,6 +203,37 @@ final class OnboardingPage
                 <?php endforeach; ?>
             </section>
 
+            <section class="hb-onboarding-grid" aria-label="واژه‌های ساده حاشیه‌بان">
+                <article class="hb-onboarding-step is-done">
+                    <div class="hb-onboarding-step__number"><span class="dashicons dashicons-cart"></span></div>
+                    <div class="hb-onboarding-step__body">
+                        <div class="hb-onboarding-step__head"><h2>فروش واقعی</h2><span>ساده</span></div>
+                        <p>پولی که از سفارش‌ها می‌ماند بعد از درنظرگرفتن مرجوعی و بازگشت وجه.</p>
+                    </div>
+                </article>
+                <article class="hb-onboarding-step is-done">
+                    <div class="hb-onboarding-step__number"><span class="dashicons dashicons-money-alt"></span></div>
+                    <div class="hb-onboarding-step__body">
+                        <div class="hb-onboarding-step__head"><h2>هزینه خرید کالا</h2><span>ساده</span></div>
+                        <p>همان مبلغی که برای تهیه یا خرید خودِ کالا پرداخت کرده‌اید.</p>
+                    </div>
+                </article>
+                <article class="hb-onboarding-step is-done">
+                    <div class="hb-onboarding-step__number"><span class="dashicons dashicons-chart-line"></span></div>
+                    <div class="hb-onboarding-step__body">
+                        <div class="hb-onboarding-step__head"><h2>درصد سود</h2><span>ساده</span></div>
+                        <p>نشان می‌دهد از هر ۱۰۰ تومان فروش، تقریباً چند تومان سود باقی مانده است.</p>
+                    </div>
+                </article>
+                <article class="hb-onboarding-step is-done">
+                    <div class="hb-onboarding-step__number"><span class="dashicons dashicons-image-rotate"></span></div>
+                    <div class="hb-onboarding-step__body">
+                        <div class="hb-onboarding-step__head"><h2>مرجوعی و بازگشت وجه</h2><span>ساده</span></div>
+                        <p>پولی که به مشتری برگردانده شده و در صورت برگشت واقعی کالا، اثر آن روی هزینه خرید هم اصلاح می‌شود.</p>
+                    </div>
+                </article>
+            </section>
+
             <section class="hb-onboarding-finish">
                 <div>
                     <span class="dashicons dashicons-chart-area"></span>
@@ -242,12 +273,12 @@ final class OnboardingPage
                 'action' => 'بررسی افزونه‌ها',
             ),
             array(
-                'title' => 'بهای تمام‌شده کالا (COGS)',
+                'title' => 'هزینه خرید کالا',
                 'description' => 'برای اینکه سود واقعی باشد، قابلیت بهای تمام‌شده ووکامرس باید فعال باشد.',
                 'done' => $this->compatibility->isCogsEnabled(),
                 'note' => 'پس از فعال‌سازی، بهای خرید هر محصول را در ویرایش همان محصول وارد کنید.',
                 'url' => admin_url('admin.php?page=wc-settings&tab=advanced&section=features'),
-                'action' => 'تنظیم COGS ووکامرس',
+                'action' => 'تنظیم هزینه خرید در ووکامرس',
             ),
             array(
                 'title' => 'واحد نمایش پول',
@@ -261,7 +292,7 @@ final class OnboardingPage
             ),
             array(
                 'title' => 'شهر و استان سفارش‌های جدید',
-                'description' => 'برای سفارش‌های ایران، شهر و استان در Checkout جدید اجباری است تا نقشه فروش دقیق بماند.',
+                'description' => 'برای سفارش‌های ایران، شهر و استان در ثبت سفارش جدید اجباری است تا نقشه فروش دقیق بماند.',
                 'done' => true,
                 'note' => 'سفارش‌های قدیمی ناقص خطا نمی‌گیرند و فقط در آمادگی جغرافیایی گزارش می‌شوند.',
                 'url' => admin_url('admin.php?page=hashieban-geo'),

@@ -84,7 +84,7 @@ final class ProductProfitabilityPage
         <div class="wrap hb-product-page">
             <section class="hb-product-hero">
                 <div>
-                    <div class="hb-product-hero__eyebrow">حاشیه‌بان BI</div>
+                    <div class="hb-product-hero__eyebrow">حاشیه‌بان · تحلیل هوشمند</div>
                     <h1>تحلیل سودآوری محصولات</h1>
                     <p>
                         ببین کدام محصول واقعاً فروش و سود می‌سازد،
@@ -125,7 +125,7 @@ final class ProductProfitabilityPage
                         ?>
                     </strong>
                     <small>
-                        فروش خالص اقلام منهای COGS؛ هزینه‌های عمومی فروشگاه بین محصولات تخصیص داده نشده‌اند.
+                        فروش خالص اقلام منهای هزینه خرید کالا؛ هزینه‌های عمومی فروشگاه بین محصولات تقسیم نشده‌اند.
                     </small>
                 </div>
             </section>
@@ -134,15 +134,15 @@ final class ProductProfitabilityPage
 
             <?php if ((int) $report['orders_with_refunds'] > 0) : ?>
                 <div class="hb-product-notice">
-                    <strong>Refund & Returns Engine فعال است:</strong>
-                    <?php echo esc_html(number_format_i18n((int) $report['orders_with_refunds'])); ?> سفارش Refund داشته‌اند؛
-                    فروش محصول بر اساس Refund آیتمی خالص شده و COGS فقط برای کالای واقعاً برگشته به موجودی آزاد می‌شود.
+                    <strong>محاسبه مرجوعی و بازگشت وجه فعال است:</strong>
+                    <?php echo esc_html(number_format_i18n((int) $report['orders_with_refunds'])); ?> سفارش مرجوعی یا بازگشت وجه داشته‌اند؛
+                    فروش محصول با درنظرگرفتن مرجوعی خالص شده و هزینه خرید فقط برای کالایی که واقعاً به موجودی برگشته اصلاح می‌شود.
                 </div>
             <?php endif; ?>
 
             <?php if ((int) $report['unallocated_refund_minor'] > 0) : ?>
                 <div class="hb-product-notice hb-product-notice--warning">
-                    <strong>Refund تخصیص‌نیافته:</strong>
+                    <strong>بازگشت وجه بدون محصول مشخص:</strong>
                     <?php echo esc_html(Currency::formatMinor((int) $report['unallocated_refund_minor'], $currency, $precision)); ?>
                     بازپرداخت فقط به‌صورت مبلغ کلی ثبت شده و به محصول مشخصی قابل انتساب نیست؛ این مبلغ در سود سفارش لحاظ می‌شود اما بین محصولات پخش نمی‌شود.
                 </div>
@@ -167,7 +167,7 @@ final class ProductProfitabilityPage
                         $currency,
                         $precision
                     ),
-                    'فروش محصول منهای COGS تاریخی همان اقلام'
+                    'فروش محصول منهای هزینه خرید تاریخی همان اقلام'
                 );
 
                 $this->renderKpi(
@@ -184,7 +184,7 @@ final class ProductProfitabilityPage
                 $this->renderKpi(
                     'واحد خالص فروخته‌شده',
                     number_format_i18n((int) $report['total_units']),
-                    'تعداد فروش پس از کسر تعداد Refund شده'
+                    'تعداد فروش پس از کسر تعداد مرجوع‌شده'
                 );
 
                 $this->renderKpi(
@@ -193,13 +193,13 @@ final class ProductProfitabilityPage
                         ? number_format_i18n((float) $report['return_rate_percentage'], 1) . '٪'
                         : '—',
                     number_format_i18n((int) $report['refunded_units'])
-                    . ' واحد Refund · '
+                    . ' واحد مرجوعی · '
                     . number_format_i18n((int) $report['restocked_units'])
                     . ' واحد برگشته به موجودی'
                 );
 
                 $this->renderKpi(
-                    'COGS بازیابی‌شده',
+                    'هزینه خرید برگشتی',
                     Currency::formatMinor(
                         (int) $report['recovered_cogs_minor'],
                         $currency,
@@ -215,9 +215,9 @@ final class ProductProfitabilityPage
                 );
 
                 $this->renderKpi(
-                    'محصول با COGS ناقص',
+                    'محصول با هزینه خرید ناقص',
                     number_format_i18n((int) $report['products_with_missing_cogs']),
-                    'محصولاتی که حداقل یک ردیف فروششان COGS قابل اتکا ندارد'
+                    'محصولاتی که هزینه خرید حداقل یک فروش آن‌ها قابل اتکا نیست'
                 );
                 ?>
             </section>
@@ -254,7 +254,7 @@ final class ProductProfitabilityPage
                 <div class="hb-product-card hb-product-card--chart">
                     <div class="hb-product-card__header">
                         <div>
-                            <h2>فروش در برابر Margin</h2>
+                            <h2>فروش در برابر درصد سود</h2>
                             <p>محصولات با فروش بالا و حاشیه سود ضعیف را سریع پیدا کن.</p>
                         </div>
                         <span class="hb-product-chart-hint">هر نقطه = یک محصول</span>
@@ -304,7 +304,7 @@ final class ProductProfitabilityPage
                     <div>
                         <h2>جزئیات محصولات</h2>
                         <p>
-                            سهم از فروش و سود، تعداد فروش، Margin و وضعیت COGS هر محصول را مقایسه کن.
+                            سهم از فروش و سود، تعداد فروش، درصد سود و وضعیت هزینه خرید هر محصول را مقایسه کن.
                         </p>
                     </div>
 
@@ -330,9 +330,9 @@ final class ProductProfitabilityPage
                                 'profit_desc' => 'بیشترین سود',
                                 'revenue_desc' => 'بیشترین فروش',
                                 'quantity_desc' => 'بیشترین تعداد فروش',
-                                'margin_desc' => 'بیشترین Margin',
+                                'margin_desc' => 'بیشترین درصد سود',
                                 'profit_asc' => 'کمترین سود / زیان‌ده',
-                                'margin_asc' => 'کمترین Margin',
+                                'margin_asc' => 'کمترین درصد سود',
                             );
                             ?>
                             <?php foreach ($sortOptions as $value => $label) : ?>
@@ -359,9 +359,9 @@ final class ProductProfitabilityPage
                                 <th>مرجوعی</th>
                                 <th>سفارش</th>
                                 <th>فروش</th>
-                                <th>COGS</th>
+                                <th>هزینه خرید کالا</th>
                                 <th>سود</th>
-                                <th>Margin</th>
+                                <th>درصد سود</th>
                                 <th>سهم از فروش</th>
                                 <th>سهم از سود</th>
                                 <th>وضعیت</th>
@@ -450,7 +450,7 @@ final class ProductProfitabilityPage
                                         <td><?php echo esc_html($this->formatPercentage($row['profit_share_percentage'])); ?></td>
                                         <td>
                                             <?php if (! (bool) $row['cogs_complete']) : ?>
-                                                <span class="hb-status-pill hb-status-pill--warning">COGS ناقص</span>
+                                                <span class="hb-status-pill hb-status-pill--warning">هزینه خرید ناقص</span>
                                             <?php elseif ($profit < 0) : ?>
                                                 <span class="hb-status-pill hb-status-pill--danger">زیان‌ده</span>
                                             <?php elseif ((int) $row['profit_rank'] <= 3) : ?>
@@ -626,7 +626,7 @@ final class ProductProfitabilityPage
                                 <?php endif; ?>
                                 <small>
                                     <?php echo esc_html(number_format_i18n((int) $row['quantity'])); ?> فروش
-                                    · Margin <?php echo esc_html($this->formatPercentage($row['margin_percentage'])); ?>
+                                    · درصد سود <?php echo esc_html($this->formatPercentage($row['margin_percentage'])); ?>
                                 </small>
                             </div>
                             <b>

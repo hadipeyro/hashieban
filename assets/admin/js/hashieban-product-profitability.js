@@ -223,7 +223,7 @@
                                 var row = scatterRows[context.dataIndex] || {};
                                 return [
                                     'فروش: ' + formatNumber(row.x),
-                                    'Margin: ' + formatPercent(row.y),
+                                    'درصد سود: ' + formatPercent(row.y),
                                     'سود: ' + formatNumber(row.profit)
                                 ];
                             }
@@ -252,7 +252,7 @@
                     y: {
                         title: {
                             display: true,
-                            text: 'Margin %'
+                            text: 'درصد سود'
                         },
                         ticks: {
                             callback: function (value) {

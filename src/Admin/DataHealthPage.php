@@ -33,11 +33,11 @@ final class DataHealthPage
         <div class="wrap hb-data-health-page">
             <section class="hb-data-health-hero">
                 <div>
-                    <div class="hb-data-health-hero__eyebrow">حاشیه‌بان BI · Data Health</div>
+                    <div class="hb-data-health-hero__eyebrow">حاشیه‌بان · سلامت داده</div>
                     <h1>سلامت داده و آمادگی تحلیل</h1>
                     <p>
                         قبل از اینکه یک گزارش مدیریتی مبنای تصمیم باشد، باید بدانیم داده‌های پشت آن چقدر قابل اتکاست.
-                        این بخش COGS ناقص، سفارش غیرقابل محاسبه، ارز متفاوت، Refund مشکوک و کیفیت داده جغرافیایی را بررسی می‌کند.
+                        این بخش هزینه خرید ناقص، سفارش غیرقابل محاسبه، ارز متفاوت، مرجوعی مشکوک و کیفیت داده جغرافیایی را بررسی می‌کند.
                     </p>
                     <div class="hb-data-health-hero__meta">
                         <span>بازه: <strong><?php echo esc_html(JalaliDate::format($start) . ' تا ' . JalaliDate::format($end)); ?></strong></span>
@@ -63,7 +63,7 @@ final class DataHealthPage
                     (float) $report['financial_readiness_percentage'] >= 95 ? 'good' : 'warning'
                 );
                 $this->renderKpi(
-                    'پوشش COGS',
+                    'پوشش هزینه خرید کالا',
                     $this->formatPercentage($report['cogs_coverage_percentage']),
                     number_format_i18n((int) $report['products_with_missing_cogs']) . ' محصول ناقص',
                     (float) $report['cogs_coverage_percentage'] >= 95 ? 'good' : 'warning'
@@ -147,8 +147,8 @@ final class DataHealthPage
                     'currency'
                 );
                 $this->renderSimpleOrderTable(
-                    'Refund نیازمند بازبینی',
-                    'Refundهایی که هشدار تخصیص یا بازیابی COGS دارند.',
+                    'مرجوعی نیازمند بازبینی',
+                    'مرجوعی‌هایی که اطلاعات محصول یا هزینه خریدشان نیازمند بازبینی است.',
                     (array) $report['refund_warning_orders'],
                     'refund'
                 );
@@ -199,7 +199,7 @@ final class DataHealthPage
                     </div>
                 </div>
                 <div class="hb-data-health-guidance__grid">
-                    <div><strong>COGS صفر با COGS گمشده یکی نیست</strong><span>اگر صفر عمداً ثبت شده باشد، به‌عنوان Missing علامت نمی‌خورد.</span></div>
+                    <div><strong>هزینه خرید صفر با هزینه خریدِ ثبت‌نشده یکی نیست</strong><span>اگر صفر عمداً ثبت شده باشد، به‌عنوان Missing علامت نمی‌خورد.</span></div>
                     <div><strong>ارزهای متفاوت جمع نمی‌شوند</strong><span>تا زمانی که موتور چندارزی واقعی ساخته نشود، عدد جعلی تولید نمی‌کنیم.</span></div>
                     <div><strong>تاریخچه سفارش حفظ می‌شود</strong><span>حذف محصول نباید باعث حذف سفارش تاریخی یا اطلاعات مالی گذشته شود.</span></div>
                     <div><strong>جغرافیا یک لایه تحلیلی است، نه خطای مالی</strong><span>استان و شهر روی امتیاز سلامت مالی جریمه نمی‌شوند؛ فقط آمادگی نقشه ایران را مشخص می‌کنند.</span></div>
@@ -260,10 +260,10 @@ final class DataHealthPage
         ?>
         <article class="hb-data-health-card hb-data-health-table-card">
             <div class="hb-data-health-card__header">
-                <div><h2>محصولات با COGS ناقص</h2><p>قیمت خرید تاریخی برای حداقل یک ردیف فروش قابل اتکا نیست</p></div>
+                <div><h2>محصولات با هزینه خرید ناقص</h2><p>قیمت خرید تاریخی برای حداقل یک ردیف فروش قابل اتکا نیست</p></div>
             </div>
             <?php if ($rows === array()) : ?>
-                <div class="hb-data-health-empty">پوشش COGS محصولات کامل است.</div>
+                <div class="hb-data-health-empty">پوشش هزینه خرید کالا محصولات کامل است.</div>
             <?php else : ?>
                 <div class="hb-data-health-table-wrap">
                     <table class="widefat striped">
@@ -344,8 +344,8 @@ final class DataHealthPage
             }
 
             return ! empty($row['has_unallocated_refund'])
-                ? 'بخشی از Refund به آیتم مشخص تخصیص پیدا نکرده است.'
-                : 'نیازمند بازبینی Refund';
+                ? 'بخشی از مبلغ بازگشتی به محصول مشخصی وصل نشده است.'
+                : 'نیازمند بازبینی مرجوعی';
         }
 
         if ($mode === 'orphan') {
@@ -359,7 +359,7 @@ final class DataHealthPage
     {
         return array(
             'readiness' => array(
-                'labels' => array('مالی', 'COGS', 'جغرافیا', 'اطلاعات تماس'),
+                'labels' => array('مالی', 'هزینه خرید', 'جغرافیا', 'اطلاعات تماس'),
                 'values' => array(
                     round((float) $report['financial_readiness_percentage'], 1),
                     round((float) $report['cogs_coverage_percentage'], 1),

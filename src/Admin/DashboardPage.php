@@ -137,7 +137,7 @@ final class DashboardPage
                         </span>
                         <div>
                             <strong>راه‌اندازی سریع حاشیه‌بان</strong>
-                            <p>در چند دقیقه مطمئن شو COGS، واحد پول، نقشه ایران و سرعت گزارش‌ها آماده‌اند.</p>
+                            <p>در چند دقیقه مطمئن شو هزینه خرید، واحد پول، نقشه ایران و سرعت گزارش‌ها آماده‌اند.</p>
                         </div>
                     </div>
                     <div class="hb-onboarding-dashboard-card__actions">

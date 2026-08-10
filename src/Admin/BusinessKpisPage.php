@@ -52,7 +52,7 @@ final class BusinessKpisPage
         <div class="wrap hb-kpi-page">
             <section class="hb-kpi-hero">
                 <div>
-                    <span class="hb-kpi-hero__eyebrow">Hashieban BI · Business Pulse</span>
+                    <span class="hb-kpi-hero__eyebrow">حاشیه‌بان · نبض کسب‌وکار</span>
                     <h1>نبض کسب‌وکار</h1>
                     <p>
                         مهم‌ترین شاخص‌های مدیریتی فروشگاه را در یک صفحه ببین؛
@@ -179,7 +179,7 @@ final class BusinessKpisPage
                     'نرخ سفارش دارای مرجوعی',
                     $report['refund_order_rate'],
                     null,
-                    'سفارش‌هایی که Refund داشته‌اند'
+                    'سفارش‌هایی که مرجوعی یا بازگشت وجه داشته‌اند'
                 );
 
                 $this->renderMoneyKpi(
@@ -204,7 +204,7 @@ final class BusinessKpisPage
                     'نسبت کل هزینه به فروش',
                     $report['cost_ratio_percentage'],
                     null,
-                    'COGS + هزینه سفارش + هزینه فروشگاه'
+                    'هزینه خرید کالا + هزینه سفارش + هزینه فروشگاه'
                 );
 
                 $this->renderPercentKpi(
@@ -234,7 +234,7 @@ final class BusinessKpisPage
                     <header>
                         <div>
                             <h2>رشد نسبت به دوره قبل</h2>
-                            <p>تغییر فروش، سود، سفارش و AOV</p>
+                            <p>تغییر فروش، سود، سفارش و میانگین مبلغ سفارش</p>
                         </div>
                     </header>
                     <div class="hb-kpi-chart-wrap">
@@ -266,7 +266,7 @@ final class BusinessKpisPage
 
                     <?php
                     $this->renderRatioRow(
-                        'COGS / فروش',
+                        'هزینه خرید / فروش',
                         $report['cogs_ratio_percentage'],
                         100
                     );
@@ -296,7 +296,7 @@ final class BusinessKpisPage
                 <header>
                     <div>
                         <h2>حاشیه‌بان چه چیزی می‌بیند؟</h2>
-                        <p>هشدار و فرصت‌های مهم بر اساس KPIهای همین بازه</p>
+                        <p>هشدار و فرصت‌های مهم بر اساس شاخص‌های همین بازه</p>
                     </div>
                     <a href="<?php echo esc_url(
                         admin_url('admin.php?page=hashieban-alerts')
@@ -564,7 +564,7 @@ final class BusinessKpisPage
             'currencyLabel' => Currency::label($currency),
             'pulse' => array(
                 'labels' => array(
-                    'Margin',
+                    'درصد سود',
                     'رشد فروش',
                     'رشد سود',
                     'تکرار خرید',
@@ -585,7 +585,7 @@ final class BusinessKpisPage
                     'فروش',
                     'سود',
                     'سفارش',
-                    'AOV',
+                    'میانگین مبلغ سفارش',
                 ),
                 'values' => array(
                     $report['revenue_growth_percentage'],
@@ -596,7 +596,7 @@ final class BusinessKpisPage
             ),
             'costs' => array(
                 'labels' => array(
-                    'COGS',
+                    'هزینه خرید',
                     'هزینه سفارش',
                     'هزینه ثابت سفارش',
                     'هزینه فروشگاه',
