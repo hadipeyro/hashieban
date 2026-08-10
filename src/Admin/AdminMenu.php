@@ -19,6 +19,8 @@ final class AdminMenu
 
     private TimeIntelligencePage $timeIntelligencePage;
 
+    private OrderProfitCenterPage $orderProfitCenterPage;
+
     private ExpensesPage $expensesPage;
 
     private ExpenseCategoriesPage $categoriesPage;
@@ -31,6 +33,7 @@ final class AdminMenu
         ProductProfitabilityPage $productProfitabilityPage,
         CustomerProfitabilityPage $customerProfitabilityPage,
         TimeIntelligencePage $timeIntelligencePage,
+        OrderProfitCenterPage $orderProfitCenterPage,
         ExpensesPage $expensesPage,
         ExpenseCategoriesPage $categoriesPage,
         SettingsPage $settingsPage
@@ -49,6 +52,9 @@ final class AdminMenu
 
         $this->timeIntelligencePage =
             $timeIntelligencePage;
+
+        $this->orderProfitCenterPage =
+            $orderProfitCenterPage;
 
         $this->expensesPage =
             $expensesPage;
@@ -132,6 +138,18 @@ final class AdminMenu
             'hashieban-time',
             array(
                 $this->timeIntelligencePage,
+                'render'
+            )
+        );
+
+        add_submenu_page(
+            'hashieban',
+            'مرکز سودآوری سفارش‌ها',
+            'مرکز سفارش‌ها',
+            'manage_woocommerce',
+            'hashieban-orders',
+            array(
+                $this->orderProfitCenterPage,
                 'render'
             )
         );
@@ -350,6 +368,38 @@ final class AdminMenu
                 'hashieban-time-intelligence',
                 plugins_url(
                     'assets/admin/js/hashieban-time-intelligence.js',
+                    HASHIEBAN_FILE
+                ),
+                array(
+                    'hashieban-chartjs'
+                ),
+                HASHIEBAN_VERSION,
+                true
+            );
+        }
+
+        if (
+            strpos(
+                $hook,
+                'hashieban-orders'
+            ) !== false
+        ) {
+            wp_enqueue_style(
+                'hashieban-orders',
+                plugins_url(
+                    'assets/admin/css/hashieban-orders.css',
+                    HASHIEBAN_FILE
+                ),
+                array(
+                    'hashieban-admin'
+                ),
+                HASHIEBAN_VERSION
+            );
+
+            wp_enqueue_script(
+                'hashieban-orders',
+                plugins_url(
+                    'assets/admin/js/hashieban-orders.js',
                     HASHIEBAN_FILE
                 ),
                 array(
