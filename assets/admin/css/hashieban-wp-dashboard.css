@@ -1,0 +1,113 @@
+#hashieban_store_pulse .inside {
+    margin: 0;
+    padding: 0;
+}
+
+.hb-wp-widget {
+    direction: rtl;
+    padding: 14px;
+    color: #172033;
+}
+
+.hb-wp-widget__profit {
+    padding: 16px;
+    border-radius: 16px;
+    background: linear-gradient(135deg, #047857, #10b981);
+    color: #fff;
+}
+
+.hb-wp-widget__profit.is-loss {
+    background: linear-gradient(135deg, #b91c1c, #ef4444);
+}
+
+.hb-wp-widget__profit span,
+.hb-wp-widget__profit strong {
+    display: block;
+}
+
+.hb-wp-widget__profit span {
+    margin-bottom: 5px;
+    color: rgba(255,255,255,.8);
+    font-size: 12px;
+}
+
+.hb-wp-widget__profit strong {
+    font-size: 23px;
+    line-height: 1.5;
+}
+
+.hb-wp-widget__stats {
+    display: grid;
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+    gap: 8px;
+    margin-top: 10px;
+}
+
+.hb-wp-widget__stats > div {
+    padding: 11px 9px;
+    border: 1px solid #e6ebf2;
+    border-radius: 12px;
+    background: #f8fafc;
+}
+
+.hb-wp-widget__stats span,
+.hb-wp-widget__stats strong {
+    display: block;
+}
+
+.hb-wp-widget__stats span {
+    margin-bottom: 4px;
+    color: #7a8495;
+    font-size: 11px;
+}
+
+.hb-wp-widget__stats strong {
+    overflow: hidden;
+    font-size: 12px;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+
+.hb-wp-widget__trend {
+    height: 64px;
+    margin: 14px 0 10px;
+    padding: 6px 8px 0;
+    border-bottom: 1px solid #dce4ee;
+    display: flex;
+    align-items: flex-end;
+    gap: 4px;
+}
+
+.hb-wp-widget__trend span {
+    min-width: 4px;
+    flex: 1;
+    border-radius: 5px 5px 0 0;
+    background: #2563eb;
+}
+
+.hb-wp-widget__trend span.is-negative {
+    background: #ef4444;
+}
+
+.hb-wp-widget__links {
+    display: flex;
+    align-items: center;
+    flex-wrap: wrap;
+    gap: 10px;
+}
+
+.hb-wp-widget__links > a:not(.button) {
+    text-decoration: none;
+}
+
+.hb-wp-widget__note {
+    margin: 11px 0 0;
+    color: #8a94a4;
+    font-size: 11px;
+}
+
+@media (max-width: 782px) {
+    .hb-wp-widget__stats {
+        grid-template-columns: 1fr;
+    }
+}

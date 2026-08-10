@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace Hashieban;
 
 use Hashieban\Admin\AdminMenu;
+use Hashieban\Admin\AnalyticsHubPage;
 use Hashieban\Admin\BulkToolsPage;
 use Hashieban\Admin\CustomerProfitabilityPage;
 use Hashieban\Admin\MarginGuardPage;
@@ -20,6 +21,7 @@ use Hashieban\Admin\ProductProfitabilityPage;
 use Hashieban\Admin\ReportsHubPage;
 use Hashieban\Admin\SettingsPage;
 use Hashieban\Admin\TimeIntelligencePage;
+use Hashieban\Admin\WordPressDashboardWidget;
 use Hashieban\Domain\Profit\ProfitEngine;
 use Hashieban\Finance\ExpenseBudgetRepository;
 use Hashieban\Finance\ExpenseCategoryRepository;
@@ -148,6 +150,16 @@ final class Plugin
             new DashboardPage(
                 $analytics
             );
+
+        $analyticsHubPage =
+            new AnalyticsHubPage();
+
+        $wordpressDashboardWidget =
+            new WordPressDashboardWidget(
+                $analytics
+            );
+
+        $wordpressDashboardWidget->register();
 
         $expenseBudgets =
             new ExpenseBudgetRepository();
@@ -290,6 +302,7 @@ final class Plugin
             new AdminMenu(
                 $compatibility,
                 $dashboard,
+                $analyticsHubPage,
                 $productProfitabilityPage,
                 $customerProfitabilityPage,
                 $timeIntelligencePage,

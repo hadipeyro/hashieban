@@ -13,6 +13,8 @@ final class AdminMenu
 
     private DashboardPage $dashboard;
 
+    private AnalyticsHubPage $analyticsHubPage;
+
     private ProductProfitabilityPage $productProfitabilityPage;
 
     private CustomerProfitabilityPage $customerProfitabilityPage;
@@ -42,6 +44,7 @@ final class AdminMenu
     public function __construct(
         Compatibility $compatibility,
         DashboardPage $dashboard,
+        AnalyticsHubPage $analyticsHubPage,
         ProductProfitabilityPage $productProfitabilityPage,
         CustomerProfitabilityPage $customerProfitabilityPage,
         TimeIntelligencePage $timeIntelligencePage,
@@ -61,6 +64,9 @@ final class AdminMenu
 
         $this->dashboard =
             $dashboard;
+
+        $this->analyticsHubPage =
+            $analyticsHubPage;
 
         $this->productProfitabilityPage =
             $productProfitabilityPage;
@@ -138,6 +144,18 @@ final class AdminMenu
             'hashieban',
             array(
                 $this->dashboard,
+                'render'
+            )
+        );
+
+        add_submenu_page(
+            'hashieban',
+            'مرکز تحلیل‌های حاشیه‌بان',
+            'مرکز تحلیل‌ها',
+            'manage_woocommerce',
+            'hashieban-analytics',
+            array(
+                $this->analyticsHubPage,
                 'render'
             )
         );
@@ -309,6 +327,29 @@ final class AdminMenu
                 'renderStatusPage'
             )
         );
+
+        /*
+         * Keep specialist screens routable, but avoid turning the WordPress
+         * sidebar into a long report catalogue. The Analytics Hub exposes
+         * these destinations as cards with context.
+         */
+        foreach (
+            array(
+                'hashieban-products',
+                'hashieban-customers',
+                'hashieban-time',
+                'hashieban-reports',
+                'hashieban-expense-intelligence',
+                'hashieban-data-health',
+                'hashieban-expense-categories',
+                'hashieban-status',
+            ) as $hiddenSlug
+        ) {
+            remove_submenu_page(
+                'hashieban',
+                $hiddenSlug
+            );
+        }
     }
 
     public function enqueueAssets(
@@ -389,6 +430,25 @@ final class AdminMenu
             HASHIEBAN_VERSION,
             true
         );
+
+        if (
+            strpos(
+                $hook,
+                'hashieban-analytics'
+            ) !== false
+        ) {
+            wp_enqueue_style(
+                'hashieban-analytics-hub',
+                plugins_url(
+                    'assets/admin/css/hashieban-analytics-hub.css',
+                    HASHIEBAN_FILE
+                ),
+                array(
+                    'hashieban-admin'
+                ),
+                HASHIEBAN_VERSION
+            );
+        }
 
         if (
             strpos(
