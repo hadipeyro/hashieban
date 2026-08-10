@@ -142,6 +142,15 @@ final class ReportsHubPage
                     $end,
                     'dashicons-chart-line'
                 );
+                $this->renderModule(
+                    'هوش هزینه‌ها',
+                    'ترکیب هزینه، روند، بودجه، هزینه‌های پرتکرار و فشار هزینه بر فروش.',
+                    'hashieban-expense-intelligence',
+                    '',
+                    $start,
+                    $end,
+                    'dashicons-chart-pie'
+                );
                 ?>
             </section>
 
@@ -292,7 +301,9 @@ final class ReportsHubPage
             ),
             admin_url('admin.php')
         );
-        $exportUrl = $this->exportUrl($exportType, $start, $end);
+        $exportUrl = $exportType !== ''
+            ? $this->exportUrl($exportType, $start, $end)
+            : '';
         ?>
         <article class="hb-reports-module">
             <span class="dashicons <?php echo esc_attr($icon); ?>"></span>
@@ -301,7 +312,9 @@ final class ReportsHubPage
                 <p><?php echo esc_html($description); ?></p>
                 <div class="hb-reports-module__actions">
                     <a class="button button-primary" href="<?php echo esc_url($pageUrl); ?>">باز کردن گزارش</a>
-                    <a class="button" href="<?php echo esc_url($exportUrl); ?>">CSV</a>
+                    <?php if ($exportUrl !== '') : ?>
+                        <a class="button" href="<?php echo esc_url($exportUrl); ?>">CSV</a>
+                    <?php endif; ?>
                 </div>
             </div>
         </article>

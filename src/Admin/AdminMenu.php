@@ -25,6 +25,8 @@ final class AdminMenu
 
     private ReportsHubPage $reportsHubPage;
 
+    private ExpenseIntelligencePage $expenseIntelligencePage;
+
     private ExpensesPage $expensesPage;
 
     private ExpenseCategoriesPage $categoriesPage;
@@ -40,6 +42,7 @@ final class AdminMenu
         OrderProfitCenterPage $orderProfitCenterPage,
         MarginGuardPage $marginGuardPage,
         ReportsHubPage $reportsHubPage,
+        ExpenseIntelligencePage $expenseIntelligencePage,
         ExpensesPage $expensesPage,
         ExpenseCategoriesPage $categoriesPage,
         SettingsPage $settingsPage
@@ -67,6 +70,9 @@ final class AdminMenu
 
         $this->reportsHubPage =
             $reportsHubPage;
+
+        $this->expenseIntelligencePage =
+            $expenseIntelligencePage;
 
         $this->expensesPage =
             $expensesPage;
@@ -186,6 +192,18 @@ final class AdminMenu
             'hashieban-reports',
             array(
                 $this->reportsHubPage,
+                'render'
+            )
+        );
+
+        add_submenu_page(
+            'hashieban',
+            'هوش هزینه‌ها و کنترل بودجه',
+            'هوش هزینه‌ها',
+            'manage_woocommerce',
+            'hashieban-expense-intelligence',
+            array(
+                $this->expenseIntelligencePage,
                 'render'
             )
         );
@@ -500,6 +518,38 @@ final class AdminMenu
                 'hashieban-reports',
                 plugins_url(
                     'assets/admin/js/hashieban-reports.js',
+                    HASHIEBAN_FILE
+                ),
+                array(
+                    'hashieban-chartjs'
+                ),
+                HASHIEBAN_VERSION,
+                true
+            );
+        }
+
+        if (
+            strpos(
+                $hook,
+                'hashieban-expense-intelligence'
+            ) !== false
+        ) {
+            wp_enqueue_style(
+                'hashieban-expense-intelligence',
+                plugins_url(
+                    'assets/admin/css/hashieban-expense-intelligence.css',
+                    HASHIEBAN_FILE
+                ),
+                array(
+                    'hashieban-admin'
+                ),
+                HASHIEBAN_VERSION
+            );
+
+            wp_enqueue_script(
+                'hashieban-expense-intelligence',
+                plugins_url(
+                    'assets/admin/js/hashieban-expense-intelligence.js',
                     HASHIEBAN_FILE
                 ),
                 array(

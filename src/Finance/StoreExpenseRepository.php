@@ -251,6 +251,52 @@ final class StoreExpenseRepository
              : array();
     }
 
+    public function topRecurringTitlesBetween(
+        DateTimeInterface $start,
+        DateTimeInterface $end,
+        string $currency,
+        int $limit = 8
+    ): array {
+        global $wpdb;
+
+        $limit = max(1, min(50, $limit));
+
+        $sql = $wpdb->prepare(
+            "
+            SELECT
+                title,
+                category_id,
+                category,
+                COUNT(*) AS occurrences,
+                SUM(amount_minor) AS amount_minor,
+                ROUND(AVG(amount_minor)) AS average_minor,
+                MIN(expense_date) AS first_date,
+                MAX(expense_date) AS last_date
+            FROM {$this->tableName()}
+            WHERE currency = %s
+              AND expense_date >= %s
+              AND expense_date <= %s
+            GROUP BY title, category_id, category
+            HAVING COUNT(*) >= 2
+            ORDER BY occurrences DESC, amount_minor DESC
+            LIMIT %d
+            ",
+            $currency,
+            $start->format('Y-m-d'),
+            $end->format('Y-m-d'),
+            $limit
+        );
+
+        $rows = $wpdb->get_results(
+            $sql,
+            ARRAY_A
+        );
+
+        return is_array($rows)
+            ? $rows
+            : array();
+    }
+
     public function paginate(
         int $page,
         int $perPage

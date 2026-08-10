@@ -9,6 +9,7 @@ use Hashieban\Admin\CustomerProfitabilityPage;
 use Hashieban\Admin\MarginGuardPage;
 use Hashieban\Admin\DashboardPage;
 use Hashieban\Admin\ExpenseCategoriesPage;
+use Hashieban\Admin\ExpenseIntelligencePage;
 use Hashieban\Admin\ExpensesPage;
 use Hashieban\Admin\OrderCostsMetaBox;
 use Hashieban\Admin\OrderProfitCenterPage;
@@ -17,11 +18,13 @@ use Hashieban\Admin\ReportsHubPage;
 use Hashieban\Admin\SettingsPage;
 use Hashieban\Admin\TimeIntelligencePage;
 use Hashieban\Domain\Profit\ProfitEngine;
+use Hashieban\Finance\ExpenseBudgetRepository;
 use Hashieban\Finance\ExpenseCategoryRepository;
 use Hashieban\Finance\GlobalOrderCostRepository;
 use Hashieban\Finance\StoreExpenseRepository;
 use Hashieban\Integration\WooCommerce\Analytics\AnalyticsService;
 use Hashieban\Integration\WooCommerce\Analytics\CustomerProfitabilityService;
+use Hashieban\Integration\WooCommerce\Analytics\ExpenseIntelligenceService;
 use Hashieban\Integration\WooCommerce\Analytics\MarginGuardService;
 use Hashieban\Integration\WooCommerce\Analytics\ProductProfitabilityService;
 use Hashieban\Integration\WooCommerce\Analytics\OrderProfitCenterService;
@@ -128,6 +131,26 @@ final class Plugin
                 $analytics
             );
 
+        $expenseBudgets =
+            new ExpenseBudgetRepository();
+
+        $expenseIntelligence =
+            new ExpenseIntelligenceService(
+                $analytics,
+                $storeExpenseRepository,
+                $expenseCategories,
+                $expenseBudgets,
+                $moneyFactory
+            );
+
+        $expenseIntelligencePage =
+            new ExpenseIntelligencePage(
+                $expenseIntelligence,
+                $expenseCategories
+            );
+
+        $expenseIntelligencePage->register();
+
         $productProfitability =
             new ProductProfitabilityService(
                 $moneyFactory,
@@ -216,6 +239,7 @@ final class Plugin
                 $orderProfitCenterPage,
                 $marginGuardPage,
                 $reportsHubPage,
+                $expenseIntelligencePage,
                 $expensesPage,
                 $expenseCategoriesPage,
                 $settingsPage
