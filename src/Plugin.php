@@ -7,6 +7,7 @@ namespace Hashieban;
 use Hashieban\Admin\AdminMenu;
 use Hashieban\Admin\AnalyticsHubPage;
 use Hashieban\Admin\BulkToolsPage;
+use Hashieban\Admin\BusinessKpisPage;
 use Hashieban\Admin\CustomerProfitabilityPage;
 use Hashieban\Admin\MarginGuardPage;
 use Hashieban\Admin\DashboardPage;
@@ -28,6 +29,7 @@ use Hashieban\Finance\ExpenseCategoryRepository;
 use Hashieban\Finance\GlobalOrderCostRepository;
 use Hashieban\Finance\StoreExpenseRepository;
 use Hashieban\Integration\WooCommerce\Analytics\AnalyticsService;
+use Hashieban\Integration\WooCommerce\Analytics\BusinessKpiService;
 use Hashieban\Integration\WooCommerce\Analytics\CustomerProfitabilityService;
 use Hashieban\Integration\WooCommerce\Analytics\DataHealthService;
 use Hashieban\Integration\WooCommerce\Analytics\ExpenseIntelligenceService;
@@ -239,6 +241,17 @@ final class Plugin
                 $customerProfitability
             );
 
+        $businessKpis =
+            new BusinessKpiService(
+                $analytics,
+                $customerProfitability
+            );
+
+        $businessKpisPage =
+            new BusinessKpisPage(
+                $businessKpis
+            );
+
         $timeIntelligence =
             new TimeIntelligenceService(
                 $orderAdapter,
@@ -348,6 +361,7 @@ final class Plugin
                 $compatibility,
                 $dashboard,
                 $analyticsHubPage,
+                $businessKpisPage,
                 $productProfitabilityPage,
                 $customerProfitabilityPage,
                 $timeIntelligencePage,

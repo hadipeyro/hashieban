@@ -15,6 +15,8 @@ final class AdminMenu
 
     private AnalyticsHubPage $analyticsHubPage;
 
+    private BusinessKpisPage $businessKpisPage;
+
     private ProductProfitabilityPage $productProfitabilityPage;
 
     private CustomerProfitabilityPage $customerProfitabilityPage;
@@ -45,6 +47,7 @@ final class AdminMenu
         Compatibility $compatibility,
         DashboardPage $dashboard,
         AnalyticsHubPage $analyticsHubPage,
+        BusinessKpisPage $businessKpisPage,
         ProductProfitabilityPage $productProfitabilityPage,
         CustomerProfitabilityPage $customerProfitabilityPage,
         TimeIntelligencePage $timeIntelligencePage,
@@ -67,6 +70,9 @@ final class AdminMenu
 
         $this->analyticsHubPage =
             $analyticsHubPage;
+
+        $this->businessKpisPage =
+            $businessKpisPage;
 
         $this->productProfitabilityPage =
             $productProfitabilityPage;
@@ -162,6 +168,18 @@ final class AdminMenu
             'hashieban-analytics',
             array(
                 $this->analyticsHubPage,
+                'render'
+            )
+        );
+
+        add_submenu_page(
+            'hashieban',
+            'نبض کسب‌وکار و KPIهای مدیریتی',
+            'نبض کسب‌وکار',
+            'manage_woocommerce',
+            'hashieban-kpis',
+            array(
+                $this->businessKpisPage,
                 'render'
             )
         );
@@ -348,6 +366,7 @@ final class AdminMenu
     {
         ?>
         <style id="hashieban-admin-navigation-css">
+            #toplevel_page_hashieban .wp-submenu li:has(a[href*="page=hashieban-kpis"]),
             #toplevel_page_hashieban .wp-submenu li:has(a[href*="page=hashieban-products"]),
             #toplevel_page_hashieban .wp-submenu li:has(a[href*="page=hashieban-customers"]),
             #toplevel_page_hashieban .wp-submenu li:has(a[href*="page=hashieban-time"]),
@@ -468,6 +487,38 @@ final class AdminMenu
                     'hashieban-admin'
                 ),
                 HASHIEBAN_VERSION
+            );
+        }
+
+        if (
+            strpos(
+                $hook,
+                'hashieban-kpis'
+            ) !== false
+        ) {
+            wp_enqueue_style(
+                'hashieban-business-kpis',
+                plugins_url(
+                    'assets/admin/css/hashieban-business-kpis.css',
+                    HASHIEBAN_FILE
+                ),
+                array(
+                    'hashieban-admin'
+                ),
+                HASHIEBAN_VERSION
+            );
+
+            wp_enqueue_script(
+                'hashieban-business-kpis',
+                plugins_url(
+                    'assets/admin/js/hashieban-business-kpis.js',
+                    HASHIEBAN_FILE
+                ),
+                array(
+                    'hashieban-chartjs'
+                ),
+                HASHIEBAN_VERSION,
+                true
             );
         }
 

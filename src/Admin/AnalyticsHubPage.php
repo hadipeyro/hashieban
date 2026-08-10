@@ -20,6 +20,12 @@ final class AnalyticsHubPage
                 'description' => 'ببینید چه چیزی می‌فروشد، چه کسی سود می‌سازد و چه زمانی عملکرد بهتر است.',
                 'items' => array(
                     array(
+                        'title' => 'نبض کسب‌وکار',
+                        'description' => 'KPIهای مدیریتی، رشد، AOV، تکرار خرید، هزینه و امتیاز عملکرد.',
+                        'icon' => 'dashicons-chart-area',
+                        'url' => admin_url('admin.php?page=hashieban-kpis'),
+                    ),
+                    array(
                         'title' => 'سودآوری محصولات',
                         'description' => 'فروش، سود، حاشیه سود و سهم هر محصول.',
                         'icon' => 'dashicons-products',
