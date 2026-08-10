@@ -9,12 +9,14 @@ use Hashieban\Admin\DashboardPage;
 use Hashieban\Admin\ExpenseCategoriesPage;
 use Hashieban\Admin\ExpensesPage;
 use Hashieban\Admin\OrderCostsMetaBox;
+use Hashieban\Admin\ProductProfitabilityPage;
 use Hashieban\Admin\SettingsPage;
 use Hashieban\Domain\Profit\ProfitEngine;
 use Hashieban\Finance\ExpenseCategoryRepository;
 use Hashieban\Finance\GlobalOrderCostRepository;
 use Hashieban\Finance\StoreExpenseRepository;
 use Hashieban\Integration\WooCommerce\Analytics\AnalyticsService;
+use Hashieban\Integration\WooCommerce\Analytics\ProductProfitabilityService;
 use Hashieban\Integration\WooCommerce\Compatibility;
 use Hashieban\Integration\WooCommerce\Order\DirectCostRepository;
 use Hashieban\Integration\WooCommerce\Order\MoneyFactory;
@@ -109,10 +111,21 @@ final class Plugin
                 $analytics
             );
 
+        $productProfitability =
+            new ProductProfitabilityService(
+                $moneyFactory
+            );
+
+        $productProfitabilityPage =
+            new ProductProfitabilityPage(
+                $productProfitability
+            );
+
         $adminMenu =
             new AdminMenu(
                 $compatibility,
                 $dashboard,
+                $productProfitabilityPage,
                 $expensesPage,
                 $expenseCategoriesPage,
                 $settingsPage

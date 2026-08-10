@@ -13,6 +13,8 @@ final class AdminMenu
 
     private DashboardPage $dashboard;
 
+    private ProductProfitabilityPage $productProfitabilityPage;
+
     private ExpensesPage $expensesPage;
 
     private ExpenseCategoriesPage $categoriesPage;
@@ -22,6 +24,7 @@ final class AdminMenu
     public function __construct(
         Compatibility $compatibility,
         DashboardPage $dashboard,
+        ProductProfitabilityPage $productProfitabilityPage,
         ExpensesPage $expensesPage,
         ExpenseCategoriesPage $categoriesPage,
         SettingsPage $settingsPage
@@ -31,6 +34,9 @@ final class AdminMenu
 
         $this->dashboard =
             $dashboard;
+
+        $this->productProfitabilityPage =
+            $productProfitabilityPage;
 
         $this->expensesPage =
             $expensesPage;
@@ -78,6 +84,18 @@ final class AdminMenu
             'hashieban',
             array(
                 $this->dashboard,
+                'render'
+            )
+        );
+
+        add_submenu_page(
+            'hashieban',
+            'تحلیل سودآوری محصولات',
+            'سودآوری محصولات',
+            'manage_woocommerce',
+            'hashieban-products',
+            array(
+                $this->productProfitabilityPage,
                 'render'
             )
         );
@@ -209,6 +227,38 @@ final class AdminMenu
             HASHIEBAN_VERSION,
             true
         );
+
+        if (
+            strpos(
+                $hook,
+                'hashieban-products'
+            ) !== false
+        ) {
+            wp_enqueue_style(
+                'hashieban-product-profitability',
+                plugins_url(
+                    'assets/admin/css/hashieban-product-profitability.css',
+                    HASHIEBAN_FILE
+                ),
+                array(
+                    'hashieban-admin'
+                ),
+                HASHIEBAN_VERSION
+            );
+
+            wp_enqueue_script(
+                'hashieban-product-profitability',
+                plugins_url(
+                    'assets/admin/js/hashieban-product-profitability.js',
+                    HASHIEBAN_FILE
+                ),
+                array(
+                    'hashieban-chartjs'
+                ),
+                HASHIEBAN_VERSION,
+                true
+            );
+        }
 
         if (
             strpos(
