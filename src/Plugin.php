@@ -8,6 +8,7 @@ use Hashieban\Admin\AdminMenu;
 use Hashieban\Admin\CustomerProfitabilityPage;
 use Hashieban\Admin\MarginGuardPage;
 use Hashieban\Admin\DashboardPage;
+use Hashieban\Admin\DataHealthPage;
 use Hashieban\Admin\ExpenseCategoriesPage;
 use Hashieban\Admin\ExpenseIntelligencePage;
 use Hashieban\Admin\ExpensesPage;
@@ -24,6 +25,7 @@ use Hashieban\Finance\GlobalOrderCostRepository;
 use Hashieban\Finance\StoreExpenseRepository;
 use Hashieban\Integration\WooCommerce\Analytics\AnalyticsService;
 use Hashieban\Integration\WooCommerce\Analytics\CustomerProfitabilityService;
+use Hashieban\Integration\WooCommerce\Analytics\DataHealthService;
 use Hashieban\Integration\WooCommerce\Analytics\ExpenseIntelligenceService;
 use Hashieban\Integration\WooCommerce\Analytics\MarginGuardService;
 use Hashieban\Integration\WooCommerce\Analytics\ProductProfitabilityService;
@@ -229,6 +231,17 @@ final class Plugin
 
         $reportsHubPage->register();
 
+        $dataHealth =
+            new DataHealthService(
+                $orderAdapter,
+                $productProfitability
+            );
+
+        $dataHealthPage =
+            new DataHealthPage(
+                $dataHealth
+            );
+
         $adminMenu =
             new AdminMenu(
                 $compatibility,
@@ -240,6 +253,7 @@ final class Plugin
                 $marginGuardPage,
                 $reportsHubPage,
                 $expenseIntelligencePage,
+                $dataHealthPage,
                 $expensesPage,
                 $expenseCategoriesPage,
                 $settingsPage

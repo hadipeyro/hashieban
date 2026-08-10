@@ -27,6 +27,8 @@ final class AdminMenu
 
     private ExpenseIntelligencePage $expenseIntelligencePage;
 
+    private DataHealthPage $dataHealthPage;
+
     private ExpensesPage $expensesPage;
 
     private ExpenseCategoriesPage $categoriesPage;
@@ -43,6 +45,7 @@ final class AdminMenu
         MarginGuardPage $marginGuardPage,
         ReportsHubPage $reportsHubPage,
         ExpenseIntelligencePage $expenseIntelligencePage,
+        DataHealthPage $dataHealthPage,
         ExpensesPage $expensesPage,
         ExpenseCategoriesPage $categoriesPage,
         SettingsPage $settingsPage
@@ -73,6 +76,9 @@ final class AdminMenu
 
         $this->expenseIntelligencePage =
             $expenseIntelligencePage;
+
+        $this->dataHealthPage =
+            $dataHealthPage;
 
         $this->expensesPage =
             $expensesPage;
@@ -204,6 +210,18 @@ final class AdminMenu
             'hashieban-expense-intelligence',
             array(
                 $this->expenseIntelligencePage,
+                'render'
+            )
+        );
+
+        add_submenu_page(
+            'hashieban',
+            'سلامت داده و آمادگی تحلیل',
+            'سلامت داده',
+            'manage_woocommerce',
+            'hashieban-data-health',
+            array(
+                $this->dataHealthPage,
                 'render'
             )
         );
@@ -550,6 +568,38 @@ final class AdminMenu
                 'hashieban-expense-intelligence',
                 plugins_url(
                     'assets/admin/js/hashieban-expense-intelligence.js',
+                    HASHIEBAN_FILE
+                ),
+                array(
+                    'hashieban-chartjs'
+                ),
+                HASHIEBAN_VERSION,
+                true
+            );
+        }
+
+        if (
+            strpos(
+                $hook,
+                'hashieban-data-health'
+            ) !== false
+        ) {
+            wp_enqueue_style(
+                'hashieban-data-health',
+                plugins_url(
+                    'assets/admin/css/hashieban-data-health.css',
+                    HASHIEBAN_FILE
+                ),
+                array(
+                    'hashieban-admin'
+                ),
+                HASHIEBAN_VERSION
+            );
+
+            wp_enqueue_script(
+                'hashieban-data-health',
+                plugins_url(
+                    'assets/admin/js/hashieban-data-health.js',
                     HASHIEBAN_FILE
                 ),
                 array(
