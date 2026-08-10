@@ -255,6 +255,12 @@ final class ProfitSnapshotService
                      $snapshot
                  );
 
+            do_action(
+                'hashieban_profit_snapshot_saved',
+                $order->get_id(),
+                $snapshot
+            );
+
             return $snapshot;
         } catch (Throwable $exception) {
             return null;

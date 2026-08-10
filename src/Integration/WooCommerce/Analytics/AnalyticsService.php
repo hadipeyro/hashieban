@@ -13,6 +13,7 @@ use Hashieban\Finance\GlobalOrderCostRepository;
 use Hashieban\Finance\StoreExpenseRepository;
 use Hashieban\Integration\WooCommerce\Order\DirectCostRepository;
 use Hashieban\Integration\WooCommerce\Order\OrderAdapter;
+use Hashieban\Integration\WooCommerce\Performance\OrderMetricsRepository;
 use Hashieban\Support\JalaliDate;
 use WC_Order;
 
@@ -24,6 +25,7 @@ final class AnalyticsService
     private ProfitEngine $profitEngine;
     private DirectCostRepository $directCosts;
     private ExpenseCategoryRepository $categories;
+    private OrderMetricsRepository $orderMetrics;
 
     public function __construct(
         OrderAdapter $orderAdapter,
@@ -31,7 +33,8 @@ final class AnalyticsService
         GlobalOrderCostRepository $globalCosts,
         ProfitEngine $profitEngine,
         DirectCostRepository $directCosts,
-        ExpenseCategoryRepository $categories
+        ExpenseCategoryRepository $categories,
+        OrderMetricsRepository $orderMetrics
     ) {
         $this->orderAdapter =
             $orderAdapter;
@@ -50,9 +53,33 @@ final class AnalyticsService
 
         $this->categories =
             $categories;
+
+        $this->orderMetrics =
+            $orderMetrics;
     }
 
     public function getDashboardData(
+        DateTimeImmutable $start,
+        DateTimeImmutable $end
+    ): array {
+        if ($this->orderMetrics->isReady()) {
+            $indexed = $this->getIndexedDashboardData(
+                $start,
+                $end
+            );
+
+            if ($indexed !== null) {
+                return $indexed;
+            }
+        }
+
+        return $this->getLegacyDashboardData(
+            $start,
+            $end
+        );
+    }
+
+    private function getLegacyDashboardData(
         DateTimeImmutable $start,
         DateTimeImmutable $end
     ): array {
@@ -605,6 +632,332 @@ final class AnalyticsService
 
             'expense_category_breakdown' =>
                 $categoryBreakdown,
+
+            'performance_mode' =>
+                'legacy',
+        );
+    }
+
+    private function getIndexedDashboardData(
+        DateTimeImmutable $start,
+        DateTimeImmutable $end
+    ): ?array {
+        $currency = get_woocommerce_currency();
+        $precision = wc_get_price_decimals();
+
+        $summary = $this->orderMetrics
+            ->summaryBetween(
+                $start,
+                $end,
+                $currency
+            );
+
+        if ($summary === array()) {
+            return null;
+        }
+
+        $revenueMinor = (int) ($summary['revenue_minor'] ?? 0);
+        $cogsMinor = (int) ($summary['cogs_minor'] ?? 0);
+        $directCostsMinor = (int) ($summary['direct_costs_minor'] ?? 0);
+        $globalCostsMinor = (int) ($summary['global_order_costs_minor'] ?? 0);
+        $orderCount = (int) ($summary['order_count'] ?? 0);
+        $incompleteCount = (int) ($summary['incomplete_count'] ?? 0);
+
+        $globalCostPerOrder = $this->globalCosts
+            ->total(
+                $currency,
+                $precision
+            );
+
+        $bucketMode = $this->resolveBucketMode(
+            $start,
+            $end
+        );
+
+        $buckets = array();
+
+        foreach (
+            $this->orderMetrics->dailyBetween(
+                $start,
+                $end,
+                $currency
+            ) as $row
+        ) {
+            $dayKey = (string) ($row['day_key'] ?? '');
+
+            $date = DateTimeImmutable::createFromFormat(
+                '!Y-m-d',
+                $dayKey,
+                wp_timezone()
+            );
+
+            if (! $date) {
+                continue;
+            }
+
+            $bucketKey = $this->bucketKey(
+                $date,
+                $bucketMode
+            );
+
+            if (! isset($buckets[$bucketKey])) {
+                $buckets[$bucketKey] = $this->newBucket(
+                    $date,
+                    $bucketMode
+                );
+            }
+
+            $buckets[$bucketKey]['revenue_minor'] +=
+                (int) ($row['revenue_minor'] ?? 0);
+            $buckets[$bucketKey]['cogs_minor'] +=
+                (int) ($row['cogs_minor'] ?? 0);
+            $buckets[$bucketKey]['direct_costs_minor'] +=
+                (int) ($row['direct_costs_minor'] ?? 0);
+            $buckets[$bucketKey]['global_order_costs_minor'] +=
+                (int) ($row['global_order_costs_minor'] ?? 0);
+            $buckets[$bucketKey]['profit_minor'] +=
+                (int) ($row['profit_minor'] ?? 0);
+        }
+
+        $categoryTotals = array();
+
+        foreach (
+            $this->orderMetrics->categoryTotalsBetween(
+                $start,
+                $end,
+                $currency
+            ) as $categoryRow
+        ) {
+            $this->addCategoryAmount(
+                $categoryTotals,
+                (string) ($categoryRow['category_id'] ?? ''),
+                (int) ($categoryRow['amount_minor'] ?? 0)
+            );
+        }
+
+        $storeExpenses = $this->expenseRepository
+            ->sumBetween(
+                $start,
+                $end,
+                $currency,
+                $precision
+            );
+
+        $expenseRows = $this->expenseRepository
+            ->totalsByDateBetween(
+                $start,
+                $end,
+                $currency
+            );
+
+        $expenseCategoryRows = $this->expenseRepository
+            ->totalsByCategoryBetween(
+                $start,
+                $end,
+                $currency
+            );
+
+        foreach ($expenseCategoryRows as $expenseCategory) {
+            $categoryId = sanitize_key(
+                (string) ($expenseCategory['category_id'] ?? '')
+            );
+
+            if ($categoryId === '') {
+                $categoryId = $this->categories
+                    ->fallbackId();
+            }
+
+            $this->addCategoryAmount(
+                $categoryTotals,
+                $categoryId,
+                (int) ($expenseCategory['amount_minor'] ?? 0)
+            );
+        }
+
+        foreach ($expenseRows as $expense) {
+            if (empty($expense['expense_date'])) {
+                continue;
+            }
+
+            $expenseDate = DateTimeImmutable::createFromFormat(
+                '!Y-m-d',
+                (string) $expense['expense_date'],
+                wp_timezone()
+            );
+
+            if (! $expenseDate) {
+                continue;
+            }
+
+            $bucketKey = $this->bucketKey(
+                $expenseDate,
+                $bucketMode
+            );
+
+            if (! isset($buckets[$bucketKey])) {
+                $buckets[$bucketKey] = $this->newBucket(
+                    $expenseDate,
+                    $bucketMode
+                );
+            }
+
+            $expenseMinor = (int) ($expense['amount_minor'] ?? 0);
+            $buckets[$bucketKey]['store_expenses_minor'] += $expenseMinor;
+            $buckets[$bucketKey]['profit_minor'] -= $expenseMinor;
+        }
+
+        ksort($buckets);
+
+        $storeProfit = $this->profitEngine
+            ->calculateStore(
+                new Money(
+                    $revenueMinor,
+                    $currency,
+                    $precision
+                ),
+                new Money(
+                    $cogsMinor,
+                    $currency,
+                    $precision
+                ),
+                new Money(
+                    $directCostsMinor,
+                    $currency,
+                    $precision
+                ),
+                new Money(
+                    $globalCostsMinor,
+                    $currency,
+                    $precision
+                ),
+                $storeExpenses,
+                $incompleteCount
+            );
+
+        $breakdown = $storeProfit->breakdown();
+        $categoryBreakdown = array();
+
+        foreach ($categoryTotals as $categoryId => $amountMinor) {
+            if ((int) $amountMinor <= 0) {
+                continue;
+            }
+
+            $category = $this->categories
+                ->find((string) $categoryId);
+
+            $categoryBreakdown[] = array(
+                'id' => (string) $categoryId,
+                'name' => $category
+                    ? (string) ($category['name'] ?? 'سایر')
+                    : 'سایر',
+                'color' => $category
+                    ? (string) ($category['color'] ?? '#64748b')
+                    : '#64748b',
+                'amount_minor' => (int) $amountMinor,
+            );
+        }
+
+        usort(
+            $categoryBreakdown,
+            static function (
+                array $left,
+                array $right
+            ): int {
+                return $right['amount_minor']
+                    <=> $left['amount_minor'];
+            }
+        );
+
+        $recentOrders = array();
+
+        foreach (
+            $this->orderMetrics->recentBetween(
+                $start,
+                $end,
+                $currency,
+                8
+            ) as $metricRow
+        ) {
+            $order = wc_get_order(
+                (int) ($metricRow['order_id'] ?? 0)
+            );
+
+            if (! $order instanceof WC_Order) {
+                continue;
+            }
+
+            $customer = trim(
+                $order->get_formatted_billing_full_name()
+            );
+
+            if ($customer === '') {
+                $customer = 'مهمان';
+            }
+
+            $date = $order->get_date_created();
+            $marginBps = $metricRow['margin_bps'] ?? null;
+
+            $recentOrders[] = array(
+                'id' => $order->get_id(),
+                'number' => $order->get_order_number(),
+                'customer' => $customer,
+                'date' => $date
+                    ? JalaliDate::format($date)
+                        . ' - '
+                        . $date->format('H:i')
+                    : '—',
+                'status' => wc_get_order_status_name(
+                    $order->get_status()
+                ),
+                'revenue_minor' =>
+                    (int) ($metricRow['revenue_minor'] ?? 0),
+                'profit_minor' =>
+                    (int) ($metricRow['profit_minor'] ?? 0),
+                'margin_percentage' =>
+                    $marginBps === null
+                ? null
+                    : ((int) $marginBps) / 100,
+                'complete' =>
+                    empty($metricRow['incomplete']),
+                'edit_url' =>
+                    $order->get_edit_order_url(),
+            );
+        }
+
+        return array(
+            'currency' => $currency,
+            'precision' => $precision,
+            'revenue_minor' => $revenueMinor,
+            'cogs_minor' => $cogsMinor,
+            'gross_profit_minor' =>
+                $breakdown->revenue()
+                    ->subtract($breakdown->cogs())
+                    ->minorAmount(),
+            'direct_costs_minor' => $directCostsMinor,
+            'global_order_costs_minor' => $globalCostsMinor,
+            'store_expenses_minor' =>
+                $storeExpenses->minorAmount(),
+            'order_profit_minor' =>
+                $breakdown->profitBeforeStoreExpenses()
+                    ->minorAmount(),
+            'net_profit_minor' =>
+                $storeProfit->profit()->minorAmount(),
+            'profit_minor' =>
+                $storeProfit->profit()->minorAmount(),
+            'margin_percentage' =>
+                $storeProfit->marginPercentage(),
+            'order_count' => $orderCount,
+            'incomplete_count' => $incompleteCount,
+            'complete' =>
+                $storeProfit->completeness()->isComplete(),
+            'global_cost_per_order_minor' =>
+                $globalCostPerOrder->minorAmount(),
+            'daily' => array_values($buckets),
+            'recent_orders' => $recentOrders,
+            'bucket_mode' => $bucketMode,
+            'expense_category_breakdown' =>
+                $categoryBreakdown,
+            'performance_mode' => 'indexed',
         );
     }
 

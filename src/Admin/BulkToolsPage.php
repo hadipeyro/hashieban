@@ -37,6 +37,11 @@ final class BulkToolsPage
             'admin_post_hashieban_profit_snapshot_backfill',
             array($this, 'backfillProfitSnapshots')
         );
+
+        add_action(
+            'admin_post_hashieban_performance_index_rebuild',
+            array($this, 'rebuildPerformanceIndex')
+        );
     }
 
     public function render(): void
@@ -48,6 +53,8 @@ final class BulkToolsPage
         $importResult = $this->pullResult('cogs_import');
         $geoResult = $this->pullResult('geo_backfill');
         $snapshotResult = $this->pullResult('profit_snapshot_backfill');
+        $performanceResult = $this->pullResult('performance_index_rebuild');
+        $performanceStatus = $this->tools->performanceIndexStatus();
         $currency = get_woocommerce_currency();
         $storeUnit = Currency::storeLabel($currency);
         ?>
@@ -75,6 +82,7 @@ final class BulkToolsPage
             <?php $this->renderImportResult($importResult); ?>
             <?php $this->renderGeoResult($geoResult); ?>
             <?php $this->renderSnapshotResult($snapshotResult); ?>
+            <?php $this->renderPerformanceResult($performanceResult); ?>
 
             <section class="hb-bulk-tools-grid">
                 <article class="hb-bulk-tools-card hb-bulk-tools-card--accent">
@@ -161,6 +169,48 @@ final class BulkToolsPage
 
                     <div class="hb-bulk-tools-help">
                         فقط سفارش‌های processing/completed/refunded بررسی می‌شوند. Snapshot موجود دوباره ساخته نمی‌شود و پردازش Batch صدتایی است.
+                    </div>
+                </article>
+
+                <article class="hb-bulk-tools-card">
+                    <div class="hb-bulk-tools-card__icon">FAST</div>
+                    <h2>شاخص سریع گزارش‌های مالی</h2>
+                    <p>
+                        برای اینکه پیشخوان حاشیه‌بان مجبور نباشد در هر بار باز شدن هزاران سفارش ووکامرس را یکی‌یکی محاسبه کند،
+                        خلاصه مالی Snapshotها در جدول تحلیلی اختصاصی حاشیه‌بان ایندکس می‌شود. اطلاعات اصلی سفارش تغییر نمی‌کند.
+                    </p>
+
+                    <?php
+                    $performanceNextPage = is_array($performanceResult) && ! empty($performanceResult['next_page'])
+                        ? (int) $performanceResult['next_page']
+                        : 1;
+                    $indexReady = ! empty($performanceStatus['ready']);
+                    ?>
+
+                    <div class="hb-bulk-tools-help">
+                        وضعیت: <strong><?php echo $indexReady ? 'آماده و فعال' : 'نیازمند ساخت/بازسازی'; ?></strong>
+                        · <?php echo esc_html(number_format_i18n((int) ($performanceStatus['indexed_total'] ?? 0))); ?> سفارش ایندکس‌شده
+                    </div>
+
+                    <form action="<?php echo esc_url(admin_url('admin-post.php')); ?>" method="post">
+                        <input type="hidden" name="action" value="hashieban_performance_index_rebuild">
+                        <input type="hidden" name="page_number" value="<?php echo esc_attr((string) $performanceNextPage); ?>">
+                        <?php wp_nonce_field('hashieban_performance_index_rebuild'); ?>
+                        <button type="submit" class="button button-primary">
+                            <?php
+                            if ($performanceNextPage > 1) {
+                                echo 'ادامه ساخت شاخص سریع';
+                            } elseif ($indexReady) {
+                                echo 'بازسازی شاخص سریع';
+                            } else {
+                                echo 'شروع ساخت شاخص سریع';
+                            }
+                            ?>
+                        </button>
+                    </form>
+
+                    <div class="hb-bulk-tools-help">
+                        پردازش Batch صدتایی است. هنگام ساخت شاخص، داشبورد همچنان با روش قدیمی و امن کار می‌کند و فقط بعد از تکمیل کامل به حالت سریع سوییچ می‌شود.
                     </div>
                 </article>
             </section>
@@ -267,6 +317,32 @@ final class BulkToolsPage
 
         $this->storeResult(
             'profit_snapshot_backfill',
+            $result
+        );
+
+        $this->redirectToPage();
+    }
+
+    public function rebuildPerformanceIndex(): void
+    {
+        if (! current_user_can('manage_woocommerce')) {
+            wp_die(esc_html('شما اجازه اجرای بازسازی شاخص را ندارید.'));
+        }
+
+        check_admin_referer('hashieban_performance_index_rebuild');
+
+        $page = isset($_POST['page_number'])
+            ? max(1, absint((string) $_POST['page_number']))
+            : 1;
+
+        $result = $this->tools
+            ->rebuildOrderMetricsBatch(
+                $page,
+                100
+            );
+
+        $this->storeResult(
+            'performance_index_rebuild',
             $result
         );
 
@@ -395,6 +471,46 @@ final class BulkToolsPage
                 Batch <?php echo esc_html(number_format_i18n((int) ($result['page'] ?? 1))); ?> از
                 <?php echo esc_html(number_format_i18n((int) ($result['max_pages'] ?? 1))); ?> انجام شد.
                 <?php echo $nextPage !== null ? 'برای ادامه، دوباره دکمه ادامه را بزن.' : 'Snapshot سفارش‌های قابل تحلیل کامل شد.'; ?>
+            </p>
+        </section>
+        <?php
+    }
+
+
+    private function renderPerformanceResult(
+        ?array $result
+    ): void {
+        if ($result === null) {
+            return;
+        }
+
+        $nextPage = isset($result['next_page'])
+            && $result['next_page'] !== null
+        ? (int) $result['next_page']
+            : null;
+
+        $ready = ! empty($result['ready']);
+        ?>
+        <section class="hb-bulk-tools-result <?php echo $ready ? 'hb-bulk-tools-result--success' : 'hb-bulk-tools-result--warning'; ?>">
+            <h2>نتیجه ساخت شاخص سریع</h2>
+            <div class="hb-bulk-tools-result__stats">
+                <span><strong><?php echo esc_html(number_format_i18n((int) ($result['processed'] ?? 0))); ?></strong> بررسی‌شده</span>
+                <span><strong><?php echo esc_html(number_format_i18n((int) ($result['indexed'] ?? 0))); ?></strong> ایندکس‌شده</span>
+                <span><strong><?php echo esc_html(number_format_i18n((int) ($result['indexed_total'] ?? 0))); ?></strong> مجموع شاخص</span>
+                <span><strong><?php echo esc_html(number_format_i18n((int) ($result['skipped'] ?? 0))); ?></strong> ردشده</span>
+            </div>
+            <p>
+                Batch <?php echo esc_html(number_format_i18n((int) ($result['page'] ?? 1))); ?> از
+                <?php echo esc_html(number_format_i18n((int) ($result['max_pages'] ?? 1))); ?> انجام شد.
+                <?php
+                if ($nextPage !== null) {
+                    echo 'برای ادامه، دوباره دکمه ادامه ساخت شاخص را بزن.';
+                } elseif ($ready) {
+                    echo 'شاخص کامل شد؛ داشبورد حاشیه‌بان از این لحظه از مسیر سریع استفاده می‌کند.';
+                } else {
+                    echo 'شاخص هنوز آماده نشده است.';
+                }
+                ?>
             </p>
         </section>
         <?php

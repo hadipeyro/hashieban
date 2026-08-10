@@ -43,6 +43,8 @@ use Hashieban\Integration\WooCommerce\Geo\GeoAddressResolver;
 use Hashieban\Integration\WooCommerce\Order\DirectCostRepository;
 use Hashieban\Integration\WooCommerce\Order\MoneyFactory;
 use Hashieban\Integration\WooCommerce\Order\OrderAdapter;
+use Hashieban\Integration\WooCommerce\Performance\OrderMetricsIndexer;
+use Hashieban\Integration\WooCommerce\Performance\OrderMetricsRepository;
 use Hashieban\Integration\WooCommerce\Tools\BulkToolsService;
 use Hashieban\Integration\WooCommerce\Refund\RefundEngine;
 use Hashieban\Integration\WooCommerce\Snapshot\ProfitSnapshotRepository;
@@ -134,6 +136,12 @@ final class Plugin
         $profitSnapshotRepository =
             new ProfitSnapshotRepository();
 
+        $orderMetricsRepository =
+            new OrderMetricsRepository();
+
+        $orderMetricsRepository
+            ->registerSchema();
+
         $orderAdapter =
             new OrderAdapter(
                 $moneyFactory,
@@ -152,6 +160,15 @@ final class Plugin
 
         $profitSnapshots->register();
 
+        $orderMetricsIndexer =
+            new OrderMetricsIndexer(
+                $orderMetricsRepository,
+                $profitSnapshotRepository,
+                $directCostRepository
+            );
+
+        $orderMetricsIndexer->register();
+
         $analytics =
             new AnalyticsService(
                 $orderAdapter,
@@ -159,7 +176,8 @@ final class Plugin
                 $globalOrderCosts,
                 $profitEngine,
                 $directCostRepository,
-                $expenseCategories
+                $expenseCategories,
+                $orderMetricsRepository
             );
 
         $dashboard =
@@ -305,7 +323,8 @@ final class Plugin
             new BulkToolsService(
                 $compatibility,
                 $geoAddressCapture,
-                $profitSnapshots
+                $profitSnapshots,
+                $orderMetricsIndexer
             );
 
         $bulkToolsPage =

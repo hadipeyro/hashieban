@@ -6,6 +6,7 @@ namespace Hashieban\Integration\WooCommerce\Tools;
 
 use Hashieban\Integration\WooCommerce\Compatibility;
 use Hashieban\Integration\WooCommerce\Geo\GeoAddressCapture;
+use Hashieban\Integration\WooCommerce\Performance\OrderMetricsIndexer;
 use Hashieban\Integration\WooCommerce\Snapshot\ProfitSnapshotService;
 use WC_Order;
 use WC_Product;
@@ -15,15 +16,18 @@ final class BulkToolsService
     private Compatibility $compatibility;
     private GeoAddressCapture $geoCapture;
     private ProfitSnapshotService $profitSnapshots;
+    private OrderMetricsIndexer $orderMetricsIndexer;
 
     public function __construct(
         Compatibility $compatibility,
         GeoAddressCapture $geoCapture,
-        ProfitSnapshotService $profitSnapshots
+        ProfitSnapshotService $profitSnapshots,
+        OrderMetricsIndexer $orderMetricsIndexer
     ) {
         $this->compatibility = $compatibility;
         $this->geoCapture = $geoCapture;
         $this->profitSnapshots = $profitSnapshots;
+        $this->orderMetricsIndexer = $orderMetricsIndexer;
     }
 
     public function isCogsEnabled(): bool
@@ -394,6 +398,120 @@ final class BulkToolsService
         }
 
         return $summary;
+    }
+
+    public function rebuildOrderMetricsBatch(
+        int $page,
+        int $batchSize = 100
+    ): array {
+        $page = max(1, $page);
+        $batchSize = max(20, min(250, $batchSize));
+
+        if ($page === 1) {
+            $this->orderMetricsIndexer
+                 ->prepareRebuild();
+        }
+
+        $query = wc_get_orders(
+            array(
+                'status' => array(
+                    'processing',
+                    'completed',
+                    'refunded',
+                ),
+                'limit' => $batchSize,
+                'page' => $page,
+                'paginate' => true,
+                'orderby' => 'date',
+                'order' => 'ASC',
+            )
+        );
+
+        $summary = array(
+            'page' => $page,
+            'processed' => 0,
+            'indexed' => 0,
+            'snapshot_created' => 0,
+            'snapshot_existing' => 0,
+            'skipped' => 0,
+            'max_pages' => 1,
+            'next_page' => null,
+            'ready' => false,
+            'indexed_total' =>
+                $this->orderMetricsIndexer
+                     ->indexedCount(),
+        );
+
+        if (! is_object($query) || ! isset($query->orders)) {
+            return $summary;
+        }
+
+        $maxPages = isset($query->max_num_pages)
+            ? max(1, (int) $query->max_num_pages)
+            : 1;
+
+        $summary['max_pages'] = $maxPages;
+
+        foreach ((array) $query->orders as $order) {
+            if (! $order instanceof WC_Order) {
+                continue;
+            }
+
+            $snapshotResult =
+                $this->profitSnapshots
+                     ->captureMissing(
+                         $order,
+                         'performance-index'
+                     );
+
+            $summary['processed']++;
+
+            $snapshotStatus = (string) (
+                $snapshotResult['status']
+                ?? 'skipped'
+            );
+
+            if ($snapshotStatus === 'created') {
+                $summary['snapshot_created']++;
+            } elseif ($snapshotStatus === 'existing') {
+                $summary['snapshot_existing']++;
+            }
+
+            if (
+                $this->orderMetricsIndexer
+                     ->indexOrder($order)
+            ) {
+                $summary['indexed']++;
+            } else {
+                $summary['skipped']++;
+            }
+        }
+
+        if ($page < $maxPages) {
+            $summary['next_page'] = $page + 1;
+        } else {
+            $this->orderMetricsIndexer
+                 ->finishRebuild();
+            $summary['ready'] = true;
+        }
+
+        $summary['indexed_total'] =
+            $this->orderMetricsIndexer
+                 ->indexedCount();
+
+        return $summary;
+    }
+
+    public function performanceIndexStatus(): array
+    {
+        return array(
+            'ready' =>
+                $this->orderMetricsIndexer
+                     ->isReady(),
+            'indexed_total' =>
+                $this->orderMetricsIndexer
+                     ->indexedCount(),
+        );
     }
 
     private function writeProductRow($stream, WC_Product $product): void
