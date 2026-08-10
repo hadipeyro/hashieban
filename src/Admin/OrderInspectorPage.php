@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace Hashieban\Admin;
 
+use Hashieban\Security\Capabilities;
 use Hashieban\Domain\Money\Money;
 use Hashieban\Integration\WooCommerce\OrderAdapter;
 use Throwable;
@@ -40,7 +41,7 @@ final class OrderInspectorPage
 
     public function renderPage(): void
     {
-        if (! current_user_can('manage_woocommerce')) {
+        if (! Capabilities::can(Capabilities::VIEW_REPORTS)) {
             wp_die(
                 esc_html__(
                     'شما اجازه دسترسی به این صفحه را ندارید.',

@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace Hashieban\Admin;
 
+use Hashieban\Security\Capabilities;
 use DateTimeImmutable;
 use Hashieban\Finance\ExpenseCategoryRepository;
 use Hashieban\Finance\StoreExpenseRepository;
@@ -55,9 +56,7 @@ final class ExpensesPage
     public function render(): void
     {
         if (
-            ! current_user_can(
-                'manage_woocommerce'
-            )
+            ! Capabilities::can(Capabilities::MANAGE_FINANCE)
         ) {
             wp_die('Access denied.');
         }
@@ -803,9 +802,7 @@ final class ExpensesPage
 		public function handleAdd(): void
 		{
 			if (
-				! current_user_can(
-					'manage_woocommerce'
-				)
+				! Capabilities::can(Capabilities::MANAGE_FINANCE)
 			) {
 				wp_die('Access denied.');
 			}
@@ -941,9 +938,7 @@ final class ExpensesPage
 		public function handleUpdate(): void
 		{
 			if (
-				! current_user_can(
-					'manage_woocommerce'
-				)
+				! Capabilities::can(Capabilities::MANAGE_FINANCE)
 			) {
 				wp_die('Access denied.');
 			}
@@ -1113,9 +1108,7 @@ final class ExpensesPage
 		public function handleDelete(): void
 		{
 			if (
-				! current_user_can(
-					'manage_woocommerce'
-				)
+				! Capabilities::can(Capabilities::MANAGE_FINANCE)
 			) {
 				wp_die('Access denied.');
 			}

@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace Hashieban\Admin;
 
+use Hashieban\Security\Capabilities;
 use Hashieban\Integration\WooCommerce\Compatibility;
 use Hashieban\Integration\WooCommerce\Performance\OrderMetricsIndexer;
 use Hashieban\Support\Currency;
@@ -64,7 +65,7 @@ final class OnboardingPage
 
     public function dismiss(): void
     {
-        if (! current_user_can('manage_woocommerce')) {
+        if (! Capabilities::can(Capabilities::VIEW_REPORTS)) {
             wp_die(
                 esc_html('شما اجازه انجام این کار را ندارید.')
             );
@@ -103,7 +104,7 @@ final class OnboardingPage
 
     public function showAgain(): void
     {
-        if (! current_user_can('manage_woocommerce')) {
+        if (! Capabilities::can(Capabilities::VIEW_REPORTS)) {
             wp_die(
                 esc_html('شما اجازه انجام این کار را ندارید.')
             );
@@ -125,7 +126,7 @@ final class OnboardingPage
 
     public function render(): void
     {
-        if (! current_user_can('manage_woocommerce')) {
+        if (! Capabilities::can(Capabilities::VIEW_REPORTS)) {
             wp_die(
                 esc_html('شما اجازه دسترسی به این بخش را ندارید.')
             );

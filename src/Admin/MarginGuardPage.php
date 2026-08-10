@@ -4,6 +4,8 @@ declare(strict_types=1);
 
 namespace Hashieban\Admin;
 
+use Hashieban\Security\Json;
+use Hashieban\Security\Capabilities;
 use DateTimeImmutable;
 use Hashieban\Integration\WooCommerce\Analytics\MarginGuardService;
 use Hashieban\Support\Currency;
@@ -24,7 +26,7 @@ final class MarginGuardPage
 
     public function render(): void
     {
-        if (! current_user_can('manage_woocommerce')) {
+        if (! Capabilities::can(Capabilities::VIEW_REPORTS)) {
             wp_die(esc_html('شما اجازه دسترسی به این بخش را ندارید.'));
         }
 
@@ -80,20 +82,24 @@ final class MarginGuardPage
                     <h2>آستانه‌های نگهبان</h2>
                     <p>این اعداد فقط رفتار هشدار را تغییر می‌دهند و هیچ داده مالی را دستکاری نمی‌کنند.</p>
                 </div>
-                <form method="post" class="hb-guard-threshold-form">
-                    <?php wp_nonce_field('hashieban_margin_guard_save', 'hashieban_margin_guard_nonce'); ?>
-                    <input type="hidden" name="hashieban_margin_guard_action" value="save">
-                    <label>حداقل Margin سالم
-                        <input type="number" step="0.1" min="0" max="100" name="margin_threshold" value="<?php echo esc_attr((string) $marginThreshold); ?>"> ٪
-                    </label>
-                    <label>هشدار افت سود
-                        <input type="number" step="0.1" min="1" max="100" name="profit_drop_threshold" value="<?php echo esc_attr((string) $profitDropThreshold); ?>"> ٪
-                    </label>
-                    <label>هشدار نرخ مرجوعی
-                        <input type="number" step="0.1" min="1" max="100" name="return_rate_threshold" value="<?php echo esc_attr((string) $returnRateThreshold); ?>"> ٪
-                    </label>
-                    <button type="submit" class="button button-primary">ذخیره آستانه‌ها</button>
-                </form>
+                <?php if (Capabilities::can(Capabilities::MANAGE_SETTINGS)) : ?>
+                    <form method="post" class="hb-guard-threshold-form">
+                        <?php wp_nonce_field('hashieban_margin_guard_save', 'hashieban_margin_guard_nonce'); ?>
+                        <input type="hidden" name="hashieban_margin_guard_action" value="save">
+                        <label>حداقل Margin سالم
+                            <input type="number" step="0.1" min="0" max="100" name="margin_threshold" value="<?php echo esc_attr((string) $marginThreshold); ?>"> ٪
+                        </label>
+                        <label>هشدار افت سود
+                            <input type="number" step="0.1" min="1" max="100" name="profit_drop_threshold" value="<?php echo esc_attr((string) $profitDropThreshold); ?>"> ٪
+                        </label>
+                        <label>هشدار نرخ مرجوعی
+                            <input type="number" step="0.1" min="1" max="100" name="return_rate_threshold" value="<?php echo esc_attr((string) $returnRateThreshold); ?>"> ٪
+                        </label>
+                        <button type="submit" class="button button-primary">ذخیره آستانه‌ها</button>
+                    </form>
+                <?php else : ?>
+                    <div class="hb-guard-threshold-form">دسترسی شما فقط خواندنی است و امکان تغییر آستانه‌های هشدار را ندارید.</div>
+                <?php endif; ?>
             </section>
 
             <section class="hb-guard-kpis">
@@ -154,7 +160,7 @@ final class MarginGuardPage
                 <?php $this->renderProductRiskTable('مرجوعی بالا', (array) $report['high_return_products'], $currency, $precision, 'returns'); ?>
             </section>
 
-            <script id="hashieban-margin-guard-data" type="application/json"><?php echo wp_json_encode($payload); ?></script>
+            <script id="hashieban-margin-guard-data" type="application/json"><?php echo Json::forHtmlScript($payload); ?></script>
         </div>
         <?php
     }
@@ -166,6 +172,10 @@ final class MarginGuardPage
             || sanitize_key(wp_unslash($_POST['hashieban_margin_guard_action'])) !== 'save'
         ) {
             return false;
+        }
+
+        if (! Capabilities::can(Capabilities::MANAGE_SETTINGS)) {
+            wp_die(esc_html('شما اجازه تغییر تنظیمات هشدارهای حاشیه‌بان را ندارید.'));
         }
 
         if (

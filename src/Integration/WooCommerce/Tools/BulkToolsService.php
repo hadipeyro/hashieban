@@ -8,6 +8,7 @@ use Hashieban\Integration\WooCommerce\Compatibility;
 use Hashieban\Integration\WooCommerce\Geo\GeoAddressCapture;
 use Hashieban\Integration\WooCommerce\Performance\OrderMetricsIndexer;
 use Hashieban\Integration\WooCommerce\Snapshot\ProfitSnapshotService;
+use Hashieban\Security\Csv;
 use WC_Order;
 use WC_Product;
 
@@ -53,7 +54,7 @@ final class BulkToolsService
 
         fputcsv(
             $stream,
-            array(
+            Csv::protectRow(array(
                 'product_id',
                 'parent_id',
                 'type',
@@ -61,7 +62,7 @@ final class BulkToolsService
                 'name',
                 'cogs_store_unit',
                 'store_currency',
-            )
+            ))
         );
 
         $page = 1;
@@ -168,6 +169,11 @@ final class BulkToolsService
 
         while (($row = fgetcsv($handle)) !== false) {
             $rowNumber++;
+
+            if ($rowNumber > 50001) {
+                $this->addError($result, 'فایل بیش از ۵۰٬۰۰۰ ردیف دارد. برای امنیت و پایداری، فایل را به چند بخش تقسیم کنید.');
+                break;
+            }
 
             if (! is_array($row) || $row === array()) {
                 continue;
@@ -522,7 +528,7 @@ final class BulkToolsService
 
         fputcsv(
             $stream,
-            array(
+            Csv::protectRow(array(
                 $product->get_id(),
                 $product->get_parent_id(),
                 $product->get_type(),
@@ -530,7 +536,7 @@ final class BulkToolsService
                 wp_strip_all_tags($product->get_name()),
                 $cogs === null ? '' : wc_format_decimal((string) $cogs),
                 get_woocommerce_currency(),
-            )
+            ))
         );
     }
 

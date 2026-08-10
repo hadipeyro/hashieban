@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace Hashieban\Admin;
 
+use Hashieban\Security\Capabilities;
 use DateTimeImmutable;
 use Hashieban\Integration\WooCommerce\Analytics\BusinessKpiService;
 use Hashieban\Support\Currency;
@@ -21,7 +22,7 @@ final class BusinessKpisPage
 
     public function render(): void
     {
-        if (! current_user_can('manage_woocommerce')) {
+        if (! Capabilities::can(Capabilities::VIEW_REPORTS)) {
             wp_die(
                 esc_html('شما اجازه دسترسی به این بخش را ندارید.')
             );

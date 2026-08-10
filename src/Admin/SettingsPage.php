@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace Hashieban\Admin;
 
+use Hashieban\Security\Capabilities;
 use Hashieban\Finance\GlobalOrderCostRepository;
 use Hashieban\Integration\WooCommerce\Order\MoneyFactory;
 use Hashieban\Support\Currency;
@@ -43,9 +44,7 @@ final class SettingsPage
     public function render(): void
     {
         if (
-            ! current_user_can(
-                'manage_woocommerce'
-            )
+            ! Capabilities::can(Capabilities::MANAGE_SETTINGS)
         ) {
             return;
         }
@@ -453,9 +452,7 @@ final class SettingsPage
 		public function saveDisplay(): void
 		{
 			if (
-				! current_user_can(
-					'manage_woocommerce'
-				)
+				! Capabilities::can(Capabilities::MANAGE_SETTINGS)
 			) {
 				wp_die('Access denied.');
 			}
@@ -484,9 +481,7 @@ final class SettingsPage
 		public function saveGlobalCosts(): void
 		{
 			if (
-				! current_user_can(
-					'manage_woocommerce'
-				)
+				! Capabilities::can(Capabilities::MANAGE_SETTINGS)
 			) {
 				wp_die('Access denied.');
 			}

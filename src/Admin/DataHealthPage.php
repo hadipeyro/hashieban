@@ -4,6 +4,8 @@ declare(strict_types=1);
 
 namespace Hashieban\Admin;
 
+use Hashieban\Security\Json;
+use Hashieban\Security\Capabilities;
 use DateTimeImmutable;
 use Hashieban\Integration\WooCommerce\Analytics\DataHealthService;
 use Hashieban\Support\JalaliDate;
@@ -19,7 +21,7 @@ final class DataHealthPage
 
     public function render(): void
     {
-        if (! current_user_can('manage_woocommerce')) {
+        if (! Capabilities::can(Capabilities::VIEW_REPORTS)) {
             wp_die(esc_html('شما اجازه دسترسی به این بخش را ندارید.'));
         }
 
@@ -204,7 +206,7 @@ final class DataHealthPage
                 </div>
             </section>
 
-            <script id="hashieban-data-health-data" type="application/json"><?php echo wp_json_encode($payload); ?></script>
+            <script id="hashieban-data-health-data" type="application/json"><?php echo Json::forHtmlScript($payload); ?></script>
         </div>
         <?php
     }

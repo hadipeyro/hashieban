@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace Hashieban\Admin;
 
+use Hashieban\Security\Capabilities;
 use Hashieban\Finance\ExpenseCategoryRepository;
 
 final class ExpenseCategoriesPage
@@ -37,9 +38,7 @@ final class ExpenseCategoriesPage
     public function render(): void
     {
         if (
-            ! current_user_can(
-                'manage_woocommerce'
-            )
+            ! Capabilities::can(Capabilities::MANAGE_FINANCE)
         ) {
             wp_die('Access denied.');
         }
@@ -433,9 +432,7 @@ final class ExpenseCategoriesPage
     public function handleSave(): void
     {
         if (
-            ! current_user_can(
-                'manage_woocommerce'
-            )
+            ! Capabilities::can(Capabilities::MANAGE_FINANCE)
         ) {
             wp_die('Access denied.');
         }
@@ -478,9 +475,7 @@ final class ExpenseCategoriesPage
     public function handleDeactivate(): void
     {
         if (
-            ! current_user_can(
-                'manage_woocommerce'
-            )
+            ! Capabilities::can(Capabilities::MANAGE_FINANCE)
         ) {
             wp_die('Access denied.');
         }
@@ -510,9 +505,7 @@ final class ExpenseCategoriesPage
     public function handleActivate(): void
     {
         if (
-            ! current_user_can(
-                'manage_woocommerce'
-            )
+            ! Capabilities::can(Capabilities::MANAGE_FINANCE)
         ) {
             wp_die('Access denied.');
         }
@@ -565,26 +558,26 @@ final class ExpenseCategoriesPage
 
         ?>
         <div class="<?php echo esc_attr($noticeClass); ?>">
-          <p>
-            <?php echo esc_html($messages[$status]); ?>
-          </p>
+            <p>
+                <?php echo esc_html($messages[$status]); ?>
+            </p>
         </div>
         <?php
-		}
+    }
 
-		private function redirect(
-			string $status
-		): void {
-			wp_safe_redirect(
-				add_query_arg(
-					'hb_status',
-					$status,
-					admin_url(
-						'admin.php?page=hashieban-expense-categories'
-					)
-				)
-			);
+    private function redirect(
+        string $status
+    ): void {
+        wp_safe_redirect(
+            add_query_arg(
+                'hb_status',
+                $status,
+                admin_url(
+                    'admin.php?page=hashieban-expense-categories'
+                )
+            )
+        );
 
-			exit;
-		}
-		}
+        exit;
+    }
+}

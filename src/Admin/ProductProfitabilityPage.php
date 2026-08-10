@@ -4,6 +4,8 @@ declare(strict_types=1);
 
 namespace Hashieban\Admin;
 
+use Hashieban\Security\Json;
+use Hashieban\Security\Capabilities;
 use DateTimeImmutable;
 use Hashieban\Integration\WooCommerce\Analytics\ProductProfitabilityService;
 use Hashieban\Support\Currency;
@@ -21,7 +23,7 @@ final class ProductProfitabilityPage
 
     public function render(): void
     {
-        if (! current_user_can('manage_woocommerce')) {
+        if (! Capabilities::can(Capabilities::VIEW_REPORTS)) {
             wp_die(
                 esc_html('شما اجازه دسترسی به این بخش را ندارید.')
             );
@@ -478,7 +480,7 @@ final class ProductProfitabilityPage
             <script
                 id="hashieban-product-profitability-data"
                 type="application/json"
-            ><?php echo wp_json_encode($chartPayload); ?></script>
+            ><?php echo Json::forHtmlScript($chartPayload); ?></script>
         </div>
         <?php
     }

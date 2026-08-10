@@ -4,6 +4,9 @@ declare(strict_types=1);
 
 namespace Hashieban\Admin;
 
+use Hashieban\Security\Csv;
+use Hashieban\Security\Json;
+use Hashieban\Security\Capabilities;
 use DateTimeImmutable;
 use Hashieban\Finance\ExpenseCategoryRepository;
 use Hashieban\Integration\WooCommerce\Analytics\ExpenseIntelligenceService;
@@ -38,7 +41,7 @@ final class ExpenseIntelligencePage
 
     public function render(): void
     {
-        if (! current_user_can('manage_woocommerce')) {
+        if (! Capabilities::can(Capabilities::VIEW_REPORTS)) {
             wp_die(esc_html('شما اجازه دسترسی به این بخش را ندارید.'));
         }
 
@@ -184,14 +187,14 @@ final class ExpenseIntelligencePage
                 <?php $this->renderBudgetForm((array) $report['category_rows'], $currency, $precision, $range, $start, $end); ?>
             </section>
 
-            <script id="hashieban-expense-intelligence-data" type="application/json"><?php echo wp_json_encode($payload); ?></script>
+            <script id="hashieban-expense-intelligence-data" type="application/json"><?php echo Json::forHtmlScript($payload); ?></script>
         </div>
         <?php
     }
 
     public function saveBudgets(): void
     {
-        if (! current_user_can('manage_woocommerce')) {
+        if (! Capabilities::can(Capabilities::MANAGE_FINANCE)) {
             wp_die(esc_html('شما اجازه تغییر بودجه‌ها را ندارید.'));
         }
 
@@ -233,7 +236,7 @@ final class ExpenseIntelligencePage
 
     public function exportCsv(): void
     {
-        if (! current_user_can('manage_woocommerce')) {
+        if (! Capabilities::can(Capabilities::VIEW_REPORTS)) {
             wp_die(esc_html('شما اجازه دریافت این گزارش را ندارید.'));
         }
 
@@ -267,7 +270,7 @@ final class ExpenseIntelligencePage
             exit;
         }
 
-        fputcsv($handle, array(
+        fputcsv($handle, Csv::protectRow(array(
             'دسته',
             'هزینه واقعی (' . Currency::label($currency) . ')',
             'سهم از هزینه',
@@ -275,10 +278,10 @@ final class ExpenseIntelligencePage
             'بودجه ماهانه (' . Currency::label($currency) . ')',
             'بودجه متناظر بازه (' . Currency::label($currency) . ')',
             'مصرف بودجه',
-        ));
+        )));
 
         foreach ((array) $report['category_rows'] as $row) {
-            fputcsv($handle, array(
+            fputcsv($handle, Csv::protectRow(array(
                 (string) $row['name'],
                 Currency::minorToDisplayInput((int) $row['amount_minor'], $currency, $precision),
                 $this->csvPercentage($row['share_percentage']),
@@ -286,7 +289,7 @@ final class ExpenseIntelligencePage
                 Currency::minorToDisplayInput((int) $row['monthly_budget_minor'], $currency, $precision),
                 Currency::minorToDisplayInput((int) $row['period_budget_minor'], $currency, $precision),
                 $this->csvPercentage($row['budget_utilization_percentage']),
-            ));
+            )));
         }
 
         fclose($handle);
@@ -382,6 +385,11 @@ final class ExpenseIntelligencePage
         DateTimeImmutable $start,
         DateTimeImmutable $end
     ): void {
+        if (! Capabilities::can(Capabilities::MANAGE_FINANCE)) {
+            echo '<div class="hb-expense-intelligence-empty">دسترسی شما فقط خواندنی است؛ تغییر بودجه نیازمند دسترسی مدیریت مالی حاشیه‌بان است.</div>';
+            return;
+        }
+
         ?>
         <form method="post" action="<?php echo esc_url(admin_url('admin-post.php')); ?>" class="hb-expense-intelligence-budget-form">
             <input type="hidden" name="action" value="hashieban_save_expense_budgets">

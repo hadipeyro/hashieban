@@ -4,11 +4,14 @@ declare(strict_types=1);
 
 namespace Hashieban\Admin;
 
+use Hashieban\Security\Capabilities;
 use Hashieban\Integration\WooCommerce\Tools\BulkToolsService;
 use Hashieban\Support\Currency;
 
 final class BulkToolsPage
 {
+    private const MAX_CSV_BYTES = 5242880;
+
     private BulkToolsService $tools;
 
     public function __construct(BulkToolsService $tools)
@@ -46,7 +49,7 @@ final class BulkToolsPage
 
     public function render(): void
     {
-        if (! current_user_can('manage_woocommerce')) {
+        if (! Capabilities::can(Capabilities::MANAGE_TOOLS)) {
             wp_die(esc_html('شما اجازه دسترسی به این بخش را ندارید.'));
         }
 
@@ -236,7 +239,7 @@ final class BulkToolsPage
 
     public function exportProductCogs(): void
     {
-        if (! current_user_can('manage_woocommerce')) {
+        if (! Capabilities::can(Capabilities::MANAGE_TOOLS)) {
             wp_die(esc_html('شما اجازه دریافت این فایل را ندارید.'));
         }
 
@@ -246,7 +249,7 @@ final class BulkToolsPage
 
     public function importProductCogs(): void
     {
-        if (! current_user_can('manage_woocommerce')) {
+        if (! Capabilities::can(Capabilities::MANAGE_TOOLS)) {
             wp_die(esc_html('شما اجازه تغییر COGS را ندارید.'));
         }
 
@@ -269,9 +272,12 @@ final class BulkToolsPage
             $name = sanitize_file_name((string) ($_FILES['cogs_csv']['name'] ?? ''));
             $tmpName = (string) ($_FILES['cogs_csv']['tmp_name'] ?? '');
             $extension = strtolower((string) pathinfo($name, PATHINFO_EXTENSION));
+            $size = max(0, (int) ($_FILES['cogs_csv']['size'] ?? 0));
 
             if ($extension !== 'csv' || $tmpName === '' || ! is_uploaded_file($tmpName)) {
                 $result['errors'][] = 'فقط فایل CSV مجاز است.';
+            } elseif ($size <= 0 || $size > self::MAX_CSV_BYTES) {
+                $result['errors'][] = 'حجم فایل CSV باید کمتر از ۵ مگابایت باشد.';
             } else {
                 $result = $this->tools->importProductCogsCsv($tmpName);
             }
@@ -283,7 +289,7 @@ final class BulkToolsPage
 
     public function backfillGeo(): void
     {
-        if (! current_user_can('manage_woocommerce')) {
+        if (! Capabilities::can(Capabilities::MANAGE_TOOLS)) {
             wp_die(esc_html('شما اجازه اجرای مهاجرت داده را ندارید.'));
         }
 
@@ -300,7 +306,7 @@ final class BulkToolsPage
 
     public function backfillProfitSnapshots(): void
     {
-        if (! current_user_can('manage_woocommerce')) {
+        if (! Capabilities::can(Capabilities::MANAGE_TOOLS)) {
             wp_die(esc_html('شما اجازه اجرای مهاجرت مالی را ندارید.'));
         }
 
@@ -325,7 +331,7 @@ final class BulkToolsPage
 
     public function rebuildPerformanceIndex(): void
     {
-        if (! current_user_can('manage_woocommerce')) {
+        if (! Capabilities::can(Capabilities::MANAGE_TOOLS)) {
             wp_die(esc_html('شما اجازه اجرای بازسازی شاخص را ندارید.'));
         }
 

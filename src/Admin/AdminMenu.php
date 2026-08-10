@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace Hashieban\Admin;
 
 use Hashieban\Integration\WooCommerce\Compatibility;
+use Hashieban\Security\Capabilities;
 use Hashieban\Support\Currency;
 
 final class AdminMenu
@@ -150,7 +151,7 @@ final class AdminMenu
         add_menu_page(
             'حاشیه‌بان',
             'حاشیه‌بان',
-            'manage_woocommerce',
+            Capabilities::VIEW_REPORTS,
             'hashieban',
             array(
                 $this->dashboard,
@@ -164,7 +165,7 @@ final class AdminMenu
             'hashieban',
             'پیشخوان',
             'پیشخوان',
-            'manage_woocommerce',
+            Capabilities::VIEW_REPORTS,
             'hashieban',
             array(
                 $this->dashboard,
@@ -176,7 +177,7 @@ final class AdminMenu
             'hashieban',
             'مرکز تحلیل‌های حاشیه‌بان',
             'مرکز تحلیل‌ها',
-            'manage_woocommerce',
+            Capabilities::VIEW_REPORTS,
             'hashieban-analytics',
             array(
                 $this->analyticsHubPage,
@@ -188,7 +189,7 @@ final class AdminMenu
             'hashieban',
             'نبض کسب‌وکار و KPIهای مدیریتی',
             'نبض کسب‌وکار',
-            'manage_woocommerce',
+            Capabilities::VIEW_REPORTS,
             'hashieban-kpis',
             array(
                 $this->businessKpisPage,
@@ -200,7 +201,7 @@ final class AdminMenu
             'hashieban',
             'تحلیل سودآوری محصولات',
             'سودآوری محصولات',
-            'manage_woocommerce',
+            Capabilities::VIEW_REPORTS,
             'hashieban-products',
             array(
                 $this->productProfitabilityPage,
@@ -212,7 +213,7 @@ final class AdminMenu
             'hashieban',
             'هوش موجودی و تصمیم خرید',
             'هوش موجودی',
-            'manage_woocommerce',
+            Capabilities::VIEW_REPORTS,
             'hashieban-inventory',
             array(
                 $this->inventoryPurchaseInsightPage,
@@ -224,7 +225,7 @@ final class AdminMenu
             'hashieban',
             'تحلیل سودآوری مشتریان',
             'سودآوری مشتریان',
-            'manage_woocommerce',
+            Capabilities::VIEW_REPORTS,
             'hashieban-customers',
             array(
                 $this->customerProfitabilityPage,
@@ -236,7 +237,7 @@ final class AdminMenu
             'hashieban',
             'هوش زمانی فروش و سود',
             'تحلیل زمانی',
-            'manage_woocommerce',
+            Capabilities::VIEW_REPORTS,
             'hashieban-time',
             array(
                 $this->timeIntelligencePage,
@@ -248,7 +249,7 @@ final class AdminMenu
             'hashieban',
             'مرکز سودآوری سفارش‌ها',
             'مرکز سفارش‌ها',
-            'manage_woocommerce',
+            Capabilities::VIEW_REPORTS,
             'hashieban-orders',
             array(
                 $this->orderProfitCenterPage,
@@ -260,7 +261,7 @@ final class AdminMenu
             'hashieban',
             'نگهبان سود و هشدارهای مدیریتی',
             'هشدارهای مدیریتی',
-            'manage_woocommerce',
+            Capabilities::VIEW_REPORTS,
             'hashieban-alerts',
             array(
                 $this->marginGuardPage,
@@ -272,7 +273,7 @@ final class AdminMenu
             'hashieban',
             'مرکز گزارش‌های مدیریتی',
             'گزارش‌ها',
-            'manage_woocommerce',
+            Capabilities::VIEW_REPORTS,
             'hashieban-reports',
             array(
                 $this->reportsHubPage,
@@ -284,7 +285,7 @@ final class AdminMenu
             'hashieban',
             'هوش هزینه‌ها و کنترل بودجه',
             'هوش هزینه‌ها',
-            'manage_woocommerce',
+            Capabilities::VIEW_REPORTS,
             'hashieban-expense-intelligence',
             array(
                 $this->expenseIntelligencePage,
@@ -296,7 +297,7 @@ final class AdminMenu
             'hashieban',
             'سلامت داده و آمادگی تحلیل',
             'سلامت داده',
-            'manage_woocommerce',
+            Capabilities::VIEW_REPORTS,
             'hashieban-data-health',
             array(
                 $this->dataHealthPage,
@@ -308,7 +309,7 @@ final class AdminMenu
             'hashieban',
             'نقشه هوشمند فروش و سود ایران',
             'نقشه فروش ایران',
-            'manage_woocommerce',
+            Capabilities::VIEW_REPORTS,
             'hashieban-geo',
             array(
                 $this->geoIntelligencePage,
@@ -320,7 +321,7 @@ final class AdminMenu
             'hashieban',
             'ابزارهای گروهی و مهاجرت داده',
             'ابزارهای گروهی',
-            'manage_woocommerce',
+            Capabilities::MANAGE_TOOLS,
             'hashieban-bulk-tools',
             array(
                 $this->bulkToolsPage,
@@ -332,7 +333,7 @@ final class AdminMenu
             'hashieban',
             'هزینه‌های فروشگاه',
             'هزینه‌ها',
-            'manage_woocommerce',
+            Capabilities::MANAGE_FINANCE,
             'hashieban-expenses',
             array(
                 $this->expensesPage,
@@ -344,7 +345,7 @@ final class AdminMenu
             'hashieban',
             'دسته‌بندی هزینه‌ها',
             'دسته‌های هزینه',
-            'manage_woocommerce',
+            Capabilities::MANAGE_FINANCE,
             'hashieban-expense-categories',
             array(
                 $this->categoriesPage,
@@ -356,7 +357,7 @@ final class AdminMenu
             'hashieban',
             'تنظیمات',
             'تنظیمات',
-            'manage_woocommerce',
+            Capabilities::MANAGE_SETTINGS,
             'hashieban-settings',
             array(
                 $this->settingsPage,
@@ -368,7 +369,7 @@ final class AdminMenu
             'hashieban',
             'وضعیت سیستم',
             'وضعیت سیستم',
-            'manage_woocommerce',
+            Capabilities::VIEW_REPORTS,
             'hashieban-status',
             array(
                 $this,
@@ -380,7 +381,7 @@ final class AdminMenu
             'hashieban',
             'شروع سریع حاشیه‌بان',
             'شروع سریع',
-            'manage_woocommerce',
+            Capabilities::VIEW_REPORTS,
             'hashieban-onboarding',
             array(
                 $this->onboardingPage,
@@ -971,8 +972,8 @@ final class AdminMenu
     public function renderStatusPage(): void
     {
         if (
-            ! current_user_can(
-                'manage_woocommerce'
+            ! Capabilities::can(
+                Capabilities::VIEW_REPORTS
             )
         ) {
             return;
@@ -1067,6 +1068,26 @@ final class AdminMenu
                           );
                           ?>
                         </td>
+                    </tr>
+
+                    <tr>
+                        <th>دسترسی گزارش‌های حاشیه‌بان</th>
+                        <td><?php echo Capabilities::can(Capabilities::VIEW_REPORTS) ? 'فعال' : 'غیرفعال'; ?></td>
+                    </tr>
+
+                    <tr>
+                        <th>دسترسی مدیریت مالی</th>
+                        <td><?php echo Capabilities::can(Capabilities::MANAGE_FINANCE) ? 'فعال' : 'غیرفعال'; ?></td>
+                    </tr>
+
+                    <tr>
+                        <th>دسترسی ابزارهای گروهی</th>
+                        <td><?php echo Capabilities::can(Capabilities::MANAGE_TOOLS) ? 'فعال' : 'غیرفعال'; ?></td>
+                    </tr>
+
+                    <tr>
+                        <th>دسترسی تنظیمات حساس</th>
+                        <td><?php echo Capabilities::can(Capabilities::MANAGE_SETTINGS) ? 'فعال' : 'غیرفعال'; ?></td>
                     </tr>
 
                 </tbody>

@@ -55,11 +55,17 @@ use Hashieban\Integration\WooCommerce\Tools\BulkToolsService;
 use Hashieban\Integration\WooCommerce\Refund\RefundEngine;
 use Hashieban\Integration\WooCommerce\Snapshot\ProfitSnapshotRepository;
 use Hashieban\Integration\WooCommerce\Snapshot\ProfitSnapshotService;
+use Hashieban\Security\AccessControl;
 
 final class Plugin
 {
     public function boot(): void
     {
+        $accessControl =
+            new AccessControl();
+
+        $accessControl->register();
+
         $compatibility =
             new Compatibility();
 

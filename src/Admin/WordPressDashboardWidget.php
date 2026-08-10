@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace Hashieban\Admin;
 
+use Hashieban\Security\Capabilities;
 use DateTimeImmutable;
 use Hashieban\Integration\WooCommerce\Analytics\AnalyticsService;
 use Hashieban\Support\Currency;
@@ -35,7 +36,7 @@ final class WordPressDashboardWidget
 
     public function registerWidget(): void
     {
-        if (! current_user_can('manage_woocommerce')) {
+        if (! Capabilities::can(Capabilities::VIEW_REPORTS)) {
             return;
         }
 
@@ -52,7 +53,7 @@ final class WordPressDashboardWidget
             return;
         }
 
-        if (! current_user_can('manage_woocommerce')) {
+        if (! Capabilities::can(Capabilities::VIEW_REPORTS)) {
             return;
         }
 

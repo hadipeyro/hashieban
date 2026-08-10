@@ -4,6 +4,9 @@ declare(strict_types=1);
 
 namespace Hashieban\Admin;
 
+use Hashieban\Security\Csv;
+use Hashieban\Security\Json;
+use Hashieban\Security\Capabilities;
 use DateTimeImmutable;
 use Hashieban\Integration\WooCommerce\Analytics\ReportsHubService;
 use Hashieban\Support\Currency;
@@ -28,7 +31,7 @@ final class ReportsHubPage
 
     public function render(): void
     {
-        if (! current_user_can('manage_woocommerce')) {
+        if (! Capabilities::can(Capabilities::VIEW_REPORTS)) {
             wp_die(esc_html('شما اجازه دسترسی به این بخش را ندارید.'));
         }
 
@@ -220,14 +223,14 @@ final class ReportsHubPage
                 </div>
             </section>
 
-            <script id="hashieban-reports-data" type="application/json"><?php echo wp_json_encode($payload); ?></script>
+            <script id="hashieban-reports-data" type="application/json"><?php echo Json::forHtmlScript($payload); ?></script>
         </div>
         <?php
     }
 
     public function exportCsv(): void
     {
-        if (! current_user_can('manage_woocommerce')) {
+        if (! Capabilities::can(Capabilities::VIEW_REPORTS)) {
             wp_die(esc_html('شما اجازه دریافت این گزارش را ندارید.'));
         }
 
@@ -273,10 +276,10 @@ final class ReportsHubPage
         }
 
         fwrite($stream, "\xEF\xBB\xBF");
-        fputcsv($stream, (array) $data['headers']);
+        fputcsv($stream, Csv::protectRow((array) $data['headers']));
 
         foreach ((array) $data['rows'] as $row) {
-            fputcsv($stream, (array) $row);
+            fputcsv($stream, Csv::protectRow((array) $row));
         }
 
         fclose($stream);

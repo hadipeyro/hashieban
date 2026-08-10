@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace Hashieban\Admin;
 
+use Hashieban\Security\Capabilities;
 use Hashieban\Finance\ExpenseCategoryRepository;
 use Hashieban\Integration\WooCommerce\Order\DirectCostRepository;
 use Hashieban\Support\Currency;
@@ -49,6 +50,10 @@ final class OrderCostsMetaBox
 
     public function addMetaBox(): void
     {
+        if (! Capabilities::can(Capabilities::MANAGE_FINANCE)) {
+            return;
+        }
+
         $screen = 'shop_order';
 
         if (
@@ -478,9 +483,7 @@ final class OrderCostsMetaBox
 			$postOrOrderObject = null
 		): void {
 			if (
-				! current_user_can(
-					'manage_woocommerce'
-				)
+				! Capabilities::can(Capabilities::MANAGE_FINANCE)
 			) {
 				return;
 			}
