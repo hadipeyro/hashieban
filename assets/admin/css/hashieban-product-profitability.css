@@ -579,3 +579,18 @@
         gap: 10px;
     }
 }
+
+
+/* Stage 19: refund-aware product intelligence */
+.hb-product-refund-meta {
+    display: block;
+    margin-top: 3px;
+    color: #ea580c;
+    font-size: 11px;
+}
+
+.hb-product-notice:not(.hb-product-notice--warning) {
+    border-color: #bfdbfe;
+    background: #eff6ff;
+    color: #1e3a8a;
+}

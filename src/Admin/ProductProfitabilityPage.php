@@ -131,10 +131,18 @@ final class ProductProfitabilityPage
             <?php $this->renderRangeFilters($range, $start, $end); ?>
 
             <?php if ((int) $report['orders_with_refunds'] > 0) : ?>
+                <div class="hb-product-notice">
+                    <strong>Refund & Returns Engine فعال است:</strong>
+                    <?php echo esc_html(number_format_i18n((int) $report['orders_with_refunds'])); ?> سفارش Refund داشته‌اند؛
+                    فروش محصول بر اساس Refund آیتمی خالص شده و COGS فقط برای کالای واقعاً برگشته به موجودی آزاد می‌شود.
+                </div>
+            <?php endif; ?>
+
+            <?php if ((int) $report['unallocated_refund_minor'] > 0) : ?>
                 <div class="hb-product-notice hb-product-notice--warning">
-                    <strong>توجه به Refund:</strong>
-                    در این بازه <?php echo esc_html(number_format_i18n((int) $report['orders_with_refunds'])); ?> سفارش دارای بازپرداخت است.
-                    موتور دقیق تخصیص Refund به محصول در مرحله Refund & Returns تکمیل می‌شود؛ بنابراین این گزارش فعلاً برای آن سفارش‌ها باید با احتیاط تفسیر شود.
+                    <strong>Refund تخصیص‌نیافته:</strong>
+                    <?php echo esc_html(Currency::formatMinor((int) $report['unallocated_refund_minor'], $currency, $precision)); ?>
+                    بازپرداخت فقط به‌صورت مبلغ کلی ثبت شده و به محصول مشخصی قابل انتساب نیست؛ این مبلغ در سود سفارش لحاظ می‌شود اما بین محصولات پخش نمی‌شود.
                 </div>
             <?php endif; ?>
 
@@ -172,9 +180,30 @@ final class ProductProfitabilityPage
                 );
 
                 $this->renderKpi(
-                    'تعداد واحد فروخته‌شده',
+                    'واحد خالص فروخته‌شده',
                     number_format_i18n((int) $report['total_units']),
-                    'مجموع تعداد اقلام فروخته‌شده'
+                    'تعداد فروش پس از کسر تعداد Refund شده'
+                );
+
+                $this->renderKpi(
+                    'نرخ مرجوعی',
+                    $report['return_rate_percentage'] !== null
+                        ? number_format_i18n((float) $report['return_rate_percentage'], 1) . '٪'
+                        : '—',
+                    number_format_i18n((int) $report['refunded_units'])
+                    . ' واحد Refund · '
+                    . number_format_i18n((int) $report['restocked_units'])
+                    . ' واحد برگشته به موجودی'
+                );
+
+                $this->renderKpi(
+                    'COGS بازیابی‌شده',
+                    Currency::formatMinor(
+                        (int) $report['recovered_cogs_minor'],
+                        $currency,
+                        $precision
+                    ),
+                    'بهای کالای مرجوعی که واقعاً به موجودی برگشته است'
                 );
 
                 $this->renderKpi(
@@ -324,7 +353,8 @@ final class ProductProfitabilityPage
                             <tr>
                                 <th>محصول</th>
                                 <th>SKU</th>
-                                <th>تعداد فروش</th>
+                                <th>فروش خالص</th>
+                                <th>مرجوعی</th>
                                 <th>سفارش</th>
                                 <th>فروش</th>
                                 <th>COGS</th>
@@ -338,7 +368,7 @@ final class ProductProfitabilityPage
                         <tbody>
                             <?php if ($pageRows === array()) : ?>
                                 <tr>
-                                    <td colspan="11" class="hb-product-empty">
+                                    <td colspan="12" class="hb-product-empty">
                                         محصولی برای این فیلتر پیدا نشد.
                                     </td>
                                 </tr>
@@ -367,6 +397,16 @@ final class ProductProfitabilityPage
                                         </td>
                                         <td><?php echo esc_html((string) $row['sku'] !== '' ? (string) $row['sku'] : '—'); ?></td>
                                         <td><?php echo esc_html(number_format_i18n((int) $row['quantity'])); ?></td>
+                                        <td>
+                                            <?php if ((int) $row['refunded_quantity'] > 0) : ?>
+                                                <strong><?php echo esc_html(number_format_i18n((int) $row['refunded_quantity'])); ?></strong>
+                                                <small class="hb-product-refund-meta">
+                                                    <?php echo esc_html($this->formatPercentage($row['return_rate_percentage'])); ?>
+                                                </small>
+                                            <?php else : ?>
+                                                —
+                                            <?php endif; ?>
+                                        </td>
                                         <td><?php echo esc_html(number_format_i18n((int) $row['order_count'])); ?></td>
                                         <td>
                                             <?php

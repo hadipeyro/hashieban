@@ -95,6 +95,7 @@ final class AnalyticsService
                     'status' => array(
                         'processing',
                         'completed',
+                        'refunded',
                     ),
                     'currency' =>
                         $currency,
@@ -499,11 +500,11 @@ final class AnalyticsService
             $categoryBreakdown[] = array(
                 'id' => (string) $categoryId,
                 'name' => $category
-                ? (string) ($category['name'] ?? 'سایر')
-                      : 'سایر',
+                    ? (string) ($category['name'] ?? 'سایر')
+                    : 'سایر',
                 'color' => $category
-                ? (string) ($category['color'] ?? '#64748b')
-                       : '#64748b',
+                    ? (string) ($category['color'] ?? '#64748b')
+                    : '#64748b',
                 'amount_minor' =>
                     (int) $amountMinor,
             );
@@ -516,7 +517,7 @@ final class AnalyticsService
                 array $right
             ): int {
                 return $right['amount_minor']
-                <=> $left['amount_minor'];
+                    <=> $left['amount_minor'];
             }
         );
 

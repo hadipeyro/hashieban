@@ -173,6 +173,11 @@ final class OrderProfitCenterPage
                     <strong><?php echo esc_html(Currency::formatMinor((int) $report['total_net_fee_revenue_minor'], $currency, $precision)); ?></strong>
                     <small>Fee مثبت منهای Fee کاهشی؛ از Double Counting جلوگیری می‌کند.</small>
                 </article>
+                <article class="hb-orders-semantic-card hb-orders-semantic-card--refund">
+                    <span>Refund و بازگشت کالا</span>
+                    <strong><?php echo esc_html(Currency::formatMinor((int) $report['total_refund_minor'], $currency, $precision)); ?></strong>
+                    <small><?php echo esc_html(number_format_i18n((int) $report['refund_order_count'])); ?> سفارش · COGS بازیابی‌شده: <?php echo esc_html(Currency::formatMinor((int) $report['total_recovered_cogs_minor'], $currency, $precision)); ?></small>
+                </article>
             </section>
 
             <?php $this->renderInsightCards($report, $currency, $precision); ?>
@@ -387,15 +392,27 @@ final class OrderProfitCenterPage
             <?php endif; ?>
 
             <?php if ((int) $detail['refund_minor'] > 0) : ?>
+                <div class="hb-orders-notice hb-orders-notice--refund">
+                    <strong>Refund & Returns Engine:</strong>
+                    Refund این سفارش در درآمد اعمال شده و COGS فقط به اندازه کالایی که واقعاً به موجودی برگشته آزاد شده است.
+                </div>
+            <?php endif; ?>
+
+            <?php if (! empty($detail['refund_warnings'])) : ?>
                 <div class="hb-orders-notice hb-orders-notice--warning">
-                    این سفارش Refund دارد. در این مرحله Refund بدون مالیات از درآمد کم می‌شود؛ اثر دقیق برگشت کالا روی COGS در مرحله Refund & Returns تکمیل می‌شود.
+                    <strong>نکات تخصیص Refund:</strong>
+                    <ul>
+                        <?php foreach ((array) $detail['refund_warnings'] as $message) : ?>
+                            <li><?php echo esc_html((string) $message); ?></li>
+                        <?php endforeach; ?>
+                    </ul>
                 </div>
             <?php endif; ?>
 
             <section class="hb-orders-kpis hb-orders-kpis--detail">
                 <?php
                 $this->renderKpi('فروش قابل انتساب', Currency::formatMinor((int) $detail['revenue_minor'], $currency, $precision), 'محصول + ارسال + Fee مثبت − Fee کاهشی − Refund بدون مالیات');
-                $this->renderKpi('COGS', Currency::formatMinor((int) $detail['cogs_minor'], $currency, $precision), 'بهای خرید اقلام سفارش');
+                $this->renderKpi('COGS مؤثر', Currency::formatMinor((int) $detail['cogs_minor'], $currency, $precision), 'COGS اولیه منهای بهای کالای مرجوعیِ برگشته به موجودی');
                 $this->renderKpi('هزینه مستقیم سفارش', Currency::formatMinor((int) $detail['direct_costs_minor'], $currency, $precision), 'هزینه‌های اختصاصی ثبت‌شده برای سفارش');
                 $this->renderKpi('هزینه ثابت سفارش', Currency::formatMinor((int) $detail['global_order_costs_minor'], $currency, $precision), 'قواعد عمومی هزینه برای هر سفارش');
                 $this->renderKpi('سود سفارش', Currency::formatMinor((int) $detail['profit_minor'], $currency, $precision), 'پس از هزینه‌های قابل انتساب', (int) $detail['profit_minor'] < 0);
@@ -433,6 +450,48 @@ final class OrderProfitCenterPage
                     </div>
                 </article>
             </section>
+
+            <?php if ((int) $detail['refund_minor'] > 0 || (int) $detail['refund_count'] > 0) : ?>
+                <section class="hb-orders-card hb-orders-refund-card">
+                    <div class="hb-orders-card__header">
+                        <div>
+                            <h2>Refund & Returns Intelligence</h2>
+                            <p>تفاوت «پول پس‌داده‌شده»، «کالای Refund شده» و «کالای واقعاً برگشته به موجودی» را جدا ببین.</p>
+                        </div>
+                        <span class="hb-orders-chip"><?php echo esc_html(number_format_i18n((int) $detail['refund_count'])); ?> رویداد Refund</span>
+                    </div>
+
+                    <div class="hb-orders-refund-kpis">
+                        <div><span>Refund بدون مالیات</span><strong><?php echo esc_html(Currency::formatMinor((int) $detail['refund_minor'], $currency, $precision)); ?></strong></div>
+                        <div><span>تعداد Refund شده</span><strong><?php echo esc_html(number_format_i18n((int) $detail['refunded_quantity'])); ?></strong></div>
+                        <div><span>برگشته به موجودی</span><strong><?php echo esc_html(number_format_i18n((int) $detail['restocked_quantity'])); ?></strong></div>
+                        <div><span>COGS اولیه</span><strong><?php echo esc_html(Currency::formatMinor((int) $detail['original_cogs_minor'], $currency, $precision)); ?></strong></div>
+                        <div><span>COGS بازیابی‌شده</span><strong class="is-positive"><?php echo esc_html(Currency::formatMinor((int) $detail['recovered_cogs_minor'], $currency, $precision)); ?></strong></div>
+                        <div><span>COGS کالای برنگشته</span><strong><?php echo esc_html(Currency::formatMinor((int) $detail['unrecovered_refunded_cogs_minor'], $currency, $precision)); ?></strong></div>
+                    </div>
+
+                    <?php if ((array) $detail['refund_events'] !== array()) : ?>
+                        <div class="hb-orders-refund-events">
+                            <?php foreach ((array) $detail['refund_events'] as $event) : ?>
+                                <div class="hb-orders-refund-event">
+                                    <div>
+                                        <strong>Refund #<?php echo esc_html(number_format_i18n((int) $event['refund_id'])); ?></strong>
+                                        <span>
+                                            <?php if ($event['date'] instanceof DateTimeImmutable) : ?>
+                                                <?php echo esc_html(JalaliDate::format($event['date'])); ?>
+                                            <?php endif; ?>
+                                            <?php if ((string) $event['reason'] !== '') : ?>
+                                                · <?php echo esc_html((string) $event['reason']); ?>
+                                            <?php endif; ?>
+                                        </span>
+                                    </div>
+                                    <strong><?php echo esc_html(Currency::formatMinor((int) $event['gross_minor'], $currency, $precision)); ?></strong>
+                                </div>
+                            <?php endforeach; ?>
+                        </div>
+                    <?php endif; ?>
+                </section>
+            <?php endif; ?>
 
             <section class="hb-orders-semantics-grid">
                 <article class="hb-orders-card hb-orders-semantic-detail hb-orders-semantic-detail--shipping">
@@ -503,9 +562,10 @@ final class OrderProfitCenterPage
                             <tr>
                                 <th>محصول</th>
                                 <th>SKU</th>
-                                <th>تعداد</th>
+                                <th>فروش خالص</th>
+                                <th>مرجوعی</th>
                                 <th>فروش</th>
-                                <th>COGS</th>
+                                <th>COGS مؤثر</th>
                                 <th>سود کالا</th>
                             </tr>
                         </thead>
@@ -521,6 +581,14 @@ final class OrderProfitCenterPage
                                     </td>
                                     <td><?php echo esc_html((string) $item['sku'] !== '' ? (string) $item['sku'] : '—'); ?></td>
                                     <td><?php echo esc_html(number_format_i18n((int) $item['quantity'])); ?></td>
+                                    <td>
+                                        <?php if ((int) $item['refunded_quantity'] > 0) : ?>
+                                            <?php echo esc_html(number_format_i18n((int) $item['refunded_quantity'])); ?>
+                                            <small>· برگشتی <?php echo esc_html(number_format_i18n((int) $item['restocked_quantity'])); ?></small>
+                                        <?php else : ?>
+                                            —
+                                        <?php endif; ?>
+                                    </td>
                                     <td><?php echo esc_html(Currency::formatMinor((int) $item['revenue_minor'], $currency, $precision)); ?></td>
                                     <td><?php echo esc_html(Currency::formatMinor((int) $item['cogs_minor'], $currency, $precision)); ?></td>
                                     <td class="<?php echo (int) $item['profit_minor'] < 0 ? 'is-negative' : 'is-positive'; ?>">
@@ -683,6 +751,7 @@ final class OrderProfitCenterPage
                     <option value="all" <?php selected($filters['status'], 'all'); ?>>همه وضعیت‌های مالی</option>
                     <option value="processing" <?php selected($filters['status'], 'processing'); ?>>در حال انجام</option>
                     <option value="completed" <?php selected($filters['status'], 'completed'); ?>>تکمیل‌شده</option>
+                    <option value="refunded" <?php selected($filters['status'], 'refunded'); ?>>بازپرداخت‌شده</option>
                 </select>
             </label>
 
@@ -967,7 +1036,7 @@ final class OrderProfitCenterPage
     ): DateTimeImmutable {
         $orders = wc_get_orders(
             array(
-                'status' => array('processing', 'completed'),
+                'status' => array('processing', 'completed', 'refunded'),
                 'limit' => 1,
                 'orderby' => 'date',
                 'order' => 'ASC',

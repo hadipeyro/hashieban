@@ -121,7 +121,7 @@ final class TimeIntelligenceService
         do {
             $result = wc_get_orders(
                 array(
-                    'status' => array('processing', 'completed'),
+                    'status' => array('processing', 'completed', 'refunded'),
                     'currency' => $currency,
                     'limit' => 100,
                     'page' => $page,

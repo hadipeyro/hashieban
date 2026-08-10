@@ -6,6 +6,7 @@ namespace Hashieban\Integration\WooCommerce\Analytics;
 
 use DateTimeImmutable;
 use Hashieban\Integration\WooCommerce\Order\MoneyFactory;
+use Hashieban\Integration\WooCommerce\Refund\RefundEngine;
 use WC_Order;
 use WC_Order_Item_Product;
 use WC_Product;
@@ -13,11 +14,14 @@ use WC_Product;
 final class ProductProfitabilityService
 {
     private MoneyFactory $moneyFactory;
+    private RefundEngine $refundEngine;
 
     public function __construct(
-        MoneyFactory $moneyFactory
+        MoneyFactory $moneyFactory,
+        RefundEngine $refundEngine
     ) {
         $this->moneyFactory = $moneyFactory;
+        $this->refundEngine = $refundEngine;
     }
 
     public function getReport(
@@ -30,7 +34,13 @@ final class ProductProfitabilityService
         $products = array();
         $totalRevenueMinor = 0;
         $totalCogsMinor = 0;
-        $totalUnits = 0;
+        $totalGrossUnits = 0;
+        $totalNetUnits = 0;
+        $totalRefundedUnits = 0;
+        $totalRestockedUnits = 0;
+        $totalRefundedRevenueMinor = 0;
+        $totalRecoveredCogsMinor = 0;
+        $unallocatedRefundMinor = 0;
         $ordersWithRefunds = 0;
 
         $page = 1;
@@ -42,6 +52,7 @@ final class ProductProfitabilityService
                     'status' => array(
                         'processing',
                         'completed',
+                        'refunded',
                     ),
                     'currency' => $currency,
                     'limit' => 100,
@@ -51,47 +62,48 @@ final class ProductProfitabilityService
                     'order' => 'DESC',
                     'date_created' =>
                         $start->format('Y-m-d H:i:s')
-								  . '...'
-								  . $end->format('Y-m-d H:i:s'),
+                        . '...'
+                        . $end->format('Y-m-d H:i:s'),
                 )
             );
 
-            if (
-                ! is_object($result)
-                || ! isset($result->orders)
-            ) {
+            if (! is_object($result) || ! isset($result->orders)) {
                 break;
             }
 
             $maxPages = isset($result->max_num_pages)
-            ? max(1, (int) $result->max_num_pages)
-					  : 1;
+                ? max(1, (int) $result->max_num_pages)
+                : 1;
 
             foreach ($result->orders as $order) {
                 if (! $order instanceof WC_Order) {
                     continue;
                 }
 
-                if ((float) $order->get_total_refunded() > 0) {
+                $refund = $this->refundEngine->analyze($order);
+                $refundItems = (array) $refund['items'];
+
+                if (! empty($refund['has_refund'])) {
                     $ordersWithRefunds++;
                 }
 
-                foreach (
-                    $order->get_items('line_item')
-                    as $item
-                ) {
+                $unallocatedRefundMinor += (int) $refund['unallocated_refund_minor'];
+
+                foreach ($order->get_items('line_item') as $item) {
                     if (! $item instanceof WC_Order_Item_Product) {
                         continue;
                     }
 
-                    $quantity = max(
-                        0,
-                        (int) $item->get_quantity()
-                    );
+                    $grossQuantity = max(0, (int) $item->get_quantity());
 
-                    if ($quantity === 0) {
+                    if ($grossQuantity === 0) {
                         continue;
                     }
+
+                    $refundRow = $refundItems[(int) $item->get_id()] ?? array();
+                    $refundedQuantity = max(0, (int) ($refundRow['refunded_quantity'] ?? 0));
+                    $restockedQuantity = max(0, (int) ($refundRow['restocked_quantity'] ?? 0));
+                    $netQuantity = max(0, $grossQuantity - $refundedQuantity);
 
                     $product = $item->get_product();
 
@@ -101,36 +113,48 @@ final class ProductProfitabilityService
 
                     $productId = (int) $item->get_product_id();
                     $variationId = (int) $item->get_variation_id();
-                    $entityId = $variationId > 0
-                    ? $variationId
-							  : $productId;
-
+                    $entityId = $variationId > 0 ? $variationId : $productId;
                     $key = $entityId > 0
-                    ? 'id:' . $entityId
-                         : 'name:' . md5((string) $item->get_name());
+                        ? 'id:' . $entityId
+                        : 'name:' . md5((string) $item->get_name());
 
-                    $lineRevenue =
-                        $this->moneyFactory
-                             ->fromWooCommerceAmount(
-                                 $item->get_total(),
-                                 $currency,
-                                 $precision
-                             )
-                             ->minorAmount();
+                    $grossLineRevenue = $this->moneyFactory
+                        ->fromWooCommerceAmount(
+                            $item->get_total(),
+                            $currency,
+                            $precision
+                        )
+                        ->minorAmount();
 
-                    $lineCogs =
-                        $this->moneyFactory
-                             ->fromWooCommerceAmount(
-                                 $item->get_cogs_value(),
-                                 $currency,
-                                 $precision
-                             )
-                             ->minorAmount();
+                    $refundedLineRevenue = max(
+                        0,
+                        (int) ($refundRow['refund_revenue_minor'] ?? 0)
+                    );
+
+                    $netLineRevenue = $grossLineRevenue - $refundedLineRevenue;
+
+                    $originalLineCogs = $this->moneyFactory
+                        ->fromWooCommerceAmount(
+                            $item->get_cogs_value(),
+                            $currency,
+                            $precision
+                        )
+                        ->minorAmount();
+
+                    $recoveredLineCogs = min(
+                        max(0, $originalLineCogs),
+                        max(0, (int) ($refundRow['recovered_cogs_minor'] ?? 0))
+                    );
+
+                    $effectiveLineCogs = max(
+                        0,
+                        $originalLineCogs - $recoveredLineCogs
+                    );
 
                     $missingCogs = $this->isCogsMissing(
                         $item,
                         $product,
-                        $lineCogs
+                        $originalLineCogs
                     );
 
                     if (! isset($products[$key])) {
@@ -138,50 +162,60 @@ final class ProductProfitabilityService
                             'entity_id' => $entityId,
                             'product_id' => $productId,
                             'variation_id' => $variationId,
-                            'name' => $this->resolveProductName(
-                                $item,
-                                $product
-                            ),
+                            'name' => $this->resolveProductName($item, $product),
                             'sku' => $product instanceof WC_Product
-                            ? (string) $product->get_sku()
-                                 : '',
-                            'edit_url' => $this->resolveEditUrl(
-                                $entityId,
-                                $productId
-                            ),
+                                ? (string) $product->get_sku()
+                                : '',
+                            'edit_url' => $this->resolveEditUrl($entityId, $productId),
                             'quantity' => 0,
+                            'gross_quantity' => 0,
+                            'refunded_quantity' => 0,
+                            'restocked_quantity' => 0,
                             'order_ids' => array(),
                             'revenue_minor' => 0,
+                            'gross_revenue_minor' => 0,
+                            'refunded_revenue_minor' => 0,
                             'cogs_minor' => 0,
+                            'original_cogs_minor' => 0,
+                            'recovered_cogs_minor' => 0,
                             'profit_minor' => 0,
                             'missing_cogs_lines' => 0,
                             'line_count' => 0,
                         );
                     }
 
-                    $products[$key]['quantity'] += $quantity;
+                    $products[$key]['quantity'] += $netQuantity;
+                    $products[$key]['gross_quantity'] += $grossQuantity;
+                    $products[$key]['refunded_quantity'] += $refundedQuantity;
+                    $products[$key]['restocked_quantity'] += $restockedQuantity;
                     $products[$key]['order_ids'][(string) $order->get_id()] = true;
-                    $products[$key]['revenue_minor'] += $lineRevenue;
-                    $products[$key]['cogs_minor'] += $lineCogs;
+                    $products[$key]['revenue_minor'] += $netLineRevenue;
+                    $products[$key]['gross_revenue_minor'] += $grossLineRevenue;
+                    $products[$key]['refunded_revenue_minor'] += $refundedLineRevenue;
+                    $products[$key]['cogs_minor'] += $effectiveLineCogs;
+                    $products[$key]['original_cogs_minor'] += $originalLineCogs;
+                    $products[$key]['recovered_cogs_minor'] += $recoveredLineCogs;
                     $products[$key]['line_count']++;
 
                     if ($missingCogs) {
                         $products[$key]['missing_cogs_lines']++;
                     }
 
-                    $totalRevenueMinor += $lineRevenue;
-                    $totalCogsMinor += $lineCogs;
-                    $totalUnits += $quantity;
+                    $totalRevenueMinor += $netLineRevenue;
+                    $totalCogsMinor += $effectiveLineCogs;
+                    $totalGrossUnits += $grossQuantity;
+                    $totalNetUnits += $netQuantity;
+                    $totalRefundedUnits += $refundedQuantity;
+                    $totalRestockedUnits += $restockedQuantity;
+                    $totalRefundedRevenueMinor += $refundedLineRevenue;
+                    $totalRecoveredCogsMinor += $recoveredLineCogs;
                 }
             }
 
             $page++;
         } while ($page <= $maxPages);
 
-        $totalProfitMinor =
-            $totalRevenueMinor
-            - $totalCogsMinor;
-
+        $totalProfitMinor = $totalRevenueMinor - $totalCogsMinor;
         $rows = array();
         $productsWithMissingCogs = 0;
 
@@ -190,6 +224,8 @@ final class ProductProfitabilityService
             $cogsMinor = (int) $product['cogs_minor'];
             $profitMinor = $revenueMinor - $cogsMinor;
             $quantity = (int) $product['quantity'];
+            $grossQuantity = (int) $product['gross_quantity'];
+            $refundedQuantity = (int) $product['refunded_quantity'];
             $missingLines = (int) $product['missing_cogs_lines'];
 
             if ($missingLines > 0) {
@@ -197,20 +233,24 @@ final class ProductProfitabilityService
             }
 
             $margin = $revenueMinor !== 0
-            ? ($profitMinor / $revenueMinor) * 100
-					: null;
+                ? ($profitMinor / $revenueMinor) * 100
+                : null;
 
-            $salesShare = $totalRevenueMinor > 0
-            ? ($revenueMinor / $totalRevenueMinor) * 100
-						: null;
+            $salesShare = $totalRevenueMinor !== 0
+                ? ($revenueMinor / $totalRevenueMinor) * 100
+                : null;
 
-            $profitShare = $totalProfitMinor > 0
-            ? ($profitMinor / $totalProfitMinor) * 100
-						 : null;
+            $profitShare = $totalProfitMinor !== 0
+                ? ($profitMinor / $totalProfitMinor) * 100
+                : null;
 
             $averageSellingPriceMinor = $quantity > 0
-            ? (int) round($revenueMinor / $quantity)
-									  : 0;
+                ? (int) round($revenueMinor / $quantity)
+                : 0;
+
+            $returnRate = $grossQuantity > 0
+                ? ($refundedQuantity / $grossQuantity) * 100
+                : null;
 
             $rows[] = array(
                 'entity_id' => (int) $product['entity_id'],
@@ -220,9 +260,17 @@ final class ProductProfitabilityService
                 'sku' => (string) $product['sku'],
                 'edit_url' => (string) $product['edit_url'],
                 'quantity' => $quantity,
+                'gross_quantity' => $grossQuantity,
+                'refunded_quantity' => $refundedQuantity,
+                'restocked_quantity' => (int) $product['restocked_quantity'],
+                'return_rate_percentage' => $returnRate,
                 'order_count' => count($product['order_ids']),
                 'revenue_minor' => $revenueMinor,
+                'gross_revenue_minor' => (int) $product['gross_revenue_minor'],
+                'refunded_revenue_minor' => (int) $product['refunded_revenue_minor'],
                 'cogs_minor' => $cogsMinor,
+                'original_cogs_minor' => (int) $product['original_cogs_minor'],
+                'recovered_cogs_minor' => (int) $product['recovered_cogs_minor'],
                 'profit_minor' => $profitMinor,
                 'margin_percentage' => $margin,
                 'sales_share_percentage' => $salesShare,
@@ -237,44 +285,25 @@ final class ProductProfitabilityService
         usort(
             $rows,
             static function (array $a, array $b): int {
-                return (int) $b['profit_minor']
-                <=> (int) $a['profit_minor'];
+                return (int) $b['profit_minor'] <=> (int) $a['profit_minor'];
             }
         );
 
         $this->appendRanks($rows);
 
-        $topByRevenue = $this->topRows(
-            $rows,
-            'revenue_minor',
-            10,
-            true
-        );
-
-        $topByProfit = $this->topRows(
-            $rows,
-            'profit_minor',
-            10,
-            true
-        );
-
-        $bottomByProfit = $this->topRows(
-            $rows,
-            'profit_minor',
-            5,
-            false
-        );
-
-        $topByQuantity = $this->topRows(
-            $rows,
-            'quantity',
-            5,
-            true
-        );
+        $topByRevenue = $this->topRows($rows, 'revenue_minor', 10, true);
+        $topByProfit = $this->topRows($rows, 'profit_minor', 10, true);
+        $bottomByProfit = $this->topRows($rows, 'profit_minor', 5, false);
+        $topByQuantity = $this->topRows($rows, 'quantity', 5, true);
+        $topByReturns = $this->topRows($rows, 'refunded_quantity', 5, true);
 
         $weightedMargin = $totalRevenueMinor !== 0
-        ? ($totalProfitMinor / $totalRevenueMinor) * 100
-						: null;
+            ? ($totalProfitMinor / $totalRevenueMinor) * 100
+            : null;
+
+        $overallReturnRate = $totalGrossUnits > 0
+            ? ($totalRefundedUnits / $totalGrossUnits) * 100
+            : null;
 
         return array(
             'currency' => $currency,
@@ -283,7 +312,14 @@ final class ProductProfitabilityService
             'total_cogs_minor' => $totalCogsMinor,
             'total_profit_minor' => $totalProfitMinor,
             'weighted_margin_percentage' => $weightedMargin,
-            'total_units' => $totalUnits,
+            'total_units' => $totalNetUnits,
+            'gross_units' => $totalGrossUnits,
+            'refunded_units' => $totalRefundedUnits,
+            'restocked_units' => $totalRestockedUnits,
+            'return_rate_percentage' => $overallReturnRate,
+            'refunded_revenue_minor' => $totalRefundedRevenueMinor,
+            'recovered_cogs_minor' => $totalRecoveredCogsMinor,
+            'unallocated_refund_minor' => $unallocatedRefundMinor,
             'product_count' => count($rows),
             'products_with_missing_cogs' => $productsWithMissingCogs,
             'orders_with_refunds' => $ordersWithRefunds,
@@ -292,6 +328,7 @@ final class ProductProfitabilityService
             'top_by_profit' => $topByProfit,
             'bottom_by_profit' => $bottomByProfit,
             'top_by_quantity' => $topByQuantity,
+            'top_by_returns' => $topByReturns,
         );
     }
 
@@ -310,8 +347,7 @@ final class ProductProfitabilityService
 
         $productCogs = $product->get_cogs_value();
 
-        return $productCogs === null
-            || $productCogs === '';
+        return $productCogs === null || $productCogs === '';
     }
 
     private function resolveProductName(
@@ -328,31 +364,22 @@ final class ProductProfitabilityService
 
         $name = trim((string) $item->get_name());
 
-        return $name !== ''
-        ? $name
-             : 'محصول بدون نام';
+        return $name !== '' ? $name : 'محصول بدون نام';
     }
 
     private function resolveEditUrl(
         int $entityId,
         int $productId
     ): string {
-        $editId = $entityId > 0
-        ? $entityId
-				: $productId;
+        $editId = $entityId > 0 ? $entityId : $productId;
 
         if ($editId <= 0) {
             return '';
         }
 
-        $url = get_edit_post_link(
-            $editId,
-            'raw'
-        );
+        $url = get_edit_post_link($editId, 'raw');
 
-        return is_string($url)
-        ? $url
-             : '';
+        return is_string($url) ? $url : '';
     }
 
     private function appendRanks(
@@ -362,29 +389,15 @@ final class ProductProfitabilityService
         $revenueSorted = $rows;
         $quantitySorted = $rows;
 
-        usort(
-            $profitSorted,
-            static function (array $a, array $b): int {
-                return (int) $b['profit_minor']
-                <=> (int) $a['profit_minor'];
-            }
-        );
-
-        usort(
-            $revenueSorted,
-            static function (array $a, array $b): int {
-                return (int) $b['revenue_minor']
-                <=> (int) $a['revenue_minor'];
-            }
-        );
-
-        usort(
-            $quantitySorted,
-            static function (array $a, array $b): int {
-                return (int) $b['quantity']
-                <=> (int) $a['quantity'];
-            }
-        );
+        usort($profitSorted, static function (array $a, array $b): int {
+            return (int) $b['profit_minor'] <=> (int) $a['profit_minor'];
+        });
+        usort($revenueSorted, static function (array $a, array $b): int {
+            return (int) $b['revenue_minor'] <=> (int) $a['revenue_minor'];
+        });
+        usort($quantitySorted, static function (array $a, array $b): int {
+            return (int) $b['quantity'] <=> (int) $a['quantity'];
+        });
 
         $profitRanks = $this->buildRankMap($profitSorted);
         $revenueRanks = $this->buildRankMap($revenueSorted);
@@ -392,7 +405,6 @@ final class ProductProfitabilityService
 
         foreach ($rows as &$row) {
             $key = $this->rowKey($row);
-
             $row['profit_rank'] = $profitRanks[$key] ?? 0;
             $row['revenue_rank'] = $revenueRanks[$key] ?? 0;
             $row['quantity_rank'] = $quantityRanks[$key] ?? 0;
@@ -400,9 +412,8 @@ final class ProductProfitabilityService
         unset($row);
     }
 
-    private function buildRankMap(
-        array $rows
-    ): array {
+    private function buildRankMap(array $rows): array
+    {
         $map = array();
         $rank = 1;
 
@@ -414,9 +425,8 @@ final class ProductProfitabilityService
         return $map;
     }
 
-    private function rowKey(
-        array $row
-    ): string {
+    private function rowKey(array $row): string
+    {
         $entityId = (int) ($row['entity_id'] ?? 0);
 
         if ($entityId > 0) {
@@ -450,10 +460,6 @@ final class ProductProfitabilityService
             }
         );
 
-        return array_slice(
-            $rows,
-            0,
-            $limit
-        );
+        return array_slice($rows, 0, $limit);
     }
 }

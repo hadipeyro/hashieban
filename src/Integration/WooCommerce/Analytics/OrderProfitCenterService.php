@@ -60,7 +60,7 @@ final class OrderProfitCenterService
             $precision
         );
 
-        $statuses = array('processing', 'completed');
+        $statuses = array('processing', 'completed', 'refunded');
 
         if (
             $filters['status'] !== 'all'
@@ -142,6 +142,15 @@ final class OrderProfitCenterService
                     'item_count' => (int) $order->get_item_count(),
                     'revenue_minor' => $breakdown->revenue()->minorAmount(),
                     'cogs_minor' => $breakdown->cogs()->minorAmount(),
+                    'original_cogs_minor' => $financial->originalCogs()->minorAmount(),
+                    'recovered_cogs_minor' => $financial->recoveredCogs()->minorAmount(),
+                    'refunded_cogs_minor' => $financial->refundedCogs()->minorAmount(),
+                    'unrecovered_refunded_cogs_minor' => $financial->unrecoveredRefundedCogs()->minorAmount(),
+                    'unallocated_refund_minor' => $financial->unallocatedRefund()->minorAmount(),
+                    'refund_count' => $financial->refundCount(),
+                    'refunded_quantity' => $financial->refundedQuantity(),
+                    'restocked_quantity' => $financial->restockedQuantity(),
+                    'refund_warnings' => $financial->refundWarnings(),
                     'direct_costs_minor' => $breakdown->orderCosts()->minorAmount(),
                     'global_order_costs_minor' => $breakdown->globalOrderCosts()->minorAmount(),
                     'profit_minor' => $profitResult->profit()->minorAmount(),
@@ -215,6 +224,7 @@ final class OrderProfitCenterService
         $date = $order->get_date_created();
 
         $items = array();
+        $refundItems = $financial->refundItems();
 
         foreach ($order->get_items('line_item') as $item) {
             if (! $item instanceof WC_Order_Item_Product) {
@@ -254,14 +264,32 @@ final class OrderProfitCenterService
                 $cogsMinor = 0;
             }
 
+            $refundRow = $refundItems[(int) $item->get_id()] ?? array();
+            $refundedRevenueMinor = max(0, (int) ($refundRow['refund_revenue_minor'] ?? 0));
+            $recoveredCogsMinor = min(
+                max(0, $cogsMinor),
+                max(0, (int) ($refundRow['recovered_cogs_minor'] ?? 0))
+            );
+            $effectiveRevenueMinor = $revenue->minorAmount() - $refundedRevenueMinor;
+            $effectiveCogsMinor = max(0, $cogsMinor - $recoveredCogsMinor);
+            $grossQuantity = max(0, (int) $item->get_quantity());
+            $refundedQuantity = max(0, (int) ($refundRow['refunded_quantity'] ?? 0));
+
             $items[] = array(
                 'product_id' => $productId,
                 'name' => (string) $item->get_name(),
                 'sku' => $product ? (string) $product->get_sku() : '',
-                'quantity' => (int) $item->get_quantity(),
-                'revenue_minor' => $revenue->minorAmount(),
-                'cogs_minor' => $cogsMinor,
-                'profit_minor' => $revenue->minorAmount() - $cogsMinor,
+                'quantity' => max(0, $grossQuantity - $refundedQuantity),
+                'gross_quantity' => $grossQuantity,
+                'refunded_quantity' => $refundedQuantity,
+                'restocked_quantity' => max(0, (int) ($refundRow['restocked_quantity'] ?? 0)),
+                'gross_revenue_minor' => $revenue->minorAmount(),
+                'refunded_revenue_minor' => $refundedRevenueMinor,
+                'revenue_minor' => $effectiveRevenueMinor,
+                'original_cogs_minor' => $cogsMinor,
+                'recovered_cogs_minor' => $recoveredCogsMinor,
+                'cogs_minor' => $effectiveCogsMinor,
+                'profit_minor' => $effectiveRevenueMinor - $effectiveCogsMinor,
                 'edit_url' => is_string($productUrl) ? $productUrl : '',
             );
         }
@@ -318,6 +346,17 @@ final class OrderProfitCenterService
             'order_edit_url' => $this->orderEditUrl($order),
             'revenue_minor' => $breakdown->revenue()->minorAmount(),
             'cogs_minor' => $breakdown->cogs()->minorAmount(),
+            'original_cogs_minor' => $financial->originalCogs()->minorAmount(),
+            'recovered_cogs_minor' => $financial->recoveredCogs()->minorAmount(),
+            'refunded_cogs_minor' => $financial->refundedCogs()->minorAmount(),
+            'unrecovered_refunded_cogs_minor' => $financial->unrecoveredRefundedCogs()->minorAmount(),
+            'unallocated_refund_minor' => $financial->unallocatedRefund()->minorAmount(),
+            'refund_count' => $financial->refundCount(),
+            'refunded_quantity' => $financial->refundedQuantity(),
+            'restocked_quantity' => $financial->restockedQuantity(),
+            'refund_events' => $financial->refundEvents(),
+            'refund_items' => $financial->refundItems(),
+            'refund_warnings' => $financial->refundWarnings(),
             'direct_costs_minor' => $breakdown->orderCosts()->minorAmount(),
             'global_order_costs_minor' => $breakdown->globalOrderCosts()->minorAmount(),
             'profit_minor' => $profitResult->profit()->minorAmount(),
@@ -350,6 +389,14 @@ final class OrderProfitCenterService
         $totalRevenue = 0;
         $totalProfit = 0;
         $totalCogs = 0;
+        $totalOriginalCogs = 0;
+        $totalRecoveredCogs = 0;
+        $totalUnrecoveredRefundedCogs = 0;
+        $totalUnallocatedRefund = 0;
+        $totalRefundAmount = 0;
+        $refundOrderCount = 0;
+        $refundedQuantity = 0;
+        $restockedQuantity = 0;
         $totalDirectCosts = 0;
         $totalGlobalCosts = 0;
         $totalShippingRevenue = 0;
@@ -376,6 +423,16 @@ final class OrderProfitCenterService
             $totalRevenue += (int) $row['revenue_minor'];
             $totalProfit += (int) $row['profit_minor'];
             $totalCogs += (int) $row['cogs_minor'];
+            $totalOriginalCogs += (int) ($row['original_cogs_minor'] ?? $row['cogs_minor']);
+            $totalRecoveredCogs += (int) ($row['recovered_cogs_minor'] ?? 0);
+            $totalUnrecoveredRefundedCogs += (int) ($row['unrecovered_refunded_cogs_minor'] ?? 0);
+            $totalUnallocatedRefund += (int) ($row['unallocated_refund_minor'] ?? 0);
+            $totalRefundAmount += (int) ($row['refund_minor'] ?? 0);
+            $refundedQuantity += (int) ($row['refunded_quantity'] ?? 0);
+            $restockedQuantity += (int) ($row['restocked_quantity'] ?? 0);
+            if ((int) ($row['refund_count'] ?? 0) > 0 || (int) ($row['refund_minor'] ?? 0) > 0) {
+                $refundOrderCount++;
+            }
             $totalDirectCosts += (int) $row['direct_costs_minor'];
             $totalGlobalCosts += (int) $row['global_order_costs_minor'];
             $totalShippingRevenue += (int) $row['shipping_revenue_minor'];
@@ -463,6 +520,14 @@ final class OrderProfitCenterService
             'total_revenue_minor' => $totalRevenue,
             'total_profit_minor' => $totalProfit,
             'total_cogs_minor' => $totalCogs,
+            'total_original_cogs_minor' => $totalOriginalCogs,
+            'total_recovered_cogs_minor' => $totalRecoveredCogs,
+            'total_unrecovered_refunded_cogs_minor' => $totalUnrecoveredRefundedCogs,
+            'total_unallocated_refund_minor' => $totalUnallocatedRefund,
+            'total_refund_minor' => $totalRefundAmount,
+            'refund_order_count' => $refundOrderCount,
+            'refunded_quantity' => $refundedQuantity,
+            'restocked_quantity' => $restockedQuantity,
             'total_direct_costs_minor' => $totalDirectCosts,
             'total_global_order_costs_minor' => $totalGlobalCosts,
             'total_shipping_revenue_minor' => $totalShippingRevenue,
@@ -501,7 +566,7 @@ final class OrderProfitCenterService
         $sort = sanitize_key((string) ($filters['sort'] ?? 'date_desc'));
         $search = sanitize_text_field((string) ($filters['q'] ?? ''));
 
-        if (! in_array($status, array('all', 'processing', 'completed'), true)) {
+        if (! in_array($status, array('all', 'processing', 'completed', 'refunded'), true)) {
             $status = 'all';
         }
 

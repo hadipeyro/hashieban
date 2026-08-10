@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace Hashieban\Integration\WooCommerce\Order;
 
 use Hashieban\Domain\Money\Money;
+use Hashieban\Integration\WooCommerce\Refund\RefundEngine;
 use RuntimeException;
 use WC_Order;
 use WC_Order_Item_Product;
@@ -12,15 +13,17 @@ use WC_Order_Item_Product;
 final class OrderAdapter
 {
     private MoneyFactory $moneyFactory;
-
     private DirectCostRepository $directCostRepository;
+    private RefundEngine $refundEngine;
 
     public function __construct(
         MoneyFactory $moneyFactory,
-        DirectCostRepository $directCostRepository
+        DirectCostRepository $directCostRepository,
+        RefundEngine $refundEngine
     ) {
         $this->moneyFactory = $moneyFactory;
         $this->directCostRepository = $directCostRepository;
+        $this->refundEngine = $refundEngine;
     }
 
     public function fromOrderId(
@@ -29,9 +32,7 @@ final class OrderAdapter
         $order = wc_get_order($orderId);
 
         if (! $order instanceof WC_Order) {
-            throw new RuntimeException(
-                'WooCommerce order not found.'
-            );
+            throw new RuntimeException('WooCommerce order not found.');
         }
 
         return $this->fromOrder($order);
@@ -49,72 +50,82 @@ final class OrderAdapter
             $precision
         );
 
-        $shippingRevenue = $this->moneyFactory
-            ->fromWooCommerceAmount(
-                $order->get_shipping_total(),
-                $currency,
-                $precision
-            );
+        $shippingRevenue = $this->moneyFactory->fromWooCommerceAmount(
+            $order->get_shipping_total(),
+            $currency,
+            $precision
+        );
 
-        list(
-            $feeRevenue,
-            $feeDiscounts
-        ) = $this->calculateFees(
+        list($feeRevenue, $feeDiscounts) = $this->calculateFees(
             $order,
             $currency,
             $precision
         );
 
-        $refundGross = $this->moneyFactory
-            ->fromWooCommerceAmount(
-                $order->get_total_refunded(),
-                $currency,
-                $precision
-            );
+        $refund = $this->refundEngine->analyze($order);
 
-        $refundedTax = $this->moneyFactory
-            ->fromWooCommerceAmount(
-                $order->get_total_tax_refunded(),
-                $currency,
-                $precision
-            );
-
-        $refundAmount = $refundGross->subtract(
-            $refundedTax
+        $refundAmount = new Money(
+            (int) $refund['refund_ex_tax_minor'],
+            $currency,
+            $precision
         );
 
-        if ($refundAmount->isNegative()) {
-            $refundAmount = Money::zero(
-                $currency,
-                $precision
-            );
-        }
+        $refundedTax = new Money(
+            (int) $refund['refunded_tax_minor'],
+            $currency,
+            $precision
+        );
 
-        $taxCharged = $this->moneyFactory
-            ->fromWooCommerceAmount(
-                $order->get_total_tax(),
-                $currency,
-                $precision
-            );
+        $taxCharged = $this->moneyFactory->fromWooCommerceAmount(
+            $order->get_total_tax(),
+            $currency,
+            $precision
+        );
 
-        $orderTotal = $this->moneyFactory
-            ->fromWooCommerceAmount(
-                $order->get_total(),
-                $currency,
-                $precision
-            );
+        $orderTotal = $this->moneyFactory->fromWooCommerceAmount(
+            $order->get_total(),
+            $currency,
+            $precision
+        );
 
-        list(
-            $cogs,
-            $missingData
-        ) = $this->calculateCogs(
+        list($originalCogs, $missingData) = $this->calculateCogs(
             $order,
             $currency,
             $precision
         );
 
-        $directCosts = $this->directCostRepository
-            ->total($order);
+        $recoveredCogsMinor = min(
+            $originalCogs->minorAmount(),
+            max(0, (int) $refund['recovered_cogs_minor'])
+        );
+
+        $recoveredCogs = new Money(
+            $recoveredCogsMinor,
+            $currency,
+            $precision
+        );
+
+        $effectiveCogs = $originalCogs->subtract($recoveredCogs);
+
+        $refundedCogs = new Money(
+            max(0, (int) $refund['refunded_cogs_minor']),
+            $currency,
+            $precision
+        );
+
+        $unrecoveredRefundedCogs = new Money(
+            max(0, (int) $refund['unrecovered_cogs_minor']),
+            $currency,
+            $precision
+        );
+
+        $unallocatedRefund = new Money(
+            max(0, (int) $refund['unallocated_refund_minor']),
+            $currency,
+            $precision
+        );
+
+        $directCosts = $this->directCostRepository->total($order);
 
         return new OrderFinancialData(
             $order->get_id(),
@@ -129,8 +140,19 @@ final class OrderAdapter
             $refundedTax,
             $taxCharged,
             $orderTotal,
-            $cogs,
+            $effectiveCogs,
+            $originalCogs,
+            $recoveredCogs,
+            $refundedCogs,
+            $unrecoveredRefundedCogs,
+            $unallocatedRefund,
             $directCosts,
+            (int) $refund['refund_count'],
+            (int) $refund['refunded_quantity'],
+            (int) $refund['restocked_quantity'],
+            (array) $refund['events'],
+            (array) $refund['items'],
+            (array) $refund['warnings'],
             $missingData
         );
     }
@@ -140,25 +162,18 @@ final class OrderAdapter
         string $currency,
         int $precision
     ): Money {
-        $total = Money::zero(
-            $currency,
-            $precision
-        );
+        $total = Money::zero($currency, $precision);
 
-        foreach (
-            $order->get_items('line_item')
-            as $item
-        ) {
+        foreach ($order->get_items('line_item') as $item) {
             if (! $item instanceof WC_Order_Item_Product) {
                 continue;
             }
 
-            $lineTotal = $this->moneyFactory
-                ->fromWooCommerceAmount(
-                    $item->get_total(),
-                    $currency,
-                    $precision
-                );
+            $lineTotal = $this->moneyFactory->fromWooCommerceAmount(
+                $item->get_total(),
+                $currency,
+                $precision
+            );
 
             $total = $total->add($lineTotal);
         }
@@ -167,30 +182,17 @@ final class OrderAdapter
     }
 
     /**
-     * Return positive fee charges and the absolute value of negative fees.
-     *
-     * WooCommerce fee line totals are tax-exclusive. Positive fees are
-     * additional customer charges; negative fees reduce attributable revenue.
+     * Positive fee charges increase attributable revenue; negative fees reduce it.
      */
     private function calculateFees(
         WC_Order $order,
         string $currency,
         int $precision
     ): array {
-        $positive = Money::zero(
-            $currency,
-            $precision
-        );
+        $positive = Money::zero($currency, $precision);
+        $discounts = Money::zero($currency, $precision);
 
-        $discounts = Money::zero(
-            $currency,
-            $precision
-        );
-
-        foreach (
-            $order->get_items('fee')
-            as $fee
-        ) {
+        foreach ($order->get_items('fee') as $fee) {
             $feeTotal = wc_format_decimal(
                 (string) $fee->get_total(),
                 $precision
@@ -200,12 +202,11 @@ final class OrderAdapter
                 continue;
             }
 
-            $money = $this->moneyFactory
-                ->fromWooCommerceAmount(
-                    $feeTotal,
-                    $currency,
-                    $precision
-                );
+            $money = $this->moneyFactory->fromWooCommerceAmount(
+                $feeTotal,
+                $currency,
+                $precision
+            );
 
             if ($money->isPositive()) {
                 $positive = $positive->add($money);
@@ -213,46 +214,38 @@ final class OrderAdapter
             }
 
             if ($money->isNegative()) {
-                $discounts = $discounts->add(
-                    $money->negate()
-                );
+                $discounts = $discounts->add($money->negate());
             }
         }
 
-        return array(
-            $positive,
-            $discounts,
-        );
+        return array($positive, $discounts);
     }
 
+    /**
+     * Read the original historical COGS stored on order lines. Returned stock is
+     * released separately by RefundEngine so refunded-but-not-returned goods keep
+     * their cost in profitability.
+     */
     private function calculateCogs(
         WC_Order $order,
         string $currency,
         int $precision
     ): array {
-        $total = Money::zero(
-            $currency,
-            $precision
-        );
-
+        $total = Money::zero($currency, $precision);
         $missingData = array();
 
-        foreach (
-            $order->get_items('line_item')
-            as $item
-        ) {
+        foreach ($order->get_items('line_item') as $item) {
             if (! $item instanceof WC_Order_Item_Product) {
                 continue;
             }
 
             $cogsValue = $item->get_cogs_value();
 
-            $cogs = $this->moneyFactory
-                ->fromWooCommerceAmount(
-                    $cogsValue,
-                    $currency,
-                    $precision
-                );
+            $cogs = $this->moneyFactory->fromWooCommerceAmount(
+                $cogsValue,
+                $currency,
+                $precision
+            );
 
             $total = $total->add($cogs);
 
@@ -267,16 +260,12 @@ final class OrderAdapter
                     'COGS محصول آیتم «%s» قابل بررسی نیست.',
                     $item->get_name()
                 );
-
                 continue;
             }
 
             $productCogs = $product->get_cogs_value();
 
-            if (
-                $productCogs === null
-                || $productCogs === ''
-            ) {
+            if ($productCogs === null || $productCogs === '') {
                 $missingData[] = sprintf(
                     'COGS محصول «%s» ثبت نشده است.',
                     $item->get_name()
@@ -284,9 +273,6 @@ final class OrderAdapter
             }
         }
 
-        return array(
-            $total,
-            $missingData,
-        );
+        return array($total, $missingData);
     }
 }

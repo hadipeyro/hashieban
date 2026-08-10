@@ -27,6 +27,7 @@ use Hashieban\Integration\WooCommerce\Compatibility;
 use Hashieban\Integration\WooCommerce\Order\DirectCostRepository;
 use Hashieban\Integration\WooCommerce\Order\MoneyFactory;
 use Hashieban\Integration\WooCommerce\Order\OrderAdapter;
+use Hashieban\Integration\WooCommerce\Refund\RefundEngine;
 
 final class Plugin
 {
@@ -96,10 +97,16 @@ final class Plugin
 
         $settingsPage->register();
 
+        $refundEngine =
+            new RefundEngine(
+                $moneyFactory
+            );
+
         $orderAdapter =
             new OrderAdapter(
                 $moneyFactory,
-                $directCostRepository
+                $directCostRepository,
+                $refundEngine
             );
 
         $analytics =
@@ -119,7 +126,8 @@ final class Plugin
 
         $productProfitability =
             new ProductProfitabilityService(
-                $moneyFactory
+                $moneyFactory,
+                $refundEngine
             );
 
         $productProfitabilityPage =

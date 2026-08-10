@@ -744,3 +744,98 @@
         grid-template-columns: 1fr;
     }
 }
+
+
+/* Stage 19: Refund & Returns Intelligence */
+.hb-orders-semantic-card--refund::before {
+    background: linear-gradient(90deg, #f97316, #ef4444);
+}
+
+.hb-orders-notice--refund {
+    border-color: #fed7aa;
+    background: #fff7ed;
+    color: #9a3412;
+}
+
+.hb-orders-refund-card {
+    margin-top: 16px;
+    border-top: 3px solid #f97316;
+}
+
+.hb-orders-refund-kpis {
+    display: grid;
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+    gap: 12px;
+    padding: 0 20px 20px;
+}
+
+.hb-orders-refund-kpis > div {
+    padding: 16px;
+    border: 1px solid #ffedd5;
+    border-radius: 14px;
+    background: linear-gradient(180deg, #fffaf5 0%, #ffffff 100%);
+}
+
+.hb-orders-refund-kpis span,
+.hb-orders-refund-kpis strong {
+    display: block;
+}
+
+.hb-orders-refund-kpis span {
+    color: #78716c;
+    font-size: 12px;
+}
+
+.hb-orders-refund-kpis strong {
+    margin-top: 7px;
+    color: #7c2d12;
+    font-size: 18px;
+}
+
+.hb-orders-refund-kpis strong.is-positive {
+    color: #047857;
+}
+
+.hb-orders-refund-events {
+    margin: 0 20px 20px;
+    border: 1px solid #eef2f7;
+    border-radius: 14px;
+    overflow: hidden;
+}
+
+.hb-orders-refund-event {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 16px;
+    padding: 14px 16px;
+    border-bottom: 1px solid #eef2f7;
+    background: #fff;
+}
+
+.hb-orders-refund-event:last-child {
+    border-bottom: 0;
+}
+
+.hb-orders-refund-event > div strong,
+.hb-orders-refund-event > div span {
+    display: block;
+}
+
+.hb-orders-refund-event > div span {
+    margin-top: 4px;
+    color: #64748b;
+    font-size: 12px;
+}
+
+.hb-orders-table td small {
+    display: block;
+    margin-top: 3px;
+    color: #94a3b8;
+}
+
+@media (max-width: 900px) {
+    .hb-orders-refund-kpis {
+        grid-template-columns: 1fr;
+    }
+}

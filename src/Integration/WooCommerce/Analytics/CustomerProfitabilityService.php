@@ -59,6 +59,7 @@ final class CustomerProfitabilityService
                     'status' => array(
                         'processing',
                         'completed',
+                        'refunded',
                     ),
                     'currency' => $currency,
                     'limit' => 100,
