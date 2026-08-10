@@ -19,6 +19,7 @@ use Hashieban\Admin\InventoryPurchaseInsightPage;
 use Hashieban\Admin\ExpensesPage;
 use Hashieban\Admin\OrderCostsMetaBox;
 use Hashieban\Admin\OrderProfitCenterPage;
+use Hashieban\Admin\OnboardingPage;
 use Hashieban\Admin\ProductProfitabilityPage;
 use Hashieban\Admin\ReportsHubPage;
 use Hashieban\Admin\SettingsPage;
@@ -369,6 +370,14 @@ final class Plugin
 
         $bulkToolsPage->register();
 
+        $onboardingPage =
+            new OnboardingPage(
+                $compatibility,
+                $orderMetricsIndexer
+            );
+
+        $onboardingPage->register();
+
         $adminMenu =
             new AdminMenu(
                 $compatibility,
@@ -388,7 +397,8 @@ final class Plugin
                 $bulkToolsPage,
                 $expensesPage,
                 $expenseCategoriesPage,
-                $settingsPage
+                $settingsPage,
+                $onboardingPage
             );
 
         $adminMenu->register();

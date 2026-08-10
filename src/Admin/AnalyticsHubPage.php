@@ -62,6 +62,12 @@ final class AnalyticsHubPage
                 'description' => 'ریسک‌ها، هزینه‌ها و آمادگی داده را در یک نقطه بررسی کنید.',
                 'items' => array(
                     array(
+                        'title' => 'شروع سریع و راه‌اندازی',
+                        'description' => 'بررسی چند دقیقه‌ای COGS، واحد پول، نقشه ایران و آمادگی گزارش‌ها.',
+                        'icon' => 'dashicons-lightbulb',
+                        'url' => admin_url('admin.php?page=hashieban-onboarding'),
+                    ),
+                    array(
                         'title' => 'هوش هزینه‌ها',
                         'description' => 'روند هزینه، بودجه و سهم دسته‌های هزینه.',
                         'icon' => 'dashicons-money-alt',

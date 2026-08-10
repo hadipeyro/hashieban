@@ -45,6 +45,8 @@ final class AdminMenu
 
     private SettingsPage $settingsPage;
 
+    private OnboardingPage $onboardingPage;
+
     public function __construct(
         Compatibility $compatibility,
         DashboardPage $dashboard,
@@ -63,7 +65,8 @@ final class AdminMenu
         BulkToolsPage $bulkToolsPage,
         ExpensesPage $expensesPage,
         ExpenseCategoriesPage $categoriesPage,
-        SettingsPage $settingsPage
+        SettingsPage $settingsPage,
+        OnboardingPage $onboardingPage
     ) {
         $this->compatibility =
             $compatibility;
@@ -118,6 +121,9 @@ final class AdminMenu
 
         $this->settingsPage =
             $settingsPage;
+
+        $this->onboardingPage =
+            $onboardingPage;
     }
 
     public function register(): void
@@ -370,6 +376,18 @@ final class AdminMenu
             )
         );
 
+        add_submenu_page(
+            'hashieban',
+            'شروع سریع حاشیه‌بان',
+            'شروع سریع',
+            'manage_woocommerce',
+            'hashieban-onboarding',
+            array(
+                $this->onboardingPage,
+                'render'
+            )
+        );
+
         /*
          * Specialist screens intentionally remain registered as normal
          * submenu pages so WordPress keeps their routes and capabilities
@@ -393,7 +411,8 @@ final class AdminMenu
             #toplevel_page_hashieban .wp-submenu li:has(a[href*="page=hashieban-expense-intelligence"]),
             #toplevel_page_hashieban .wp-submenu li:has(a[href*="page=hashieban-data-health"]),
             #toplevel_page_hashieban .wp-submenu li:has(a[href*="page=hashieban-expense-categories"]),
-            #toplevel_page_hashieban .wp-submenu li:has(a[href*="page=hashieban-status"]) {
+            #toplevel_page_hashieban .wp-submenu li:has(a[href*="page=hashieban-status"]),
+            #toplevel_page_hashieban .wp-submenu li:has(a[href*="page=hashieban-onboarding"]) {
                 display: none !important;
             }
         </style>
@@ -500,6 +519,25 @@ final class AdminMenu
                 'hashieban-analytics-hub',
                 plugins_url(
                     'assets/admin/css/hashieban-analytics-hub.css',
+                    HASHIEBAN_FILE
+                ),
+                array(
+                    'hashieban-admin'
+                ),
+                HASHIEBAN_VERSION
+            );
+        }
+
+        if (
+            strpos(
+                $hook,
+                'hashieban-onboarding'
+            ) !== false
+        ) {
+            wp_enqueue_style(
+                'hashieban-onboarding',
+                plugins_url(
+                    'assets/admin/css/hashieban-onboarding.css',
                     HASHIEBAN_FILE
                 ),
                 array(

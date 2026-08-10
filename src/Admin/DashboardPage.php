@@ -127,6 +127,24 @@ final class DashboardPage
                 </div>
             </section>
 
+            <?php if (! OnboardingPage::isDismissed()) : ?>
+                <section class="hb-onboarding-dashboard-card">
+                    <div class="hb-onboarding-dashboard-card__copy">
+                        <span class="hb-onboarding-dashboard-card__icon">
+                            <span class="dashicons dashicons-lightbulb"></span>
+                        </span>
+                        <div>
+                            <strong>راه‌اندازی سریع حاشیه‌بان</strong>
+                            <p>در چند دقیقه مطمئن شو COGS، واحد پول، نقشه ایران و سرعت گزارش‌ها آماده‌اند.</p>
+                        </div>
+                    </div>
+                    <div class="hb-onboarding-dashboard-card__actions">
+                        <a class="button button-primary" href="<?php echo esc_url(admin_url('admin.php?page=hashieban-onboarding')); ?>">شروع بررسی</a>
+                        <a class="hb-onboarding-dashboard-card__dismiss" href="<?php echo esc_url(OnboardingPage::dismissUrl('dashboard')); ?>">دیگر نمایش نده</a>
+                    </div>
+                </section>
+            <?php endif; ?>
+
             <?php $this->renderRangeFilters($range, $start, $end); ?>
 
             <section class="hb-kpi-grid">
@@ -197,7 +215,7 @@ final class DashboardPage
 
             <section class="hb-drilldown-strip">
                 <div class="hb-drilldown-strip__intro">
-                    <span class="hb-drilldown-strip__eyebrow">Drill-down</span>
+                    <span class="hb-drilldown-strip__eyebrow">جزئیات هوشمند</span>
                     <strong>از عدد کلی برو سراغ دلیلش</strong>
                     <small>روی هر کارت یا نمودار کلیک کن تا مستقیم وارد تحلیل مرتبط شوی.</small>
                 </div>
@@ -852,6 +870,16 @@ final class DashboardPage
 
 		private function enqueueAssets(): void
 		{
+			wp_enqueue_style(
+				'hashieban-onboarding',
+				plugins_url(
+					'assets/admin/css/hashieban-onboarding.css',
+					HASHIEBAN_FILE
+				),
+				array(),
+				HASHIEBAN_VERSION
+			);
+
 			wp_enqueue_style(
 				'hashieban-dashboard-v3',
 				plugins_url(

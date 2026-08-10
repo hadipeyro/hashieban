@@ -164,10 +164,23 @@ final class Currency
             );
         }
 
-        return number_format_i18n(
-            $value,
+        $isNegative = $value < 0;
+        $formattedValue = number_format_i18n(
+            abs($value),
             $decimals
-        )
+        );
+
+        if ($isNegative) {
+            /*
+             * Keep the minus sign visually before the amount in RTL
+             * admin screens. LRM is invisible and only stabilizes bidi.
+             */
+            $formattedValue = "\u{200E}−"
+                . $formattedValue
+                . "\u{200E}";
+        }
+
+        return $formattedValue
              . ' '
              . self::label($currency);
     }
