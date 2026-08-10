@@ -329,32 +329,28 @@ final class AdminMenu
         );
 
         /*
-         * Keep specialist screens routable, but avoid turning the WordPress
-         * sidebar into a long report catalogue. The Analytics Hub exposes
-         * these destinations as cards with context.
+         * Specialist screens intentionally remain registered as normal
+         * submenu pages so WordPress keeps their routes and capabilities
+         * intact. A tiny admin navigation script hides selected links only
+         * from the sidebar; the Analytics Hub remains their visible entry
+         * point.
          */
-        foreach (
-            array(
-                'hashieban-products',
-                'hashieban-customers',
-                'hashieban-time',
-                'hashieban-reports',
-                'hashieban-expense-intelligence',
-                'hashieban-data-health',
-                'hashieban-expense-categories',
-                'hashieban-status',
-            ) as $hiddenSlug
-        ) {
-            remove_submenu_page(
-                'hashieban',
-                $hiddenSlug
-            );
-        }
     }
 
     public function enqueueAssets(
         string $hook
     ): void {
+        wp_enqueue_script(
+            'hashieban-admin-navigation',
+            plugins_url(
+                'assets/admin/js/hashieban-admin-navigation.js',
+                HASHIEBAN_FILE
+            ),
+            array(),
+            HASHIEBAN_VERSION,
+            true
+        );
+
         if (
             strpos(
                 $hook,
