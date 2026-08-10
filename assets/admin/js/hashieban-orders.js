@@ -210,50 +210,97 @@
 
     function renderDetail() {
         var canvas = document.getElementById('hashieban-order-detail-breakdown-chart');
+        var semanticsCanvas = document.getElementById('hashieban-order-semantics-chart');
 
-        if (!canvas || !payload.breakdown) {
-            return;
-        }
-
-        var options = baseOptions();
-        options.plugins.legend.display = false;
-        options.plugins.tooltip.callbacks = {
-            label: function (context) {
-                return money(context.raw || 0);
-            }
-        };
-        options.scales = {
-            y: {
-                beginAtZero: false,
-                grid: {
-                    color: 'rgba(148,163,184,.13)'
+        if (canvas && payload.breakdown) {
+            var options = baseOptions();
+            options.plugins.legend.display = false;
+            options.plugins.tooltip.callbacks = {
+                label: function (context) {
+                    return money(context.raw || 0);
+                }
+            };
+            options.scales = {
+                y: {
+                    beginAtZero: false,
+                    grid: {
+                        color: 'rgba(148,163,184,.13)'
+                    },
+                    ticks: {
+                        callback: function (value) {
+                            return numberFormatter.format(value);
+                        }
+                    }
                 },
-                ticks: {
-                    callback: function (value) {
-                        return numberFormatter.format(value);
+                x: {
+                    grid: {
+                        display: false
                     }
                 }
-            },
-            x: {
-                grid: {
-                    display: false
-                }
-            }
-        };
+            };
 
-        new Chart(canvas, {
-            type: 'bar',
-            data: {
-                labels: payload.breakdown.labels || [],
-                datasets: [{
-                    data: payload.breakdown.values || [],
-                    backgroundColor: ['#2563eb', '#f59e0b', '#8b5cf6', '#06b6d4', '#10b981'],
-                    borderRadius: 9,
-                    maxBarThickness: 58
-                }]
-            },
-            options: options
-        });
+            new Chart(canvas, {
+                type: 'bar',
+                data: {
+                    labels: payload.breakdown.labels || [],
+                    datasets: [{
+                        data: payload.breakdown.values || [],
+                        backgroundColor: ['#2563eb', '#f59e0b', '#8b5cf6', '#06b6d4', '#10b981'],
+                        borderRadius: 9,
+                        maxBarThickness: 58
+                    }]
+                },
+                options: options
+            });
+        }
+
+        if (semanticsCanvas && payload.semantics) {
+            var semanticsOptions = baseOptions();
+            semanticsOptions.indexAxis = 'y';
+            semanticsOptions.plugins.legend.display = false;
+            semanticsOptions.plugins.tooltip.callbacks = {
+                label: function (context) {
+                    return money(context.raw || 0);
+                }
+            };
+            semanticsOptions.scales = {
+                x: {
+                    grid: {
+                        color: 'rgba(148,163,184,.13)'
+                    },
+                    ticks: {
+                        callback: function (value) {
+                            return numberFormatter.format(value);
+                        }
+                    }
+                },
+                y: {
+                    grid: {
+                        display: false
+                    }
+                }
+            };
+
+            new Chart(semanticsCanvas, {
+                type: 'bar',
+                data: {
+                    labels: payload.semantics.labels || [],
+                    datasets: [{
+                        data: payload.semantics.values || [],
+                        backgroundColor: function (context) {
+                            if (context.dataIndex === 5) {
+                                return '#94a3b8';
+                            }
+
+                            return Number(context.raw || 0) < 0 ? '#ef4444' : '#2563eb';
+                        },
+                        borderRadius: 9,
+                        maxBarThickness: 38
+                    }]
+                },
+                options: semanticsOptions
+            });
+        }
     }
 
     if (payload.mode === 'detail') {

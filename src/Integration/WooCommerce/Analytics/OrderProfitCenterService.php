@@ -123,6 +123,11 @@ final class OrderProfitCenterService
                 $email = sanitize_email((string) $order->get_billing_email());
                 $phone = sanitize_text_field((string) $order->get_billing_phone());
 
+                $shippingCategoryTotals = $this->directCosts->totalsByCategory($order);
+                $shippingCostMinor = isset($shippingCategoryTotals['hb_shipping'])
+                    ? (int) $shippingCategoryTotals['hb_shipping']
+                    : 0;
+
                 $row = array(
                     'order_id' => $order->get_id(),
                     'order_number' => (string) $order->get_order_number(),
@@ -142,6 +147,15 @@ final class OrderProfitCenterService
                     'profit_minor' => $profitResult->profit()->minorAmount(),
                     'margin_percentage' => $profitResult->marginPercentage(),
                     'refund_minor' => $financial->refundAmount()->minorAmount(),
+                    'refunded_tax_minor' => $financial->refundedTax()->minorAmount(),
+                    'tax_charged_minor' => $financial->taxCharged()->minorAmount(),
+                    'net_tax_minor' => $financial->netTax()->minorAmount(),
+                    'shipping_revenue_minor' => $financial->shippingRevenue()->minorAmount(),
+                    'shipping_cost_minor' => $shippingCostMinor,
+                    'fee_revenue_minor' => $financial->feeRevenue()->minorAmount(),
+                    'fee_discount_minor' => $financial->feeDiscounts()->minorAmount(),
+                    'net_fee_revenue_minor' => $financial->netFeeRevenue()->minorAmount(),
+                    'order_total_minor' => $financial->orderTotal()->minorAmount(),
                     'has_missing_data' => ! $profitResult->completeness()->isComplete(),
                     'missing_data' => $profitResult->completeness()->missingData(),
                     'edit_url' => $this->orderEditUrl($order),
@@ -253,6 +267,7 @@ final class OrderProfitCenterService
         }
 
         $directCostRows = array();
+        $shippingCostMinor = 0;
 
         foreach ($this->directCosts->getCosts($order) as $cost) {
             $categoryId = sanitize_key((string) ($cost['category_id'] ?? ''));
@@ -265,6 +280,10 @@ final class OrderProfitCenterService
                 );
             } catch (Throwable $exception) {
                 continue;
+            }
+
+            if ($categoryId === 'hb_shipping') {
+                $shippingCostMinor += $money->minorAmount();
             }
 
             $directCostRows[] = array(
@@ -304,8 +323,16 @@ final class OrderProfitCenterService
             'profit_minor' => $profitResult->profit()->minorAmount(),
             'margin_percentage' => $profitResult->marginPercentage(),
             'refund_minor' => $financial->refundAmount()->minorAmount(),
+            'refunded_tax_minor' => $financial->refundedTax()->minorAmount(),
+            'tax_charged_minor' => $financial->taxCharged()->minorAmount(),
+            'net_tax_minor' => $financial->netTax()->minorAmount(),
+            'order_total_minor' => $financial->orderTotal()->minorAmount(),
             'shipping_revenue_minor' => $financial->shippingRevenue()->minorAmount(),
+            'shipping_cost_minor' => $shippingCostMinor,
+            'shipping_contribution_minor' => $financial->shippingRevenue()->minorAmount() - $shippingCostMinor,
             'fee_revenue_minor' => $financial->feeRevenue()->minorAmount(),
+            'fee_discount_minor' => $financial->feeDiscounts()->minorAmount(),
+            'net_fee_revenue_minor' => $financial->netFeeRevenue()->minorAmount(),
             'product_revenue_minor' => $financial->productRevenue()->minorAmount(),
             'has_missing_data' => ! $profitResult->completeness()->isComplete(),
             'missing_data' => $profitResult->completeness()->missingData(),
@@ -325,6 +352,12 @@ final class OrderProfitCenterService
         $totalCogs = 0;
         $totalDirectCosts = 0;
         $totalGlobalCosts = 0;
+        $totalShippingRevenue = 0;
+        $totalShippingCost = 0;
+        $totalFeeRevenue = 0;
+        $totalFeeDiscounts = 0;
+        $totalTaxCharged = 0;
+        $totalRefundedTax = 0;
         $profitable = 0;
         $loss = 0;
         $breakEven = 0;
@@ -345,6 +378,12 @@ final class OrderProfitCenterService
             $totalCogs += (int) $row['cogs_minor'];
             $totalDirectCosts += (int) $row['direct_costs_minor'];
             $totalGlobalCosts += (int) $row['global_order_costs_minor'];
+            $totalShippingRevenue += (int) $row['shipping_revenue_minor'];
+            $totalShippingCost += (int) $row['shipping_cost_minor'];
+            $totalFeeRevenue += (int) $row['fee_revenue_minor'];
+            $totalFeeDiscounts += (int) $row['fee_discount_minor'];
+            $totalTaxCharged += (int) $row['tax_charged_minor'];
+            $totalRefundedTax += (int) $row['refunded_tax_minor'];
 
             if (! empty($row['has_missing_data'])) {
                 $incomplete++;
@@ -426,6 +465,15 @@ final class OrderProfitCenterService
             'total_cogs_minor' => $totalCogs,
             'total_direct_costs_minor' => $totalDirectCosts,
             'total_global_order_costs_minor' => $totalGlobalCosts,
+            'total_shipping_revenue_minor' => $totalShippingRevenue,
+            'total_shipping_cost_minor' => $totalShippingCost,
+            'total_shipping_contribution_minor' => $totalShippingRevenue - $totalShippingCost,
+            'total_fee_revenue_minor' => $totalFeeRevenue,
+            'total_fee_discount_minor' => $totalFeeDiscounts,
+            'total_net_fee_revenue_minor' => $totalFeeRevenue - $totalFeeDiscounts,
+            'total_tax_charged_minor' => $totalTaxCharged,
+            'total_refunded_tax_minor' => $totalRefundedTax,
+            'total_net_tax_minor' => $totalTaxCharged - $totalRefundedTax,
             'weighted_margin_percentage' => $weightedMargin,
             'profitable_count' => $profitable,
             'loss_count' => $loss,

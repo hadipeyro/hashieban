@@ -20,8 +20,7 @@ final class OrderAdapter
         DirectCostRepository $directCostRepository
     ) {
         $this->moneyFactory = $moneyFactory;
-        $this->directCostRepository =
-            $directCostRepository;
+        $this->directCostRepository = $directCostRepository;
     }
 
     public function fromOrderId(
@@ -44,35 +43,66 @@ final class OrderAdapter
         $currency = $order->get_currency();
         $precision = wc_get_price_decimals();
 
-        $productRevenue =
-            $this->calculateProductRevenue(
-                $order,
+        $productRevenue = $this->calculateProductRevenue(
+            $order,
+            $currency,
+            $precision
+        );
+
+        $shippingRevenue = $this->moneyFactory
+            ->fromWooCommerceAmount(
+                $order->get_shipping_total(),
                 $currency,
                 $precision
             );
 
-        $shippingRevenue =
-            $this->moneyFactory
-                 ->fromWooCommerceAmount(
-                     $order->get_shipping_total(),
-                     $currency,
-                     $precision
-                 );
+        list(
+            $feeRevenue,
+            $feeDiscounts
+        ) = $this->calculateFees(
+            $order,
+            $currency,
+            $precision
+        );
 
-        $feeRevenue =
-            $this->calculatePositiveFees(
-                $order,
+        $refundGross = $this->moneyFactory
+            ->fromWooCommerceAmount(
+                $order->get_total_refunded(),
                 $currency,
                 $precision
             );
 
-        $refundAmount =
-            $this->moneyFactory
-                 ->fromWooCommerceAmount(
-                     $order->get_total_refunded(),
-                     $currency,
-                     $precision
-                 );
+        $refundedTax = $this->moneyFactory
+            ->fromWooCommerceAmount(
+                $order->get_total_tax_refunded(),
+                $currency,
+                $precision
+            );
+
+        $refundAmount = $refundGross->subtract(
+            $refundedTax
+        );
+
+        if ($refundAmount->isNegative()) {
+            $refundAmount = Money::zero(
+                $currency,
+                $precision
+            );
+        }
+
+        $taxCharged = $this->moneyFactory
+            ->fromWooCommerceAmount(
+                $order->get_total_tax(),
+                $currency,
+                $precision
+            );
+
+        $orderTotal = $this->moneyFactory
+            ->fromWooCommerceAmount(
+                $order->get_total(),
+                $currency,
+                $precision
+            );
 
         list(
             $cogs,
@@ -83,9 +113,8 @@ final class OrderAdapter
             $precision
         );
 
-        $directCosts =
-            $this->directCostRepository
-                 ->total($order);
+        $directCosts = $this->directCostRepository
+            ->total($order);
 
         return new OrderFinancialData(
             $order->get_id(),
@@ -95,7 +124,11 @@ final class OrderAdapter
             $productRevenue,
             $shippingRevenue,
             $feeRevenue,
+            $feeDiscounts,
             $refundAmount,
+            $refundedTax,
+            $taxCharged,
+            $orderTotal,
             $cogs,
             $directCosts,
             $missingData
@@ -116,20 +149,16 @@ final class OrderAdapter
             $order->get_items('line_item')
             as $item
         ) {
-            if (
-                ! $item
-                instanceof WC_Order_Item_Product
-            ) {
+            if (! $item instanceof WC_Order_Item_Product) {
                 continue;
             }
 
-            $lineTotal =
-                $this->moneyFactory
-                     ->fromWooCommerceAmount(
-                         $item->get_total(),
-                         $currency,
-                         $precision
-                     );
+            $lineTotal = $this->moneyFactory
+                ->fromWooCommerceAmount(
+                    $item->get_total(),
+                    $currency,
+                    $precision
+                );
 
             $total = $total->add($lineTotal);
         }
@@ -137,12 +166,23 @@ final class OrderAdapter
         return $total;
     }
 
-    private function calculatePositiveFees(
+    /**
+     * Return positive fee charges and the absolute value of negative fees.
+     *
+     * WooCommerce fee line totals are tax-exclusive. Positive fees are
+     * additional customer charges; negative fees reduce attributable revenue.
+     */
+    private function calculateFees(
         WC_Order $order,
         string $currency,
         int $precision
-    ): Money {
-        $total = Money::zero(
+    ): array {
+        $positive = Money::zero(
+            $currency,
+            $precision
+        );
+
+        $discounts = Money::zero(
             $currency,
             $precision
         );
@@ -160,22 +200,29 @@ final class OrderAdapter
                 continue;
             }
 
-            $money =
-                $this->moneyFactory
-                     ->fromWooCommerceAmount(
-                         $feeTotal,
-                         $currency,
-                         $precision
-                     );
+            $money = $this->moneyFactory
+                ->fromWooCommerceAmount(
+                    $feeTotal,
+                    $currency,
+                    $precision
+                );
 
-            if (! $money->isPositive()) {
+            if ($money->isPositive()) {
+                $positive = $positive->add($money);
                 continue;
             }
 
-            $total = $total->add($money);
+            if ($money->isNegative()) {
+                $discounts = $discounts->add(
+                    $money->negate()
+                );
+            }
         }
 
-        return $total;
+        return array(
+            $positive,
+            $discounts,
+        );
     }
 
     private function calculateCogs(
@@ -194,22 +241,18 @@ final class OrderAdapter
             $order->get_items('line_item')
             as $item
         ) {
-            if (
-                ! $item
-                instanceof WC_Order_Item_Product
-            ) {
+            if (! $item instanceof WC_Order_Item_Product) {
                 continue;
             }
 
             $cogsValue = $item->get_cogs_value();
 
-            $cogs =
-                $this->moneyFactory
-                     ->fromWooCommerceAmount(
-                         $cogsValue,
-                         $currency,
-                         $precision
-                     );
+            $cogs = $this->moneyFactory
+                ->fromWooCommerceAmount(
+                    $cogsValue,
+                    $currency,
+                    $precision
+                );
 
             $total = $total->add($cogs);
 
@@ -228,8 +271,7 @@ final class OrderAdapter
                 continue;
             }
 
-            $productCogs =
-                $product->get_cogs_value();
+            $productCogs = $product->get_cogs_value();
 
             if (
                 $productCogs === null

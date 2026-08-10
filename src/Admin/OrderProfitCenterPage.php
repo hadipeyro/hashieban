@@ -125,7 +125,7 @@ final class OrderProfitCenterPage
                 $this->renderKpi(
                     'فروش قابل انتساب',
                     Currency::formatMinor((int) $report['total_revenue_minor'], $currency, $precision),
-                    'فروش محصولات + ارسال + Fee مثبت - Refund'
+                    'محصول + ارسال + Fee مثبت − Fee کاهشی − Refund بدون مالیات'
                 );
 
                 $this->renderKpi(
@@ -155,6 +155,24 @@ final class OrderProfitCenterPage
                     (int) $report['incomplete_count'] > 0
                 );
                 ?>
+            </section>
+
+            <section class="hb-orders-semantics-summary">
+                <article class="hb-orders-semantic-card hb-orders-semantic-card--shipping">
+                    <span>ارسال؛ درآمد و هزینه جدا</span>
+                    <strong><?php echo esc_html(Currency::formatMinor((int) $report['total_shipping_revenue_minor'], $currency, $precision)); ?></strong>
+                    <small>دریافتی از مشتری · هزینه واقعی ثبت‌شده: <?php echo esc_html(Currency::formatMinor((int) $report['total_shipping_cost_minor'], $currency, $precision)); ?></small>
+                </article>
+                <article class="hb-orders-semantic-card hb-orders-semantic-card--tax">
+                    <span>مالیات خالص سفارش‌ها</span>
+                    <strong><?php echo esc_html(Currency::formatMinor((int) $report['total_net_tax_minor'], $currency, $precision)); ?></strong>
+                    <small>برای تطبیق نمایش داده می‌شود و وارد درآمد سودآوری نمی‌شود.</small>
+                </article>
+                <article class="hb-orders-semantic-card hb-orders-semantic-card--fee">
+                    <span>Fee خالص</span>
+                    <strong><?php echo esc_html(Currency::formatMinor((int) $report['total_net_fee_revenue_minor'], $currency, $precision)); ?></strong>
+                    <small>Fee مثبت منهای Fee کاهشی؛ از Double Counting جلوگیری می‌کند.</small>
+                </article>
             </section>
 
             <?php $this->renderInsightCards($report, $currency, $precision); ?>
@@ -370,13 +388,13 @@ final class OrderProfitCenterPage
 
             <?php if ((int) $detail['refund_minor'] > 0) : ?>
                 <div class="hb-orders-notice hb-orders-notice--warning">
-                    این سفارش Refund دارد. موتور دقیق اثر Refund روی COGS در مرحله Refund & Returns تکمیل می‌شود.
+                    این سفارش Refund دارد. در این مرحله Refund بدون مالیات از درآمد کم می‌شود؛ اثر دقیق برگشت کالا روی COGS در مرحله Refund & Returns تکمیل می‌شود.
                 </div>
             <?php endif; ?>
 
             <section class="hb-orders-kpis hb-orders-kpis--detail">
                 <?php
-                $this->renderKpi('فروش قابل انتساب', Currency::formatMinor((int) $detail['revenue_minor'], $currency, $precision), 'محصول + ارسال + Fee مثبت - Refund');
+                $this->renderKpi('فروش قابل انتساب', Currency::formatMinor((int) $detail['revenue_minor'], $currency, $precision), 'محصول + ارسال + Fee مثبت − Fee کاهشی − Refund بدون مالیات');
                 $this->renderKpi('COGS', Currency::formatMinor((int) $detail['cogs_minor'], $currency, $precision), 'بهای خرید اقلام سفارش');
                 $this->renderKpi('هزینه مستقیم سفارش', Currency::formatMinor((int) $detail['direct_costs_minor'], $currency, $precision), 'هزینه‌های اختصاصی ثبت‌شده برای سفارش');
                 $this->renderKpi('هزینه ثابت سفارش', Currency::formatMinor((int) $detail['global_order_costs_minor'], $currency, $precision), 'قواعد عمومی هزینه برای هر سفارش');
@@ -406,12 +424,70 @@ final class OrderProfitCenterPage
                         </div>
                     </div>
                     <div class="hb-orders-metric-list">
-                        <div><span>فروش محصولات</span><strong><?php echo esc_html(Currency::formatMinor((int) $detail['product_revenue_minor'], $currency, $precision)); ?></strong></div>
-                        <div><span>ارسال دریافت‌شده</span><strong><?php echo esc_html(Currency::formatMinor((int) $detail['shipping_revenue_minor'], $currency, $precision)); ?></strong></div>
+                        <div><span>فروش محصولات بدون مالیات</span><strong><?php echo esc_html(Currency::formatMinor((int) $detail['product_revenue_minor'], $currency, $precision)); ?></strong></div>
+                        <div><span>ارسال دریافت‌شده از مشتری</span><strong><?php echo esc_html(Currency::formatMinor((int) $detail['shipping_revenue_minor'], $currency, $precision)); ?></strong></div>
                         <div><span>Fee مثبت</span><strong><?php echo esc_html(Currency::formatMinor((int) $detail['fee_revenue_minor'], $currency, $precision)); ?></strong></div>
-                        <div><span>Refund</span><strong><?php echo esc_html(Currency::formatMinor((int) $detail['refund_minor'], $currency, $precision)); ?></strong></div>
+                        <div><span>Fee کاهشی</span><strong><?php echo esc_html(Currency::formatMinor((int) $detail['fee_discount_minor'], $currency, $precision)); ?></strong></div>
+                        <div><span>Refund بدون مالیات</span><strong><?php echo esc_html(Currency::formatMinor((int) $detail['refund_minor'], $currency, $precision)); ?></strong></div>
+                        <div><span>مبلغ کل سفارش WooCommerce</span><strong><?php echo esc_html(Currency::formatMinor((int) $detail['order_total_minor'], $currency, $precision)); ?></strong></div>
                     </div>
                 </article>
+            </section>
+
+            <section class="hb-orders-semantics-grid">
+                <article class="hb-orders-card hb-orders-semantic-detail hb-orders-semantic-detail--shipping">
+                    <div class="hb-orders-card__header">
+                        <div>
+                            <h2>ارسال: دریافتی ≠ هزینه واقعی</h2>
+                            <p>مبلغی که مشتری بابت ارسال می‌پردازد درآمد سفارش است؛ هزینه واقعی پست فقط از هزینه مستقیم با دسته «پست و ارسال» خوانده می‌شود.</p>
+                        </div>
+                    </div>
+                    <div class="hb-orders-semantic-numbers">
+                        <div><span>دریافتی ارسال</span><strong><?php echo esc_html(Currency::formatMinor((int) $detail['shipping_revenue_minor'], $currency, $precision)); ?></strong></div>
+                        <div><span>هزینه واقعی ثبت‌شده</span><strong><?php echo esc_html(Currency::formatMinor((int) $detail['shipping_cost_minor'], $currency, $precision)); ?></strong></div>
+                        <div><span>Contribution ارسال</span><strong class="<?php echo (int) $detail['shipping_contribution_minor'] < 0 ? 'is-negative' : 'is-positive'; ?>"><?php echo esc_html(Currency::formatMinor((int) $detail['shipping_contribution_minor'], $currency, $precision)); ?></strong></div>
+                    </div>
+                </article>
+
+                <article class="hb-orders-card hb-orders-semantic-detail hb-orders-semantic-detail--tax">
+                    <div class="hb-orders-card__header">
+                        <div>
+                            <h2>مالیات: عدد عبوری، نه سود</h2>
+                            <p>مالیات سفارش جدا برای تطبیق نگهداری می‌شود و به درآمد سودآوری اضافه نمی‌شود.</p>
+                        </div>
+                    </div>
+                    <div class="hb-orders-semantic-numbers">
+                        <div><span>مالیات ثبت‌شده</span><strong><?php echo esc_html(Currency::formatMinor((int) $detail['tax_charged_minor'], $currency, $precision)); ?></strong></div>
+                        <div><span>مالیات Refundشده</span><strong><?php echo esc_html(Currency::formatMinor((int) $detail['refunded_tax_minor'], $currency, $precision)); ?></strong></div>
+                        <div><span>مالیات خالص</span><strong><?php echo esc_html(Currency::formatMinor((int) $detail['net_tax_minor'], $currency, $precision)); ?></strong></div>
+                    </div>
+                </article>
+
+                <article class="hb-orders-card hb-orders-semantic-detail hb-orders-semantic-detail--fee">
+                    <div class="hb-orders-card__header">
+                        <div>
+                            <h2>Fee: افزایش و کاهش درآمد</h2>
+                            <p>Fee مثبت به درآمد اضافه و Fee منفی/کاهشی از درآمد کم می‌شود؛ هیچ Fee به‌صورت کورکورانه هزینه فرض نمی‌شود.</p>
+                        </div>
+                    </div>
+                    <div class="hb-orders-semantic-numbers">
+                        <div><span>Fee مثبت</span><strong><?php echo esc_html(Currency::formatMinor((int) $detail['fee_revenue_minor'], $currency, $precision)); ?></strong></div>
+                        <div><span>Fee کاهشی</span><strong><?php echo esc_html(Currency::formatMinor((int) $detail['fee_discount_minor'], $currency, $precision)); ?></strong></div>
+                        <div><span>Fee خالص</span><strong class="<?php echo (int) $detail['net_fee_revenue_minor'] < 0 ? 'is-negative' : 'is-positive'; ?>"><?php echo esc_html(Currency::formatMinor((int) $detail['net_fee_revenue_minor'], $currency, $precision)); ?></strong></div>
+                    </div>
+                </article>
+            </section>
+
+            <section class="hb-orders-card hb-orders-card--chart hb-orders-card--wide">
+                <div class="hb-orders-card__header">
+                    <div>
+                        <h2>جریان مالی سفارش</h2>
+                        <p>اجزای افزاینده و کاهنده درآمد در کنار مالیات؛ مالیات فقط برای مقایسه نمایش داده می‌شود.</p>
+                    </div>
+                </div>
+                <div class="hb-orders-chart-wrap hb-orders-chart-wrap--semantics">
+                    <canvas id="hashieban-order-semantics-chart"></canvas>
+                </div>
             </section>
 
             <section class="hb-orders-card hb-orders-table-card">
@@ -710,6 +786,17 @@ final class OrderProfitCenterPage
                     Currency::minorToDisplayNumber((int) $detail['direct_costs_minor'], $currency, $precision),
                     Currency::minorToDisplayNumber((int) $detail['global_order_costs_minor'], $currency, $precision),
                     Currency::minorToDisplayNumber((int) $detail['profit_minor'], $currency, $precision),
+                ),
+            ),
+            'semantics' => array(
+                'labels' => array('محصول', 'ارسال مشتری', 'Fee مثبت', 'Fee کاهشی', 'Refund بدون مالیات', 'مالیات خالص'),
+                'values' => array(
+                    Currency::minorToDisplayNumber((int) $detail['product_revenue_minor'], $currency, $precision),
+                    Currency::minorToDisplayNumber((int) $detail['shipping_revenue_minor'], $currency, $precision),
+                    Currency::minorToDisplayNumber((int) $detail['fee_revenue_minor'], $currency, $precision),
+                    -Currency::minorToDisplayNumber((int) $detail['fee_discount_minor'], $currency, $precision),
+                    -Currency::minorToDisplayNumber((int) $detail['refund_minor'], $currency, $precision),
+                    Currency::minorToDisplayNumber((int) $detail['net_tax_minor'], $currency, $precision),
                 ),
             ),
         );
