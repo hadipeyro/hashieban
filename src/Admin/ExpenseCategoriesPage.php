@@ -25,7 +25,12 @@ final class ExpenseCategoriesPage
 
         add_action(
             'admin_post_hashieban_delete_expense_category',
-            array($this, 'handleDelete')
+            array($this, 'handleDeactivate')
+        );
+
+        add_action(
+            'admin_post_hashieban_activate_expense_category',
+            array($this, 'handleActivate')
         );
     }
 
@@ -39,8 +44,11 @@ final class ExpenseCategoriesPage
             wp_die('Access denied.');
         }
 
-        $categories =
+        $activeCategories =
             $this->categories->active();
+
+        $inactiveCategories =
+            $this->categories->inactive();
 
         ?>
         <div class="wrap hb-category-page">
@@ -58,7 +66,8 @@ final class ExpenseCategoriesPage
                     <p>
                         هر دسته یک نام و رنگ اختصاصی دارد.
                         همین رنگ در نمودارها و گزارش‌های حاشیه‌بان
-                        استفاده خواهد شد.
+                        استفاده می‌شود. غیرفعال‌سازی دسته،
+                        هزینه‌های قبلی و تاریخچه آن را حذف نمی‌کند.
                     </p>
                 </div>
 
@@ -67,7 +76,7 @@ final class ExpenseCategoriesPage
                         <?php
                         echo esc_html(
                             number_format_i18n(
-                                count($categories)
+                                count($activeCategories)
                             )
                         );
                         ?>
@@ -76,17 +85,7 @@ final class ExpenseCategoriesPage
                 </div>
             </section>
 
-            <?php if (
-                isset($_GET['saved'])
-            ) : ?>
-
-                <div class="notice notice-success is-dismissible">
-                    <p>
-                        دسته هزینه ذخیره شد.
-                    </p>
-                </div>
-
-            <?php endif; ?>
+            <?php $this->renderNotice(); ?>
 
             <div class="hb-category-layout">
 
@@ -176,7 +175,7 @@ final class ExpenseCategoriesPage
                     <div class="hb-category-heading">
                         <div>
                             <h2>
-                                دسته‌های فعلی
+                                دسته‌های فعال
                             </h2>
 
                             <p>
@@ -186,128 +185,236 @@ final class ExpenseCategoriesPage
                         </div>
                     </div>
 
-                    <div class="hb-category-grid">
+                    <?php if ($activeCategories === array()) : ?>
 
-                        <?php
-                        foreach (
-                            $categories
-                            as $category
-                        ) :
-                            ?>
+                        <div class="hb-category-empty">
+                            هنوز دسته فعالی وجود ندارد.
+                            یک دسته جدید بسازید یا یکی از دسته‌های
+                            غیرفعال را دوباره فعال کنید.
+                        </div>
 
-                            <div class="hb-category-item">
+                    <?php else : ?>
 
-                                <form
-                                    method="post"
-                                    action="<?php
-                                    echo esc_url(
-                                        admin_url(
-                                            'admin-post.php'
-                                        )
-                                    );
-                                    ?>"
-                                >
+                        <div class="hb-category-grid">
 
-                                    <input
-                                        type="hidden"
-                                        name="action"
-                                        value="hashieban_save_expense_category"
-                                    >
+                            <?php
+                            foreach (
+                                $activeCategories
+                                as $category
+                            ) :
+                                ?>
 
-                                    <input
-                                        type="hidden"
-                                        name="id"
-                                        value="<?php
-                                        echo esc_attr(
-                                            $category['id']
+                                <div class="hb-category-item">
+
+                                    <form
+                                        method="post"
+                                        action="<?php
+                                        echo esc_url(
+                                            admin_url(
+                                                'admin-post.php'
+                                            )
                                         );
                                         ?>"
                                     >
 
-                                    <?php
-                                    wp_nonce_field(
-                                        'hashieban_save_expense_category'
-                                    );
-                                    ?>
-
-                                    <div class="hb-category-item-top">
-
-                                        <span
-                                            class="hb-category-preview"
-                                            style="background: <?php
-                                            echo esc_attr(
-                                                $category['color']
-                                            );
-                                            ?>;"
-                                        ></span>
-
                                         <input
-                                            type="text"
-                                            name="name"
-                                            value="<?php
-                                            echo esc_attr(
-                                                $category['name']
-                                            );
-                                            ?>"
-                                            required
+                                            type="hidden"
+                                            name="action"
+                                            value="hashieban_save_expense_category"
                                         >
 
                                         <input
-                                            type="color"
-                                            name="color"
+                                            type="hidden"
+                                            name="id"
                                             value="<?php
                                             echo esc_attr(
-                                                $category['color']
+                                                $category['id']
                                             );
                                             ?>"
                                         >
-
-                                    </div>
-
-                                    <div class="hb-category-actions">
-
-                                        <button
-                                            type="submit"
-                                            class="button"
-                                        >
-                                            ذخیره تغییرات
-                                        </button>
 
                                         <?php
-                                        $deleteUrl =
-                                            wp_nonce_url(
-                                                add_query_arg(
-                                                    array(
-                                                        'action' =>
-                                                            'hashieban_delete_expense_category',
-
-                                                        'category_id' =>
-                                                            $category['id'],
-                                                    ),
-                                                    admin_url(
-                                                        'admin-post.php'
-                                                    )
-                                                ),
-                                                'hashieban_delete_expense_category_'
-                                                    . $category['id']
-                                            );
+                                        wp_nonce_field(
+                                            'hashieban_save_expense_category'
+                                        );
                                         ?>
 
-                                        <a
-                                            href="<?php
-												  echo esc_url(
-													  $deleteUrl
-												  );
-												  ?>"
-                                            class="hb-category-delete"
-                                            onclick="return confirm('این دسته از فهرست فعال حذف شود؟ هزینه‌های قبلی حذف نمی‌شوند.');"
-                                        >
-                                          حذف
-                                        </a>
+                                        <div class="hb-category-item-top">
 
+                                            <span
+                                                class="hb-category-preview"
+                                                style="background: <?php
+                                                echo esc_attr(
+                                                    $category['color']
+                                                );
+                                                ?>;"
+                                            ></span>
+
+                                            <input
+                                                type="text"
+                                                name="name"
+                                                value="<?php
+                                                echo esc_attr(
+                                                    $category['name']
+                                                );
+                                                ?>"
+                                                required
+                                            >
+
+                                            <input
+                                                type="color"
+                                                name="color"
+                                                value="<?php
+                                                echo esc_attr(
+                                                    $category['color']
+                                                );
+                                                ?>"
+                                            >
+
+                                        </div>
+
+                                        <div class="hb-category-actions">
+
+                                            <button
+                                                type="submit"
+                                                class="button"
+                                            >
+                                                ذخیره تغییرات
+                                            </button>
+
+                                            <?php
+                                            $deactivateUrl =
+                                                wp_nonce_url(
+                                                    add_query_arg(
+                                                        array(
+                                                            'action' =>
+                                                                'hashieban_delete_expense_category',
+
+                                                            'category_id' =>
+                                                                $category['id'],
+                                                        ),
+                                                        admin_url(
+                                                            'admin-post.php'
+                                                        )
+                                                    ),
+                                                    'hashieban_delete_expense_category_'
+                                                        . $category['id']
+                                                );
+                                            ?>
+
+                                            <a
+                                                href="<?php
+                                                echo esc_url(
+                                                    $deactivateUrl
+                                                );
+                                                ?>"
+                                                class="hb-category-delete"
+                                                onclick="return confirm('این دسته غیرفعال شود؟ هزینه‌های قبلی، رنگ و تاریخچه آن حفظ می‌شوند.');"
+                                            >
+                                                غیرفعال‌سازی
+                                            </a>
+
+                                        </div>
+
+                                    </form>
+
+                                </div>
+
+                            <?php endforeach; ?>
+
+                        </div>
+
+                    <?php endif; ?>
+
+                </section>
+
+            </div>
+
+            <?php if ($inactiveCategories !== array()) : ?>
+
+                <section class="hb-category-card hb-category-card--inactive">
+
+                    <div class="hb-category-heading">
+                        <div>
+                            <h2>
+                                دسته‌های غیرفعال
+                            </h2>
+
+                            <p>
+                                این دسته‌ها برای هزینه‌های جدید نمایش داده نمی‌شوند،
+                                اما اطلاعات تاریخی و رنگ آن‌ها در گزارش‌های قبلی حفظ می‌شود.
+                            </p>
+                        </div>
+                    </div>
+
+                    <div class="hb-category-grid hb-category-grid--inactive">
+
+                        <?php
+                        foreach (
+                            $inactiveCategories
+                            as $category
+                        ) :
+                            ?>
+
+                            <div class="hb-category-item hb-category-item--inactive">
+
+                                <div class="hb-category-item-top hb-category-item-top--inactive">
+
+                                    <span
+                                        class="hb-category-preview"
+                                        style="background: <?php
+                                        echo esc_attr(
+                                            $category['color']
+                                        );
+                                        ?>;"
+                                    ></span>
+
+                                    <div class="hb-category-inactive-name">
+                                        <strong>
+                                            <?php
+                                            echo esc_html(
+                                                $category['name']
+                                            );
+                                            ?>
+                                        </strong>
+
+                                        <span>
+                                            غیرفعال — داده‌های قبلی محفوظ است
+                                        </span>
                                     </div>
 
-                                </form>
+                                    <?php
+                                    $activateUrl =
+                                        wp_nonce_url(
+                                            add_query_arg(
+                                                array(
+                                                    'action' =>
+                                                        'hashieban_activate_expense_category',
+
+                                                    'category_id' =>
+                                                        $category['id'],
+                                                ),
+                                                admin_url(
+                                                    'admin-post.php'
+                                                )
+                                            ),
+                                            'hashieban_activate_expense_category_'
+                                                . $category['id']
+                                        );
+                                    ?>
+
+                                    <a
+                                        href="<?php
+                                        echo esc_url(
+                                            $activateUrl
+                                        );
+                                        ?>"
+                                        class="button hb-category-restore"
+                                    >
+                                        فعال‌سازی مجدد
+                                    </a>
+
+                                </div>
 
                             </div>
 
@@ -317,94 +424,164 @@ final class ExpenseCategoriesPage
 
                 </section>
 
-            </div>
+            <?php endif; ?>
 
+        </div>
+        <?php
+    }
+
+    public function handleSave(): void
+    {
+        if (
+            ! current_user_can(
+                'manage_woocommerce'
+            )
+        ) {
+            wp_die('Access denied.');
+        }
+
+        check_admin_referer(
+            'hashieban_save_expense_category'
+        );
+
+        $id = sanitize_key(
+            wp_unslash(
+                $_POST['id'] ?? ''
+            )
+        );
+
+        $name = sanitize_text_field(
+            wp_unslash(
+                $_POST['name'] ?? ''
+            )
+        );
+
+        $color = sanitize_text_field(
+            wp_unslash(
+                $_POST['color'] ?? ''
+            )
+        );
+
+        if ($name === '') {
+            $this->redirect('invalid');
+        }
+
+        $this->categories->save(
+            $name,
+            $color,
+            $id
+        );
+
+        $this->redirect('saved');
+    }
+
+    public function handleDeactivate(): void
+    {
+        if (
+            ! current_user_can(
+                'manage_woocommerce'
+            )
+        ) {
+            wp_die('Access denied.');
+        }
+
+        $id = sanitize_key(
+            wp_unslash(
+                $_GET['category_id'] ?? ''
+            )
+        );
+
+        if ($id === '') {
+            $this->redirect('invalid');
+        }
+
+        check_admin_referer(
+            'hashieban_delete_expense_category_'
+            . $id
+        );
+
+        $this->categories->deactivate(
+            $id
+        );
+
+        $this->redirect('deactivated');
+    }
+
+    public function handleActivate(): void
+    {
+        if (
+            ! current_user_can(
+                'manage_woocommerce'
+            )
+        ) {
+            wp_die('Access denied.');
+        }
+
+        $id = sanitize_key(
+            wp_unslash(
+                $_GET['category_id'] ?? ''
+            )
+        );
+
+        if ($id === '') {
+            $this->redirect('invalid');
+        }
+
+        check_admin_referer(
+            'hashieban_activate_expense_category_'
+            . $id
+        );
+
+        $this->categories->activate(
+            $id
+        );
+
+        $this->redirect('activated');
+    }
+
+    private function renderNotice(): void
+    {
+        $status = sanitize_key(
+            wp_unslash(
+                $_GET['hb_status'] ?? ''
+            )
+        );
+
+        $messages = array(
+            'saved' => 'دسته هزینه ذخیره شد.',
+            'deactivated' => 'دسته غیرفعال شد. اطلاعات تاریخی آن حفظ می‌شود.',
+            'activated' => 'دسته دوباره فعال شد و برای هزینه‌های جدید قابل انتخاب است.',
+            'invalid' => 'اطلاعات دسته کامل یا معتبر نبود.',
+        );
+
+        if (! isset($messages[$status])) {
+            return;
+        }
+
+        $noticeClass =
+            $status === 'invalid'
+                ? 'notice notice-error is-dismissible'
+                : 'notice notice-success is-dismissible';
+
+        ?>
+        <div class="<?php echo esc_attr($noticeClass); ?>">
+          <p>
+            <?php echo esc_html($messages[$status]); ?>
+          </p>
         </div>
         <?php
 		}
 
-		public function handleSave(): void
-		{
-			if (
-				! current_user_can(
-					'manage_woocommerce'
-				)
-			) {
-				wp_die('Access denied.');
-			}
-
-			check_admin_referer(
-				'hashieban_save_expense_category'
-			);
-
-			$id = sanitize_key(
-				wp_unslash(
-					$_POST['id'] ?? ''
-				)
-			);
-
-			$name = sanitize_text_field(
-				wp_unslash(
-					$_POST['name'] ?? ''
-				)
-			);
-
-			$color = sanitize_text_field(
-				wp_unslash(
-					$_POST['color'] ?? ''
-				)
-			);
-
-			if ($name === '') {
-				$this->redirect();
-			}
-
-			$this->categories->save(
-				$name,
-				$color,
-				$id
-			);
-
-			$this->redirect();
-		}
-
-		public function handleDelete(): void
-		{
-			if (
-				! current_user_can(
-					'manage_woocommerce'
-				)
-			) {
-				wp_die('Access denied.');
-			}
-
-			$id = sanitize_key(
-				wp_unslash(
-					$_GET['category_id'] ?? ''
-				)
-			);
-
-			if ($id === '') {
-				$this->redirect();
-			}
-
-			check_admin_referer(
-				'hashieban_delete_expense_category_'
-              . $id
-			);
-
-			$this->categories->deactivate(
-				$id
-			);
-
-			$this->redirect();
-		}
-
-		private function redirect(): void
-		{
+		private function redirect(
+			string $status
+		): void {
 			wp_safe_redirect(
-				admin_url(
-					'admin.php?page=hashieban-expense-categories&saved=1'
+				add_query_arg(
+					'hb_status',
+					$status,
+					admin_url(
+						'admin.php?page=hashieban-expense-categories'
+					)
 				)
 			);
 

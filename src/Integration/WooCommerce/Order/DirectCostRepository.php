@@ -126,6 +126,27 @@ final class DirectCostRepository
         $precision =
             wc_get_price_decimals();
 
+        $existingById = array();
+
+        foreach (
+            $this->getCosts($order)
+            as $existingCost
+        ) {
+            $existingId = sanitize_key(
+                (string) (
+                    $existingCost['id']
+                    ?? ''
+                )
+            );
+
+            if ($existingId === '') {
+                continue;
+            }
+
+            $existingById[$existingId] =
+                $existingCost;
+        }
+
         $costs = array();
 
         foreach ($rows as $row) {
@@ -199,6 +220,10 @@ final class DirectCostRepository
                 );
             }
 
+            $previousCost =
+                $existingById[$id]
+            ?? null;
+
             $categoryId = sanitize_key(
                 (string) (
                     $row['category_id']
@@ -206,13 +231,39 @@ final class DirectCostRepository
                 )
             );
 
+            if (
+                $categoryId === ''
+                && is_array($previousCost)
+            ) {
+                $categoryId = sanitize_key(
+                    (string) (
+                        $previousCost['category_id']
+                        ?? ''
+                    )
+                );
+            }
+
             $category =
                 $this->categories
                      ->find($categoryId);
 
-            if (
-                ! $category
-                || empty($category['active'])
+            $isHistoricalCategory =
+                is_array($previousCost)
+                && $categoryId !== ''
+                && $categoryId === sanitize_key(
+                    (string) (
+                        $previousCost['category_id']
+                        ?? ''
+                    )
+                );
+
+            if (! $category) {
+                $categoryId =
+                    $this->categories
+                         ->fallbackId();
+            } elseif (
+                empty($category['active'])
+                && ! $isHistoricalCategory
             ) {
                 $categoryId =
                     $this->categories

@@ -151,6 +151,31 @@ final class OrderCostsMetaBox
                                 ]
                             );
 
+                    $rowCategories =
+                        $categories;
+
+                    $selectedCategory =
+                        $this->categories
+                            ->find(
+                                (string) $cost[
+                                    'category_id'
+                                ]
+                            );
+
+                    if (
+                        is_array($selectedCategory)
+                        && empty(
+                            $selectedCategory[
+                                'active'
+                            ]
+                        )
+                    ) {
+                        array_unshift(
+                            $rowCategories,
+                            $selectedCategory
+                        );
+                    }
+
                     $displayAmount =
                         Currency::storeDecimalToDisplayInput(
                             (string) $cost[
@@ -188,7 +213,7 @@ final class OrderCostsMetaBox
 
                                     <?php
                                     foreach (
-                                        $categories
+                                        $rowCategories
                                         as $category
                                     ) :
                                         ?>
@@ -207,6 +232,18 @@ final class OrderCostsMetaBox
                                             echo esc_html(
                                                 $category['name']
                                             );
+
+                                            if (
+                                                empty(
+                                                    $category[
+                                                        'active'
+                                                    ]
+                                                )
+                                            ) {
+                                                echo esc_html(
+                                                    ' — غیرفعال (تاریخی)'
+                                                );
+                                            }
                                             ?>
                                         </option>
 

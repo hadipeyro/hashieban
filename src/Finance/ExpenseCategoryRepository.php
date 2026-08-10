@@ -87,6 +87,19 @@ final class ExpenseCategoryRepository
         );
     }
 
+    public function inactive(): array
+    {
+        return array_values(
+            array_filter(
+                $this->all(),
+                static function ($category): bool {
+                    return is_array($category)
+                        && empty($category['active']);
+                }
+            )
+        );
+    }
+
     public function find(
         string $id
     ): ?array {
@@ -145,11 +158,18 @@ final class ExpenseCategoryRepository
                 continue;
             }
 
+            $isActive = array_key_exists(
+                'active',
+                $category
+            )
+            ? (bool) $category['active']
+					  : true;
+
             $categories[$index] = array(
                 'id' => $id,
                 'name' => $name,
                 'color' => $safeColor,
-                'active' => true,
+                'active' => $isActive,
             );
 
             $found = true;
@@ -170,30 +190,22 @@ final class ExpenseCategoryRepository
         return $id;
     }
 
+    public function activate(
+        string $id
+    ): void {
+        $this->setActive(
+            $id,
+            true
+        );
+    }
+
     public function deactivate(
         string $id
     ): void {
-        $categories = $this->all();
-
-        foreach (
-            $categories
-            as $index => $category
-        ) {
-            if (
-                ! is_array($category)
-                || ($category['id'] ?? '')
-                !== $id
-            ) {
-                continue;
-            }
-
-            $categories[$index]['active'] =
-                false;
-
-            break;
-        }
-
-        $this->saveAll($categories);
+        $this->setActive(
+            $id,
+            false
+        );
     }
 
     public function fallbackId(): string
@@ -237,6 +249,39 @@ final class ExpenseCategoryRepository
         }
 
         return '#64748b';
+    }
+
+    private function setActive(
+        string $id,
+        bool $active
+    ): void {
+        $id = sanitize_key($id);
+
+        if ($id === '') {
+            return;
+        }
+
+        $categories = $this->all();
+
+        foreach (
+            $categories
+            as $index => $category
+        ) {
+            if (
+                ! is_array($category)
+                || ($category['id'] ?? '')
+                !== $id
+            ) {
+                continue;
+            }
+
+            $categories[$index]['active'] =
+                $active;
+
+            $this->saveAll($categories);
+
+            return;
+        }
     }
 
     private function saveAll(
