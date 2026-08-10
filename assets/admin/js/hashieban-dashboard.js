@@ -72,6 +72,30 @@ document.addEventListener('DOMContentLoaded', function () {
     const summary =
         payload.summary || {};
 
+    const navigation =
+        payload.navigation || {};
+
+    function navigateTo(url) {
+        if (typeof url !== 'string' || url === '') {
+            return;
+        }
+
+        window.location.href = url;
+    }
+
+    function setInteractiveCursor(event, elements) {
+        const target = event && event.native
+            ? event.native.target
+            : null;
+
+        if (target) {
+            target.style.cursor =
+                elements && elements.length > 0
+                    ? 'pointer'
+                    : 'default';
+        }
+    }
+
     const trendLabels =
         Array.isArray(trend.labels)
             ? trend.labels
@@ -100,11 +124,6 @@ document.addEventListener('DOMContentLoaded', function () {
     const compositionValues =
         Array.isArray(composition.values)
             ? composition.values
-            : [];
-
-    const compositionColors =
-        Array.isArray(composition.colors)
-            ? composition.colors
             : [];
 
     const summaryLabels =
@@ -299,6 +318,16 @@ document.addEventListener('DOMContentLoaded', function () {
                         intersect: false
                     },
 
+                    onHover: setInteractiveCursor,
+
+                    onClick: function (event, elements) {
+                        if (!elements || elements.length === 0) {
+                            return;
+                        }
+
+                        navigateTo(navigation.trend);
+                    },
+
                     plugins: {
                         legend: {
                             display: false
@@ -358,26 +387,12 @@ document.addEventListener('DOMContentLoaded', function () {
                             data:
                                 compositionValues,
 
-                            backgroundColor:
-                                compositionColors.length
-                                === compositionValues.length
-                                    ? compositionColors
-                                    : compositionValues.map(
-                                        function (value, index) {
-                                            const fallback = [
-                                                palette.revenue,
-                                                palette.amber,
-                                                palette.purple,
-                                                palette.pink,
-                                                palette.cyan,
-                                                palette.expenses
-                                            ];
-
-                                            return fallback[
-                                                index % fallback.length
-                                            ];
-                                        }
-                                    ),
+                            backgroundColor: [
+                                palette.revenue,
+                                palette.amber,
+                                palette.purple,
+                                palette.pink
+                            ],
 
                             borderColor:
                                 '#ffffff',
@@ -402,6 +417,20 @@ document.addEventListener('DOMContentLoaded', function () {
                         duration: 700
                     },
 
+                    onHover: setInteractiveCursor,
+
+                    onClick: function (event, elements) {
+                        if (!elements || elements.length === 0) {
+                            return;
+                        }
+
+                        const urls = Array.isArray(navigation.composition)
+                            ? navigation.composition
+                            : [];
+
+                        navigateTo(urls[elements[0].index] || '');
+                    },
+
                     plugins: {
                         legend: {
                             position: 'bottom',
@@ -420,38 +449,12 @@ document.addEventListener('DOMContentLoaded', function () {
                             callbacks: {
                                 label:
                                     function (context) {
-                                        const values =
-                                            context.dataset.data || [];
-
-                                        const total = values.reduce(
-                                            function (sum, value) {
-                                                const numeric =
-                                                    Number(value);
-
-                                                return sum
-                                                    + (Number.isFinite(numeric)
-                                                        ? numeric
-                                                        : 0);
-                                            },
-                                            0
-                                        );
-
-                                        const current =
-                                            Number(context.raw);
-
-                                        const percent =
-                                            total > 0
-                                            && Number.isFinite(current)
-                                                ? (current / total) * 100
-                                                : 0;
-
                                         return (
                                             context.label
                                             + ': '
-                                            + formatMoney(context.raw)
-                                            + ' ('
-                                            + formatter.format(percent)
-                                            + '٪)'
+                                            + formatMoney(
+                                                context.raw
+                                            )
                                         );
                                     }
                             }
@@ -501,6 +504,20 @@ document.addEventListener('DOMContentLoaded', function () {
 
                     animation: {
                         duration: 700
+                    },
+
+                    onHover: setInteractiveCursor,
+
+                    onClick: function (event, elements) {
+                        if (!elements || elements.length === 0) {
+                            return;
+                        }
+
+                        const urls = Array.isArray(navigation.summary)
+                            ? navigation.summary
+                            : [];
+
+                        navigateTo(urls[elements[0].index] || '');
                     },
 
                     plugins: {

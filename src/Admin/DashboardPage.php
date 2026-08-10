@@ -60,10 +60,17 @@ final class DashboardPage
 
         $currencyLabel = Currency::label($currency);
 
+        $navigation = $this->buildNavigationUrls(
+            $range,
+            $start,
+            $end
+        );
+
         $chartPayload = $this->buildChartPayload(
             $data,
             $currency,
-            $precision
+            $precision,
+            $navigation
         );
 
         ?>
@@ -93,6 +100,12 @@ final class DashboardPage
                             </strong>
                         </span>
                     </div>
+
+                    <div class="hb-hero__actions">
+                        <a href="<?php echo esc_url($navigation['analytics']); ?>">مرکز تحلیل‌ها</a>
+                        <a href="<?php echo esc_url($navigation['orders']); ?>">بررسی سفارش‌ها</a>
+                        <a href="<?php echo esc_url($navigation['alerts']); ?>">هشدارهای مدیریتی</a>
+                    </div>
                 </div>
 
                 <div class="hb-hero__profit <?php echo $netProfit < 0 ? 'is-loss' : 'is-profit'; ?>">
@@ -121,13 +134,15 @@ final class DashboardPage
                 $this->renderKpi(
                     'فروش کل',
                     Currency::formatMinor($revenue, $currency, $precision),
-                    'کل درآمد ثبت‌شده در این بازه'
+                    'کل درآمد ثبت‌شده در این بازه',
+                    $navigation['reports']
                 );
 
                 $this->renderKpi(
                     'کل هزینه‌ها',
                     Currency::formatMinor($totalExpenses, $currency, $precision),
-                    'قیمت خرید کالا + هزینه سفارش + هزینه ثابت + هزینه کلی'
+                    'قیمت خرید کالا + هزینه سفارش + هزینه ثابت + هزینه کلی',
+                    $navigation['expense_intelligence']
                 );
 
                 $this->renderKpi(
@@ -135,19 +150,22 @@ final class DashboardPage
                     $margin !== null
                         ? number_format_i18n((float) $margin, 1) . '٪'
                         : '—',
-                    'درصدی از فروش که به سود خالص تبدیل شده'
+                    'درصدی از فروش که به سود خالص تبدیل شده',
+                    $navigation['alerts']
                 );
 
                 $this->renderKpi(
                     'تعداد سفارش',
                     number_format_i18n($orderCount),
-                    'تعداد سفارش‌های معتبر در این بازه'
+                    'تعداد سفارش‌های معتبر در این بازه',
+                    $navigation['orders']
                 );
 
                 $this->renderKpi(
                     'میانگین سود هر سفارش',
                     Currency::formatMinor($averageProfit, $currency, $precision),
-                    'میانگین سود خالص به ازای هر سفارش'
+                    'میانگین سود خالص به ازای هر سفارش',
+                    $navigation['orders']
                 );
 
                 $this->renderKpi(
@@ -157,21 +175,52 @@ final class DashboardPage
                         $currency,
                         $precision
                     ),
-                    'هزینه‌ای که در تنظیمات روی همه سفارش‌ها اعمال می‌شود'
+                    'هزینه‌ای که در تنظیمات روی همه سفارش‌ها اعمال می‌شود',
+                    $navigation['settings']
                 );
 
                 $this->renderKpi(
                     'هزینه‌های کلی فروشگاه',
                     Currency::formatMinor($storeExpenses, $currency, $precision),
-                    'هزینه‌هایی که جدا از سفارش‌ها ثبت شده‌اند'
+                    'هزینه‌هایی که جدا از سفارش‌ها ثبت شده‌اند',
+                    $navigation['expenses']
                 );
 
                 $this->renderKpi(
                     'اطلاعات ناقص',
                     number_format_i18n((int) $data['incomplete_count']),
-                    'تعداد سفارش‌هایی که اطلاعات مالی کامل ندارند'
+                    'تعداد سفارش‌هایی که اطلاعات مالی کامل ندارند',
+                    $navigation['data_health']
                 );
                 ?>
+            </section>
+
+            <section class="hb-drilldown-strip">
+                <div class="hb-drilldown-strip__intro">
+                    <span class="hb-drilldown-strip__eyebrow">Drill-down</span>
+                    <strong>از عدد کلی برو سراغ دلیلش</strong>
+                    <small>روی هر کارت یا نمودار کلیک کن تا مستقیم وارد تحلیل مرتبط شوی.</small>
+                </div>
+
+                <a class="hb-drilldown-link" href="<?php echo esc_url($navigation['products']); ?>">
+                    <span>محصولات</span>
+                    <strong>کدام کالا سود ساخت؟</strong>
+                </a>
+
+                <a class="hb-drilldown-link" href="<?php echo esc_url($navigation['customers']); ?>">
+                    <span>مشتریان</span>
+                    <strong>بهترین مشتری‌ها چه کسانی‌اند؟</strong>
+                </a>
+
+                <a class="hb-drilldown-link" href="<?php echo esc_url($navigation['time']); ?>">
+                    <span>زمان</span>
+                    <strong>رشد و افت از کجا آمده؟</strong>
+                </a>
+
+                <a class="hb-drilldown-link" href="<?php echo esc_url($navigation['geo']); ?>">
+                    <span>جغرافیا</span>
+                    <strong>کدام استان پول‌سازتر است؟</strong>
+                </a>
             </section>
 
             <section class="hb-chart-layout">
@@ -312,8 +361,18 @@ final class DashboardPage
                                 <?php foreach ($data['recent_orders'] as $order) : ?>
                                     <tr>
                                         <td>
-                                            <a href="<?php echo esc_url($order['edit_url']); ?>">
+                                            <a
+                                                class="hb-order-drilldown"
+                                                href="<?php echo esc_url(add_query_arg(
+                                                    array(
+                                                        'page' => 'hashieban-orders',
+                                                        'order_id' => (int) $order['id'],
+                                                    ),
+                                                    admin_url('admin.php')
+                                                )); ?>"
+                                            >
                                                 #<?php echo esc_html($order['number']); ?>
+                                                <span>جزئیات مالی</span>
                                             </a>
                                         </td>
 
@@ -379,7 +438,8 @@ final class DashboardPage
     private function buildChartPayload(
         array $data,
         string $currency,
-        int $precision
+        int $precision,
+        array $navigation
     ): array {
         $labels = array();
         $revenue = array();
@@ -416,89 +476,22 @@ final class DashboardPage
             );
         }
 
-        $compositionLabels = array();
-        $compositionValues = array();
-        $compositionColors = array();
-
-        $this->appendCompositionItem(
-            $compositionLabels,
-            $compositionValues,
-            $compositionColors,
-            'قیمت خرید کالاها',
-            (int) $data['cogs_minor'],
-            '#2563eb',
-            $currency,
-            $precision
-        );
-
-        $this->appendCompositionItem(
-            $compositionLabels,
-            $compositionValues,
-            $compositionColors,
-            'هزینه ثابت سفارش',
-            (int) ($data['global_order_costs_minor'] ?? 0),
-            '#7c3aed',
-            $currency,
-            $precision
-        );
-
-        $categorizedMinor = 0;
-
-        foreach (
-            ($data['expense_category_breakdown'] ?? array())
-            as $category
-        ) {
-            if (! is_array($category)) {
-                continue;
-            }
-
-            $amountMinor =
-                (int) ($category['amount_minor'] ?? 0);
-
-            if ($amountMinor <= 0) {
-                continue;
-            }
-
-            $categorizedMinor +=
-                $amountMinor;
-
-            $color = sanitize_hex_color(
-                (string) ($category['color'] ?? '')
-            );
-
-            $this->appendCompositionItem(
-                $compositionLabels,
-                $compositionValues,
-                $compositionColors,
-                (string) ($category['name'] ?? 'سایر'),
-                $amountMinor,
-                $color ?: '#64748b',
-                $currency,
-                $precision
-            );
-        }
-
-        $manualCostsMinor =
-            (int) $data['direct_costs_minor']
-            + (int) $data['store_expenses_minor'];
-
-        $uncategorizedMinor =
-            $manualCostsMinor
-            - $categorizedMinor;
-
-        $this->appendCompositionItem(
-            $compositionLabels,
-            $compositionValues,
-            $compositionColors,
-            'هزینه‌های دسته‌بندی‌نشده',
-            max(0, $uncategorizedMinor),
-            '#64748b',
-            $currency,
-            $precision
-        );
-
         return array(
             'currencyLabel' => Currency::label($currency),
+            'navigation' => array(
+                'trend' => $navigation['time'],
+                'composition' => array(
+                    $navigation['products'],
+                    $navigation['expense_intelligence'],
+                    $navigation['settings'],
+                    $navigation['expenses'],
+                ),
+                'summary' => array(
+                    $navigation['reports'],
+                    $navigation['expense_intelligence'],
+                    $navigation['reports'],
+                ),
+            ),
             'trend' => array(
                 'labels' => $labels,
                 'revenue' => $revenue,
@@ -506,9 +499,34 @@ final class DashboardPage
                 'expenses' => $expenses,
             ),
             'composition' => array(
-                'labels' => $compositionLabels,
-                'values' => $compositionValues,
-                'colors' => $compositionColors,
+                'labels' => array(
+                    'قیمت خرید کالاها',
+                    'هزینه سفارش‌ها',
+                    'هزینه ثابت سفارش',
+                    'هزینه‌های کلی فروشگاه',
+                ),
+                'values' => array(
+                    Currency::minorToDisplayNumber(
+                        (int) $data['cogs_minor'],
+                        $currency,
+                        $precision
+                    ),
+                    Currency::minorToDisplayNumber(
+                        (int) $data['direct_costs_minor'],
+                        $currency,
+                        $precision
+                    ),
+                    Currency::minorToDisplayNumber(
+                        (int) ($data['global_order_costs_minor'] ?? 0),
+                        $currency,
+                        $precision
+                    ),
+                    Currency::minorToDisplayNumber(
+                        (int) $data['store_expenses_minor'],
+                        $currency,
+                        $precision
+                    ),
+                ),
             ),
             'summary' => array(
                 'labels' => array(
@@ -540,30 +558,6 @@ final class DashboardPage
                 ),
             ),
         );
-    }
-
-    private function appendCompositionItem(
-        array &$labels,
-        array &$values,
-        array &$colors,
-        string $label,
-        int $amountMinor,
-        string $color,
-        string $currency,
-        int $precision
-    ): void {
-        if ($amountMinor <= 0) {
-            return;
-        }
-
-        $labels[] = $label;
-        $values[] =
-            Currency::minorToDisplayNumber(
-                $amountMinor,
-                $currency,
-                $precision
-            );
-        $colors[] = $color;
     }
 
     private function renderRangeFilters(
@@ -638,15 +632,67 @@ final class DashboardPage
     private function renderKpi(
         string $title,
         string $value,
-        string $description
+        string $description,
+        string $url = ''
     ): void {
+        $tag = $url !== '' ? 'a' : 'div';
         ?>
-        <div class="hb-kpi-card">
+        <<?php echo esc_html($tag); ?>
+            class="hb-kpi-card <?php echo $url !== '' ? 'hb-kpi-card--link' : ''; ?>"
+            <?php if ($url !== '') : ?>href="<?php echo esc_url($url); ?>"<?php endif; ?>
+        >
             <span class="hb-kpi-title"><?php echo esc_html($title); ?></span>
             <strong class="hb-kpi-value"><?php echo esc_html($value); ?></strong>
             <small><?php echo esc_html($description); ?></small>
-        </div>
+            <?php if ($url !== '') : ?>
+                <span class="hb-kpi-open">مشاهده تحلیل ←</span>
+            <?php endif; ?>
+        </<?php echo esc_html($tag); ?>>
         <?php
+    }
+
+    private function buildNavigationUrls(
+        string $range,
+        DateTimeImmutable $start,
+        DateTimeImmutable $end
+    ): array {
+        $rangeArgs = array(
+            'range' => $range,
+        );
+
+        if ($range === 'custom') {
+            $rangeArgs['start_date'] = JalaliDate::numeric($start);
+            $rangeArgs['end_date'] = JalaliDate::numeric($end);
+        }
+
+        $url = static function (
+            string $page,
+            array $extra = array()
+        ) use ($rangeArgs): string {
+            return add_query_arg(
+                array_merge(
+                    array('page' => $page),
+                    $rangeArgs,
+                    $extra
+                ),
+                admin_url('admin.php')
+            );
+        };
+
+        return array(
+            'analytics' => $url('hashieban-analytics'),
+            'products' => $url('hashieban-products'),
+            'customers' => $url('hashieban-customers'),
+            'time' => $url('hashieban-time'),
+            'orders' => $url('hashieban-orders'),
+            'alerts' => $url('hashieban-alerts'),
+            'reports' => $url('hashieban-reports'),
+            'expense_intelligence' => $url('hashieban-expense-intelligence'),
+            'data_health' => $url('hashieban-data-health'),
+            'geo' => $url('hashieban-geo'),
+            'expenses' => $url('hashieban-expenses'),
+            'settings' => $url('hashieban-settings'),
+        );
     }
 
     private function renderCostRow(
