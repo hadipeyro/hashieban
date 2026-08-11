@@ -213,7 +213,7 @@ final class OrderInspectorPage
                 </tr>
 
                 <tr>
-                    <th>بهای تمام‌شده کالاها</th>
+                    <th>هزینه خرید کالا کالاها</th>
                     <td>
                         <?php
                         echo wp_kses_post(

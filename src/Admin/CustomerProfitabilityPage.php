@@ -83,7 +83,7 @@ final class CustomerProfitabilityPage
         <div class="wrap hb-customer-page">
             <section class="hb-customer-hero">
                 <div>
-                    <div class="hb-customer-hero__eyebrow">حاشیه‌بان · تحلیل هوشمند</div>
+                    <div class="hb-customer-hero__eyebrow">حاشیه‌بان · گزارش تحلیلی</div>
                     <h1>تحلیل سودآوری مشتریان</h1>
                     <p>
                         ببین کدام مشتری فقط فروش ایجاد می‌کند، کدام مشتری سود واقعی می‌سازد

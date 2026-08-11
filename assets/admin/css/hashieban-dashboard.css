@@ -522,3 +522,50 @@
         grid-column: auto;
     }
 }
+
+/* Release 1.0 dashboard polish */
+.hb-hero__meta span {
+    align-items: center;
+    gap: 7px;
+    line-height: 1.65;
+}
+
+.hb-hero__meta strong {
+    display: inline-block;
+    margin-inline-start: 2px;
+    color: #fff;
+}
+
+.hb-range-bar {
+    padding: 17px 18px;
+}
+
+.hb-range-buttons,
+.hb-custom-range {
+    row-gap: 10px;
+}
+
+.hb-kpi-card {
+    border-color: #e2e8f0;
+    box-shadow: 0 8px 28px rgba(15, 23, 42, .045);
+}
+
+.hb-kpi-card:hover {
+    border-color: #cbd5e1;
+}
+
+.hb-card__header p {
+    line-height: 1.8;
+}
+
+.hb-chip-group button {
+    min-width: 58px;
+    font-weight: 600;
+}
+
+.hb-chip-group button:focus-visible,
+.hb-range-button:focus-visible,
+.hb-drilldown-link:focus-visible {
+    outline: 2px solid #60a5fa;
+    outline-offset: 2px;
+}

@@ -64,6 +64,10 @@ final class LicenseManager
 
     public function ensureSchedule(): void
     {
+        if (! $this->marketplaceIsConfigured()) {
+            return;
+        }
+
         if (wp_next_scheduled(self::DAILY_CHECK_HOOK)) {
             return;
         }
@@ -129,7 +133,7 @@ final class LicenseManager
             return $this->storeStatus(
                 new LicenseStatus(
                     LicenseStatus::ERROR,
-                    'توکن محصول فروشگاه نرم‌افزاری هنوز برای نسخه نهایی تنظیم نشده است.',
+                    'پیکربندی فعال‌سازی این بسته کامل نشده است. لطفاً با پشتیبانی محصول تماس بگیرید.',
                     $this->provider->key(),
                     $this->domain(),
                     time(),
@@ -225,11 +229,11 @@ final class LicenseManager
         $token = '';
 
         if (
-            defined('HASHIEBAN_ZHAKET_PRODUCT_TOKEN')
-            && trim((string) HASHIEBAN_ZHAKET_PRODUCT_TOKEN) !== ''
+            defined('HASHIEBAN_LICENSE_PRODUCT_TOKEN')
+            && trim((string) HASHIEBAN_LICENSE_PRODUCT_TOKEN) !== ''
         ) {
             $token = trim(
-                (string) HASHIEBAN_ZHAKET_PRODUCT_TOKEN
+                (string) HASHIEBAN_LICENSE_PRODUCT_TOKEN
             );
         }
 
@@ -246,7 +250,8 @@ final class LicenseManager
 
     public function marketplaceIsConfigured(): bool
     {
-        return $this->productToken() !== '';
+        return $this->provider->key() !== 'none'
+            && $this->productToken() !== '';
     }
 
     public function isDevelopmentEnvironment(): bool
@@ -281,7 +286,10 @@ final class LicenseManager
 
     public function pluginActionLinks(array $links): array
     {
-        if (! Capabilities::can(Capabilities::MANAGE_SETTINGS)) {
+        if (
+            ! Capabilities::can(Capabilities::MANAGE_SETTINGS)
+            || ! $this->marketplaceIsConfigured()
+        ) {
             return $links;
         }
 
@@ -420,7 +428,7 @@ final class LicenseManager
     ): LicenseStatus {
         $status = new LicenseStatus(
             LicenseStatus::DEVELOPMENT,
-            'محیط توسعه شناسایی شد؛ برای localhost نیازی به فعال‌سازی مجوز نیست.',
+            'این نصب برای بررسی مجوز نیاز به اقدام دیگری ندارد.',
             $this->provider->key(),
             $this->domain(),
             time(),

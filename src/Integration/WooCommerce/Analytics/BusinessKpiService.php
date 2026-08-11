@@ -419,7 +419,7 @@ final class BusinessKpiService
             $insights[] = array(
                 'type' => 'danger',
                 'title' => 'سودآوری این بازه منفی است',
-                'description' => 'فروش را به‌تنهایی معیار موفقیت ندان؛ هزینه‌ها، COGS و سفارش‌های زیان‌ده را بررسی کن.',
+                'description' => 'فروش را به‌تنهایی معیار موفقیت ندان؛ هزینه‌ها، هزینه خرید کالا و سفارش‌های زیان‌ده را بررسی کن.',
                 'url' => admin_url('admin.php?page=hashieban-alerts'),
                 'action' => 'بررسی هشدارها',
             );
@@ -452,7 +452,7 @@ final class BusinessKpiService
             $insights[] = array(
                 'type' => 'warning',
                 'title' => 'نرخ سفارش‌های دارای مرجوعی بالاست',
-                'description' => 'محصولات و سفارش‌هایی که Refund بیشتری دارند می‌توانند حاشیه سود را سریع کاهش دهند.',
+                'description' => 'محصولات و سفارش‌هایی که بازگشت وجه بیشتری دارند می‌توانند درصد سود را سریع کاهش دهند.',
                 'url' => admin_url('admin.php?page=hashieban-orders'),
                 'action' => 'بررسی سفارش‌ها',
             );
@@ -462,7 +462,7 @@ final class BusinessKpiService
             $insights[] = array(
                 'type' => 'warning',
                 'title' => 'بخشی از داده مالی ناقص است',
-                'description' => 'برای تصمیم‌گیری دقیق‌تر، سفارش‌های دارای COGS یا اطلاعات مالی ناقص را تکمیل کن.',
+                'description' => 'برای تصمیم‌گیری دقیق‌تر، سفارش‌های دارای هزینه خرید یا اطلاعات مالی ناقص را تکمیل کن.',
                 'url' => admin_url('admin.php?page=hashieban-data-health'),
                 'action' => 'سلامت داده',
             );
@@ -477,7 +477,7 @@ final class BusinessKpiService
                 'title' => 'هزینه‌های عملیاتی سهم بالایی از فروش دارند',
                 'description' => 'هزینه‌های سفارش و هزینه‌های عمومی فروشگاه را از نظر روند و بودجه بررسی کن.',
                 'url' => admin_url('admin.php?page=hashieban-expense-intelligence'),
-                'action' => 'هوش هزینه‌ها',
+                'action' => 'تحلیل هزینه‌ها',
             );
         }
 

@@ -173,7 +173,7 @@ final class OrderProfitCenterPage
                 <article class="hb-orders-semantic-card hb-orders-semantic-card--fee">
                     <span>اثر خالص کارمزدها</span>
                     <strong><?php echo esc_html(Currency::formatMinor((int) $report['total_net_fee_revenue_minor'], $currency, $precision)); ?></strong>
-                    <small>افزایش درآمد منهای کاهش درآمد؛ از Double Counting جلوگیری می‌کند.</small>
+                    <small>افزایش درآمد منهای کاهش درآمد؛ هر مبلغ فقط یک‌بار در محاسبه لحاظ می‌شود.</small>
                 </article>
                 <article class="hb-orders-semantic-card hb-orders-semantic-card--refund">
                     <span>مرجوعی و بازگشت وجه</span>
@@ -201,7 +201,7 @@ final class OrderProfitCenterPage
                     <div class="hb-orders-card__header">
                         <div>
                             <h2>توزیع درصد سود</h2>
-                            <p>چند سفارش در هر محدوده حاشیه سود قرار گرفته‌اند؟</p>
+                            <p>چند سفارش در هر محدوده درصد سود قرار گرفته‌اند؟</p>
                         </div>
                     </div>
                     <div class="hb-orders-chart-wrap hb-orders-chart-wrap--compact">
@@ -418,7 +418,7 @@ final class OrderProfitCenterPage
                 $this->renderKpi('هزینه مستقیم سفارش', Currency::formatMinor((int) $detail['direct_costs_minor'], $currency, $precision), 'هزینه‌های اختصاصی ثبت‌شده برای سفارش');
                 $this->renderKpi('هزینه ثابت سفارش', Currency::formatMinor((int) $detail['global_order_costs_minor'], $currency, $precision), 'قواعد عمومی هزینه برای هر سفارش');
                 $this->renderKpi('سود سفارش', Currency::formatMinor((int) $detail['profit_minor'], $currency, $precision), 'پس از هزینه‌های قابل انتساب', (int) $detail['profit_minor'] < 0);
-                $this->renderKpi('درصد سود', $this->formatPercentage($detail['margin_percentage']), 'حاشیه سود این سفارش');
+                $this->renderKpi('درصد سود', $this->formatPercentage($detail['margin_percentage']), 'درصد سود این سفارش');
                 ?>
             </section>
 
@@ -506,7 +506,7 @@ final class OrderProfitCenterPage
                     <div class="hb-orders-semantic-numbers">
                         <div><span>دریافتی ارسال</span><strong><?php echo esc_html(Currency::formatMinor((int) $detail['shipping_revenue_minor'], $currency, $precision)); ?></strong></div>
                         <div><span>هزینه واقعی ثبت‌شده</span><strong><?php echo esc_html(Currency::formatMinor((int) $detail['shipping_cost_minor'], $currency, $precision)); ?></strong></div>
-                        <div><span>Contribution ارسال</span><strong class="<?php echo (int) $detail['shipping_contribution_minor'] < 0 ? 'is-negative' : 'is-positive'; ?>"><?php echo esc_html(Currency::formatMinor((int) $detail['shipping_contribution_minor'], $currency, $precision)); ?></strong></div>
+                        <div><span>سهم سود ارسال</span><strong class="<?php echo (int) $detail['shipping_contribution_minor'] < 0 ? 'is-negative' : 'is-positive'; ?>"><?php echo esc_html(Currency::formatMinor((int) $detail['shipping_contribution_minor'], $currency, $precision)); ?></strong></div>
                     </div>
                 </article>
 
@@ -528,7 +528,7 @@ final class OrderProfitCenterPage
                     <div class="hb-orders-card__header">
                         <div>
                             <h2>کارمزدها و تعدیل‌های سفارش</h2>
-                            <p>افزایش درآمد به درآمد اضافه و Fee منفی/کاهشی از درآمد کم می‌شود؛ هیچ Fee به‌صورت کورکورانه هزینه فرض نمی‌شود.</p>
+                            <p>مبالغ افزایشی به درآمد اضافه و مبالغ کاهشی از درآمد کم می‌شوند؛ هیچ مبلغی بدون توجه به نوع آن، خودکار هزینه فرض نمی‌شود.</p>
                         </div>
                     </div>
                     <div class="hb-orders-semantic-numbers">
@@ -563,7 +563,7 @@ final class OrderProfitCenterPage
                         <thead>
                             <tr>
                                 <th>محصول</th>
-                                <th>SKU</th>
+                                <th>کد محصول (SKU)</th>
                                 <th>فروش خالص</th>
                                 <th>مرجوعی</th>
                                 <th>فروش</th>

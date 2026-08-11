@@ -42,7 +42,7 @@ final class WordPressDashboardWidget
 
         wp_add_dashboard_widget(
             'hashieban_store_pulse',
-            'حاشیه‌بان — نبض مالی ۳۰ روز اخیر',
+            'حاشیه‌بان — خلاصه ۳۰ روز اخیر',
             array($this, 'render')
         );
     }
@@ -112,7 +112,7 @@ final class WordPressDashboardWidget
         ?>
         <div class="hb-wp-widget">
             <div class="hb-wp-widget__profit <?php echo $profit < 0 ? 'is-loss' : 'is-profit'; ?>">
-                <span>سود خالص</span>
+                <span>سود خالص ۳۰ روز اخیر</span>
                 <strong>
                     <?php
                     echo esc_html(
@@ -136,7 +136,7 @@ final class WordPressDashboardWidget
                     <strong><?php echo esc_html(number_format_i18n($orders)); ?></strong>
                 </div>
                 <div>
-                    <span>حاشیه سود</span>
+                    <span>درصد سود</span>
                     <strong>
                         <?php
                         echo $margin === null
@@ -148,13 +148,22 @@ final class WordPressDashboardWidget
             </div>
 
             <?php if ($daily !== array()) : ?>
+                <div class="hb-wp-widget__trend-head">
+                    <strong>روند سود روزانه</strong>
+                    <span><i class="is-positive"></i> سود <i class="is-negative"></i> زیان</span>
+                </div>
                 <div class="hb-wp-widget__trend" aria-label="روند سود دوره‌های اخیر">
                     <?php foreach ($daily as $bucket) :
                         $value = (int) ($bucket['profit_minor'] ?? 0);
-                        $height = max(8, (int) round((abs($value) / $maxBar) * 100));
+                        $height = $value === 0
+                            ? 3
+                            : max(8, (int) round((abs($value) / $maxBar) * 100));
+                        $trendClass = $value < 0
+                            ? 'is-negative'
+                            : ($value > 0 ? 'is-positive' : 'is-zero');
                         ?>
                         <span
-                            class="<?php echo $value < 0 ? 'is-negative' : 'is-positive'; ?>"
+                            class="<?php echo esc_attr($trendClass); ?>"
                             style="height: <?php echo esc_attr((string) $height); ?>%"
                             title="<?php echo esc_attr((string) ($bucket['label'] ?? '')); ?>"
                         ></span>
@@ -168,7 +177,7 @@ final class WordPressDashboardWidget
                 <a href="<?php echo esc_url(admin_url('admin.php?page=hashieban-geo')); ?>">نقشه فروش</a>
             </div>
 
-            <p class="hb-wp-widget__note">برای سبک ماندن پیشخوان، این خلاصه هر ۵ دقیقه به‌روزرسانی می‌شود.</p>
+            <p class="hb-wp-widget__note">خلاصه اطلاعات هر ۵ دقیقه به‌روزرسانی می‌شود.</p>
         </div>
         <?php
     }

@@ -57,7 +57,7 @@ final class ExpenseIntelligencePage
             <section class="hb-expense-intelligence-hero">
                 <div>
                     <span class="hb-expense-intelligence-hero__eyebrow">حاشیه‌بان · تحلیل هزینه‌ها</span>
-                    <h1>هوش هزینه‌ها</h1>
+                    <h1>تحلیل هزینه‌ها</h1>
                     <p>
                         هزینه‌ها فقط عددی برای کم‌شدن از سود نیستند؛ این صفحه نشان می‌دهد پول کجا خرج می‌شود،
                         کدام دسته سریع‌تر رشد کرده، چه چیزی از بودجه عبور کرده و فشار هزینه روی فروش و سود چقدر است.
@@ -129,7 +129,7 @@ final class ExpenseIntelligencePage
                 <article class="hb-expense-intelligence-card">
                     <div class="hb-expense-intelligence-card__header">
                         <div><h2>ترکیب هزینه‌های قابل دسته‌بندی</h2><p>سهم هر دسته با همان رنگی که خودت تعریف کرده‌ای.</p></div>
-                        <span class="hb-expense-intelligence-chip">Category Mix</span>
+                        <span class="hb-expense-intelligence-chip">ترکیب هزینه‌ها</span>
                     </div>
                     <div class="hb-expense-intelligence-chart"><canvas id="hashieban-expense-category-chart"></canvas></div>
                 </article>
@@ -137,7 +137,7 @@ final class ExpenseIntelligencePage
                 <article class="hb-expense-intelligence-card hb-expense-intelligence-card--wide">
                     <div class="hb-expense-intelligence-card__header">
                         <div><h2>روند هزینه در برابر فروش</h2><p>تشخیص افزایش فشار هزینه همزمان با رشد یا افت فروش.</p></div>
-                        <span class="hb-expense-intelligence-chip">Cost Trend</span>
+                        <span class="hb-expense-intelligence-chip">روند هزینه</span>
                     </div>
                     <div class="hb-expense-intelligence-chart hb-expense-intelligence-chart--large"><canvas id="hashieban-expense-trend-chart"></canvas></div>
                 </article>
@@ -147,7 +147,7 @@ final class ExpenseIntelligencePage
                 <article class="hb-expense-intelligence-card hb-expense-intelligence-card--wide">
                     <div class="hb-expense-intelligence-card__header">
                         <div><h2>بودجه در برابر عملکرد واقعی</h2><p>بودجه ماهانه به تناسب طول بازه برای مقایسه تبدیل می‌شود.</p></div>
-                        <span class="hb-expense-intelligence-chip">Budget vs Actual</span>
+                        <span class="hb-expense-intelligence-chip">بودجه و هزینه واقعی</span>
                     </div>
                     <div class="hb-expense-intelligence-chart hb-expense-intelligence-chart--large"><canvas id="hashieban-expense-budget-chart"></canvas></div>
                 </article>

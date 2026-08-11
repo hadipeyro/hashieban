@@ -84,7 +84,7 @@ final class ProductProfitabilityPage
         <div class="wrap hb-product-page">
             <section class="hb-product-hero">
                 <div>
-                    <div class="hb-product-hero__eyebrow">حاشیه‌بان · تحلیل هوشمند</div>
+                    <div class="hb-product-hero__eyebrow">حاشیه‌بان · گزارش تحلیلی</div>
                     <h1>تحلیل سودآوری محصولات</h1>
                     <p>
                         ببین کدام محصول واقعاً فروش و سود می‌سازد،
@@ -171,14 +171,14 @@ final class ProductProfitabilityPage
                 );
 
                 $this->renderKpi(
-                    'حاشیه سود وزنی',
+                    'درصد سود وزنی',
                     $report['weighted_margin_percentage'] !== null
                         ? number_format_i18n(
                             (float) $report['weighted_margin_percentage'],
                             1
                         ) . '٪'
                         : '—',
-                    'حاشیه سود کل محصولات نسبت به فروش محصولات'
+                    'درصد سود کل محصولات نسبت به فروش محصولات'
                 );
 
                 $this->renderKpi(
@@ -255,7 +255,7 @@ final class ProductProfitabilityPage
                     <div class="hb-product-card__header">
                         <div>
                             <h2>فروش در برابر درصد سود</h2>
-                            <p>محصولات با فروش بالا و حاشیه سود ضعیف را سریع پیدا کن.</p>
+                            <p>محصولات با فروش بالا و درصد سود ضعیف را سریع پیدا کن.</p>
                         </div>
                         <span class="hb-product-chart-hint">هر نقطه = یک محصول</span>
                     </div>

@@ -123,13 +123,13 @@ final class Compatibility
         >
             <p>
                 <strong>
-                    حاشیه‌بان برای محاسبه دقیق سود به اطلاعات بهای تمام‌شده کالا نیاز دارد.
+                    حاشیه‌بان برای محاسبه دقیق سود به اطلاعات هزینه خرید کالا نیاز دارد.
                 </strong>
             </p>
 
             <p>
                 قابلیت
-                <strong>Cost of Goods Sold (COGS)</strong>
+                <strong>هزینه خرید کالا (Cost of Goods Sold)</strong>
                 در ووکامرس شما غیرفعال است.
             </p>
 
@@ -154,7 +154,7 @@ final class Compatibility
 
             <p>
                 پس از فعال‌سازی، هنگام ویرایش محصولات می‌توانید
-                بهای تمام‌شده هر محصول را ثبت کنید.
+                هزینه خرید هر محصول را ثبت کنید.
             </p>
 
             <p>
@@ -162,7 +162,7 @@ final class Compatibility
                   href="<?php echo esc_url($settingsUrl); ?>"
                   class="button button-primary"
               >
-                رفتن به تنظیمات بهای تمام‌شده
+                رفتن به تنظیمات هزینه خرید کالا
               </a>
             </p>
         </div>

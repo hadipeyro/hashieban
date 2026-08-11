@@ -216,6 +216,12 @@ document.addEventListener('DOMContentLoaded', function () {
         const bar =
             currentTrendType === 'bar';
 
+        const pointOnly =
+            currentTrendType === 'points';
+
+        const stepped =
+            currentTrendType === 'stepped';
+
         return {
             label: series.label,
 
@@ -233,16 +239,22 @@ document.addEventListener('DOMContentLoaded', function () {
                 area,
 
             tension:
-                0.35,
+                stepped ? 0 : 0.35,
+
+            stepped:
+                stepped,
+
+            showLine:
+                !pointOnly,
 
             borderWidth:
-                3,
+                pointOnly ? 0 : 3,
 
             pointRadius:
-                bar ? 0 : 3,
+                bar ? 0 : (pointOnly ? 5 : 3),
 
             pointHoverRadius:
-                bar ? 0 : 6,
+                bar ? 0 : (pointOnly ? 8 : 6),
 
             pointBackgroundColor:
                 series.color,
@@ -570,9 +582,9 @@ document.addEventListener('DOMContentLoaded', function () {
 
     function updateTrendChart() {
         const chartType =
-            currentTrendType === 'area'
-                ? 'line'
-                : currentTrendType;
+            currentTrendType === 'bar'
+                ? 'bar'
+                : 'line';
 
         trendChart.config.type =
             chartType;
@@ -714,7 +726,4 @@ document.addEventListener('DOMContentLoaded', function () {
         );
     }
 
-    console.info(
-        'Hashieban charts loaded successfully.'
-    );
 });

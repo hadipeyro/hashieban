@@ -153,7 +153,7 @@ final class RefundEngine
                 && $itemRefundedQuantity === 0
             ) {
                 $warnings[] = sprintf(
-                    'برای «%s» مبلغ Refund ثبت شده اما تعداد مرجوعی مشخص نشده است؛ COGS این ردیف آزاد نشده.',
+                    'برای «%s» مبلغ بازگشت وجه ثبت شده اما تعداد کالای مرجوعی مشخص نیست؛ هزینه خرید این ردیف آزاد نشده است.',
                     $item->get_name()
                 );
             }
@@ -163,7 +163,7 @@ final class RefundEngine
                 && $restocked < $itemRefundedQuantity
             ) {
                 $warnings[] = sprintf(
-                    'از %1$d عدد Refund شده «%2$s»، فقط %3$d عدد به موجودی برگشته است؛ COGS کالای برنگشته همچنان هزینه باقی می‌ماند.',
+                    'از %1$d عدد مرجوع‌شده «%2$s»، فقط %3$d عدد به موجودی برگشته است؛ هزینه خرید کالای برنگشته همچنان در محاسبات باقی می‌ماند.',
                     $itemRefundedQuantity,
                     $item->get_name(),
                     $restocked
@@ -222,7 +222,7 @@ final class RefundEngine
         );
 
         if ($unallocatedRefundMinor > 1) {
-            $warnings[] = 'بخشی از Refund فقط به‌صورت مبلغ کلی ثبت شده و به محصول/ارسال/Fee مشخصی قابل تخصیص نیست.';
+            $warnings[] = 'بخشی از بازگشت وجه فقط به‌صورت مبلغ کلی ثبت شده و به محصول، ارسال یا هزینه جانبی مشخصی قابل تخصیص نیست.';
         }
 
         $refundEvents = $this->refundEvents(

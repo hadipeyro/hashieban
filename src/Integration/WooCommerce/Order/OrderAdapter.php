@@ -278,7 +278,7 @@ final class OrderAdapter
 
             if (! $product) {
                 $missingData[] = sprintf(
-                    'COGS محصول آیتم «%s» قابل بررسی نیست.',
+                    'هزینه خرید آیتم «%s» قابل بررسی نیست.',
                     $item->get_name()
                 );
                 continue;
@@ -288,7 +288,7 @@ final class OrderAdapter
 
             if ($productCogs === null || $productCogs === '') {
                 $missingData[] = sprintf(
-                    'COGS محصول «%s» ثبت نشده است.',
+                    'هزینه خرید محصول «%s» ثبت نشده است.',
                     $item->get_name()
                 );
             }

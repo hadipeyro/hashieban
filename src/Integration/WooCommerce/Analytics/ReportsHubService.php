@@ -123,8 +123,8 @@ final class ReportsHubService
                 return array(
                     'filename' => 'hashieban-products-report.csv',
                     'headers' => array(
-                        'محصول', 'SKU', 'تعداد فروش', 'تعداد سفارش', 'فروش (' . $unit . ')', 'COGS (' . $unit . ')',
-                        'سود (' . $unit . ')', 'Margin %', 'سهم فروش %', 'سهم سود %', 'مرجوعی', 'نرخ مرجوعی %',
+                        'محصول', 'SKU', 'تعداد فروش', 'تعداد سفارش', 'فروش (' . $unit . ')', 'هزینه خرید کالا (' . $unit . ')',
+                        'سود (' . $unit . ')', 'درصد سود %', 'سهم فروش %', 'سهم سود %', 'مرجوعی', 'نرخ مرجوعی %',
                     ),
                     'rows' => array_map(
                         static function (array $row) use ($currency, $precision): array {
@@ -156,7 +156,7 @@ final class ReportsHubService
                     'filename' => 'hashieban-customers-report.csv',
                     'headers' => array(
                         'مشتری', 'ایمیل', 'تلفن', 'تعداد سفارش', 'فروش (' . $unit . ')', 'سود (' . $unit . ')', 'AOV (' . $unit . ')',
-                        'Margin %', 'سهم فروش %', 'سهم سود %', 'سفارش مرجوعی',
+                        'درصد سود %', 'سهم فروش %', 'سهم سود %', 'سفارش مرجوعی',
                     ),
                     'rows' => array_map(
                         static function (array $row) use ($currency, $precision): array {
@@ -186,8 +186,8 @@ final class ReportsHubService
                 return array(
                     'filename' => 'hashieban-orders-report.csv',
                     'headers' => array(
-                        'شماره سفارش', 'مشتری', 'وضعیت', 'فروش (' . $unit . ')', 'COGS (' . $unit . ')', 'هزینه سفارش (' . $unit . ')',
-                        'هزینه ثابت سفارش (' . $unit . ')', 'سود (' . $unit . ')', 'Margin %', 'Refund (' . $unit . ')', 'مالیات خالص (' . $unit . ')',
+                        'شماره سفارش', 'مشتری', 'وضعیت', 'فروش (' . $unit . ')', 'هزینه خرید کالا (' . $unit . ')', 'هزینه سفارش (' . $unit . ')',
+                        'هزینه ثابت سفارش (' . $unit . ')', 'سود (' . $unit . ')', 'درصد سود %', 'بازگشت وجه (' . $unit . ')', 'مالیات خالص (' . $unit . ')',
                     ),
                     'rows' => array_map(
                         static function (array $row) use ($currency, $precision): array {

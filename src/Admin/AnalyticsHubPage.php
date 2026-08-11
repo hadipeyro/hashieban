@@ -17,8 +17,8 @@ final class AnalyticsHubPage
 
         $groups = array(
             array(
-                'title' => 'فروش و سودآوری',
-                'description' => 'ببینید چه چیزی می‌فروشد، چه کسی سود می‌سازد و چه زمانی عملکرد بهتر است.',
+                'title' => 'تحلیل فروش و سود',
+                'description' => 'گزارش‌های اصلی فروش، سود، مشتری، محصول و روند زمانی را از این بخش باز کنید.',
                 'items' => array(
                     array(
                         'title' => 'نبض کسب‌وکار',
@@ -33,19 +33,19 @@ final class AnalyticsHubPage
                         'url' => admin_url('admin.php?page=hashieban-channels'),
                     ),
                     array(
-                        'title' => 'هوش تخفیف و کوپن',
+                        'title' => 'تخفیف‌ها و کوپن‌ها',
                         'description' => 'ببینید هر کد تخفیف چقدر فروش ساخته، چه مقدار سود باقی گذاشته و کجا سفارش زیان‌ده ایجاد کرده است.',
                         'icon' => 'dashicons-tickets-alt',
                         'url' => admin_url('admin.php?page=hashieban-coupons'),
                     ),
                     array(
                         'title' => 'سودآوری محصولات',
-                        'description' => 'فروش، سود، حاشیه سود و سهم هر محصول.',
+                        'description' => 'فروش، سود، درصد سود و سهم هر محصول.',
                         'icon' => 'dashicons-products',
                         'url' => admin_url('admin.php?page=hashieban-products'),
                     ),
                     array(
-                        'title' => 'هوش موجودی و تصمیم خرید',
+                        'title' => 'موجودی و پیشنهاد خرید',
                         'description' => 'موجودی، سرعت فروش، نقطه سفارش و پیشنهاد تقریبی خرید مجدد.',
                         'icon' => 'dashicons-archive',
                         'url' => admin_url('admin.php?page=hashieban-inventory'),
@@ -57,7 +57,7 @@ final class AnalyticsHubPage
                         'url' => admin_url('admin.php?page=hashieban-customers'),
                     ),
                     array(
-                        'title' => 'تحلیل زمانی',
+                        'title' => 'روند فروش در زمان',
                         'description' => 'رشد و افت، بهترین روزها و مقایسه دوره‌ها.',
                         'icon' => 'dashicons-chart-line',
                         'url' => admin_url('admin.php?page=hashieban-time'),
@@ -71,8 +71,8 @@ final class AnalyticsHubPage
                 ),
             ),
             array(
-                'title' => 'تصمیم‌گیری و کنترل',
-                'description' => 'ریسک‌ها، هزینه‌ها و آمادگی داده را در یک نقطه بررسی کنید.',
+                'title' => 'کنترل و مدیریت',
+                'description' => 'هزینه‌ها، سلامت داده و ابزارهای مدیریتی را از یک مسیر مشخص در دسترس داشته باشید.',
                 'items' => array(
                     array(
                         'title' => 'شروع سریع و راه‌اندازی',
@@ -81,7 +81,7 @@ final class AnalyticsHubPage
                         'url' => admin_url('admin.php?page=hashieban-onboarding'),
                     ),
                     array(
-                        'title' => 'هوش هزینه‌ها',
+                        'title' => 'تحلیل هزینه‌ها',
                         'description' => 'روند هزینه، بودجه و سهم دسته‌های هزینه.',
                         'icon' => 'dashicons-money-alt',
                         'url' => admin_url('admin.php?page=hashieban-expense-intelligence'),
@@ -112,33 +112,14 @@ final class AnalyticsHubPage
             <section class="hb-analytics-hub__hero">
                 <div>
                     <span class="hb-analytics-hub__eyebrow">حاشیه‌بان · مرکز تحلیل‌ها</span>
-                    <h1>مرکز تحلیل‌های حاشیه‌بان</h1>
+                    <h1>گزارش‌ها و تحلیل‌های حاشیه‌بان</h1>
                     <p>
-                        گزارش‌های تخصصی را از اینجا باز کنید؛ منوی کناری عمداً ساده نگه داشته شده تا حاشیه‌بان با بزرگ‌تر شدن شلوغ نشود.
+                        گزارش موردنیاز را انتخاب کنید. مسیر بالای هر صفحه کمک می‌کند همیشه بدانید کجا هستید و سریع برگردید.
                     </p>
                 </div>
 
                 <a class="hb-analytics-hub__primary" href="<?php echo esc_url(admin_url('admin.php?page=hashieban')); ?>">
-                    بازگشت به پیشخوان حاشیه‌بان
-                </a>
-            </section>
-
-            <section class="hb-analytics-hub__quick">
-                <a href="<?php echo esc_url(admin_url('admin.php?page=hashieban-channels')); ?>">
-                    <span class="dashicons dashicons-randomize"></span>
-                    منبع فروش
-                </a>
-                <a href="<?php echo esc_url(admin_url('admin.php?page=hashieban-orders')); ?>">
-                    <span class="dashicons dashicons-cart"></span>
-                    مرکز سفارش‌ها
-                </a>
-                <a href="<?php echo esc_url(admin_url('admin.php?page=hashieban-alerts')); ?>">
-                    <span class="dashicons dashicons-warning"></span>
-                    هشدارهای مدیریتی
-                </a>
-                <a href="<?php echo esc_url(admin_url('admin.php?page=hashieban-geo')); ?>">
-                    <span class="dashicons dashicons-location-alt"></span>
-                    نقشه فروش ایران
+                    بازگشت به پیشخوان
                 </a>
             </section>
 

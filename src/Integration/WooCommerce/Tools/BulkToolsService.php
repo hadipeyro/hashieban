@@ -123,7 +123,7 @@ final class BulkToolsService
         );
 
         if (! $this->isCogsEnabled()) {
-            $result['errors'][] = 'قابلیت Cost of Goods Sold ووکامرس فعال نیست.';
+            $result['errors'][] = 'قابلیت «هزینه خرید کالا» در ووکامرس فعال نیست.';
             return $result;
         }
 
@@ -211,13 +211,13 @@ final class BulkToolsService
 
             if ($normalized === null || $normalized < 0) {
                 $result['skipped']++;
-                $this->addError($result, 'ردیف ' . $rowNumber . ': مقدار COGS نامعتبر است.');
+                $this->addError($result, 'ردیف ' . $rowNumber . ': مقدار هزینه خرید کالا نامعتبر است.');
                 continue;
             }
 
             if (! method_exists($product, 'set_cogs_value')) {
                 $result['skipped']++;
-                $this->addError($result, 'ردیف ' . $rowNumber . ': نسخه ووکامرس این محصول API نوشتن COGS را ندارد.');
+                $this->addError($result, 'ردیف ' . $rowNumber . ': نسخه ووکامرس این محصول امکان ثبت هزینه خرید کالا را از این مسیر ندارد.');
                 continue;
             }
 

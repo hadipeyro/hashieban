@@ -53,7 +53,7 @@ final class MarginGuardPage
             <section class="hb-guard-hero">
                 <div>
                     <div class="hb-guard-hero__eyebrow">حاشیه‌بان · هشدارهای سود</div>
-                    <h1>نگهبان سود و هشدارهای مدیریتی</h1>
+                    <h1>هشدارهای سود و فروش</h1>
                     <p>
                         حاشیه‌بان به‌صورت خودکار سفارش‌های زیان‌ده، محصولات کم‌حاشیه، افت سود،
                         هزینه خرید ناقص و نرخ مرجوعی غیرعادی را از دل داده فروشگاه بیرون می‌کشد.
@@ -79,7 +79,7 @@ final class MarginGuardPage
 
             <section class="hb-guard-control-card">
                 <div>
-                    <h2>آستانه‌های نگهبان</h2>
+                    <h2>آستانه‌های هشدار</h2>
                     <p>این اعداد فقط رفتار هشدار را تغییر می‌دهند و هیچ داده مالی را دستکاری نمی‌کنند.</p>
                 </div>
                 <?php if (Capabilities::can(Capabilities::MANAGE_SETTINGS)) : ?>

@@ -130,7 +130,7 @@ $requiredRuntimeFiles = array(
     '/src/Integration/WooCommerce/Analytics/CouponDiscountAnalyzer.php',
     '/docs/COUPON-INTELLIGENCE-TEST-FA.md',
     '/src/Licensing/LicenseManager.php',
-    '/src/Licensing/ZhaketLicenseClient.php',
+    '/src/Licensing/NullLicenseProvider.php',
     '/CHANGELOG.md',
     '/readme.txt',
     '/docs/QA-CHECKLIST-FA.md',
@@ -143,7 +143,7 @@ foreach ($requiredRuntimeFiles as $relative) {
 }
 
 $licensingSource = file_get_contents(
-    $root . '/src/Licensing/ZhaketLicenseClient.php'
+    $root . '/src/Licensing/NullLicenseProvider.php'
 );
 
 if (

@@ -63,8 +63,9 @@ use Hashieban\Integration\WooCommerce\Snapshot\ProfitSnapshotRepository;
 use Hashieban\Integration\WooCommerce\Snapshot\ProfitSnapshotService;
 use Hashieban\Security\AccessControl;
 use Hashieban\Licensing\LicenseManager;
+use Hashieban\Licensing\LicenseProviderInterface;
 use Hashieban\Licensing\LicenseRepository;
-use Hashieban\Licensing\ZhaketLicenseClient;
+use Hashieban\Licensing\NullLicenseProvider;
 
 final class Plugin
 {
@@ -78,8 +79,17 @@ final class Plugin
         $licenseRepository =
             new LicenseRepository();
 
-        $licenseProvider =
-            new ZhaketLicenseClient();
+        $defaultLicenseProvider =
+            new NullLicenseProvider();
+
+        $filteredLicenseProvider = apply_filters(
+            'hashieban_license_provider',
+            $defaultLicenseProvider
+        );
+
+        $licenseProvider = $filteredLicenseProvider instanceof LicenseProviderInterface
+            ? $filteredLicenseProvider
+            : $defaultLicenseProvider;
 
         $licenseManager =
             new LicenseManager(

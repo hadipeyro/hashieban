@@ -187,8 +187,8 @@ final class AdminMenu
 
         add_submenu_page(
             'hashieban',
-            'مرکز تحلیل‌های حاشیه‌بان',
-            'مرکز تحلیل‌ها',
+            'گزارش‌ها و تحلیل‌های حاشیه‌بان',
+            'گزارش‌ها و تحلیل‌ها',
             Capabilities::VIEW_REPORTS,
             'hashieban-analytics',
             array(
@@ -211,7 +211,7 @@ final class AdminMenu
 
         add_submenu_page(
             'hashieban',
-            'هوش کانال‌های فروش و منبع سفارش',
+            'کانال‌های فروش و منبع سفارش',
             'کانال‌های فروش',
             Capabilities::VIEW_REPORTS,
             'hashieban-channels',
@@ -223,7 +223,7 @@ final class AdminMenu
 
         add_submenu_page(
             'hashieban',
-            'هوش تخفیف و کوپن',
+            'تحلیل تخفیف و کوپن',
             'تخفیف و کوپن',
             Capabilities::VIEW_REPORTS,
             'hashieban-coupons',
@@ -247,8 +247,8 @@ final class AdminMenu
 
         add_submenu_page(
             'hashieban',
-            'هوش موجودی و تصمیم خرید',
-            'هوش موجودی',
+            'موجودی و پیشنهاد خرید',
+            'موجودی و خرید',
             Capabilities::VIEW_REPORTS,
             'hashieban-inventory',
             array(
@@ -271,8 +271,8 @@ final class AdminMenu
 
         add_submenu_page(
             'hashieban',
-            'هوش زمانی فروش و سود',
-            'تحلیل زمانی',
+            'روند فروش و سود در زمان',
+            'روند زمانی',
             Capabilities::VIEW_REPORTS,
             'hashieban-time',
             array(
@@ -295,7 +295,7 @@ final class AdminMenu
 
         add_submenu_page(
             'hashieban',
-            'نگهبان سود و هشدارهای مدیریتی',
+            'هشدارهای سود و فروش',
             'هشدارهای مدیریتی',
             Capabilities::VIEW_REPORTS,
             'hashieban-alerts',
@@ -319,8 +319,8 @@ final class AdminMenu
 
         add_submenu_page(
             'hashieban',
-            'هوش هزینه‌ها و کنترل بودجه',
-            'هوش هزینه‌ها',
+            'تحلیل هزینه‌ها و بودجه',
+            'تحلیل هزینه‌ها',
             Capabilities::VIEW_REPORTS,
             'hashieban-expense-intelligence',
             array(
@@ -343,7 +343,7 @@ final class AdminMenu
 
         add_submenu_page(
             'hashieban',
-            'نقشه هوشمند فروش و سود ایران',
+            'نقشه فروش و سود ایران',
             'نقشه فروش ایران',
             Capabilities::VIEW_REPORTS,
             'hashieban-geo',
@@ -355,7 +355,7 @@ final class AdminMenu
 
         add_submenu_page(
             'hashieban',
-            'ابزارهای گروهی و مهاجرت داده',
+            'ابزارهای مدیریت داده',
             'ابزارهای گروهی',
             Capabilities::MANAGE_TOOLS,
             'hashieban-bulk-tools',
@@ -446,9 +446,12 @@ final class AdminMenu
             #toplevel_page_hashieban .wp-submenu li:has(a[href*="page=hashieban-inventory"]),
             #toplevel_page_hashieban .wp-submenu li:has(a[href*="page=hashieban-customers"]),
             #toplevel_page_hashieban .wp-submenu li:has(a[href*="page=hashieban-time"]),
+            #toplevel_page_hashieban .wp-submenu li:has(a[href*="page=hashieban-alerts"]),
             #toplevel_page_hashieban .wp-submenu li:has(a[href*="page=hashieban-reports"]),
             #toplevel_page_hashieban .wp-submenu li:has(a[href*="page=hashieban-expense-intelligence"]),
             #toplevel_page_hashieban .wp-submenu li:has(a[href*="page=hashieban-data-health"]),
+            #toplevel_page_hashieban .wp-submenu li:has(a[href*="page=hashieban-geo"]),
+            #toplevel_page_hashieban .wp-submenu li:has(a[href*="page=hashieban-bulk-tools"]),
             #toplevel_page_hashieban .wp-submenu li:has(a[href*="page=hashieban-expense-categories"]),
             #toplevel_page_hashieban .wp-submenu li:has(a[href*="page=hashieban-status"]),
             #toplevel_page_hashieban .wp-submenu li:has(a[href*="page=hashieban-onboarding"]) {
@@ -1069,6 +1072,18 @@ final class AdminMenu
                 HASHIEBAN_VERSION
             );
         }
+
+        wp_enqueue_style(
+            'hashieban-ui-polish',
+            plugins_url(
+                'assets/admin/css/hashieban-ui-polish.css',
+                HASHIEBAN_FILE
+            ),
+            array(
+                'hashieban-admin'
+            ),
+            HASHIEBAN_VERSION
+        );
     }
 
     public function renderStatusPage(): void

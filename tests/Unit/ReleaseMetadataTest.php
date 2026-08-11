@@ -19,10 +19,10 @@ final class ReleaseMetadataTest extends TestCase
         $this->assertTrue(isset($header[1]));
         $this->assertTrue(isset($constant[1]));
         $this->assertSame(trim((string) $header[1]), trim((string) $constant[1]));
-        $this->assertSame('0.99.2', trim((string) $constant[1]));
+        $this->assertSame('1.0.0', trim((string) $constant[1]));
     }
 
-    public function testReleaseCandidateDocumentationExists(): void
+    public function testReleaseDocumentationExists(): void
     {
         $root = dirname(__DIR__, 2);
         $this->assertTrue(is_readable($root . '/CHANGELOG.md'));

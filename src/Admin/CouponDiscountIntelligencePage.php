@@ -41,8 +41,8 @@ final class CouponDiscountIntelligencePage
         <div class="wrap hb-coupon-page">
             <section class="hb-coupon-hero">
                 <div>
-                    <span class="hb-coupon-hero__eyebrow">حاشیه‌بان · هوش تخفیف و کوپن</span>
-                    <h1>این تخفیف واقعاً برایت سود ساخته؟</h1>
+                    <span class="hb-coupon-hero__eyebrow">حاشیه‌بان · تخفیف و کوپن</span>
+                    <h1>تحلیل تخفیف‌ها و کوپن‌ها</h1>
                     <p>
                         سفارش‌های دارای کوپن را از نظر فروش، مبلغ تخفیف، سود باقی‌مانده و سفارش‌های زیان‌ده مقایسه کن.
                         این گزارش اثر حسابداری تخفیف را نشان می‌دهد؛ ادعا نمی‌کند مشتری بدون تخفیف همان خرید را انجام می‌داد.
@@ -71,7 +71,7 @@ final class CouponDiscountIntelligencePage
                 <section class="hb-coupon-state hb-coupon-state--building">
                     <span class="dashicons dashicons-update"></span>
                     <div>
-                        <h2>در حال آماده‌سازی هوش تخفیف</h2>
+                        <h2>در حال آماده‌سازی گزارش تخفیف‌ها</h2>
                         <p>شاخص سریع سفارش‌ها برای ذخیره اطلاعات کوپن ارتقا پیدا کرده و حاشیه‌بان سفارش‌های قبلی را دوباره فهرست می‌کند.</p>
                     </div>
                     <a class="button" href="<?php echo esc_url(admin_url('admin.php?page=hashieban-bulk-tools')); ?>">وضعیت ابزارهای گروهی</a>

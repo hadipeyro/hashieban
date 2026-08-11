@@ -40,7 +40,7 @@ final class ExpenseCategoriesPage
         if (
             ! Capabilities::can(Capabilities::MANAGE_FINANCE)
         ) {
-            wp_die('Access denied.');
+            wp_die(esc_html('شما اجازه دسترسی به این بخش را ندارید.'));
         }
 
         $activeCategories =
@@ -434,7 +434,7 @@ final class ExpenseCategoriesPage
         if (
             ! Capabilities::can(Capabilities::MANAGE_FINANCE)
         ) {
-            wp_die('Access denied.');
+            wp_die(esc_html('شما اجازه دسترسی به این بخش را ندارید.'));
         }
 
         check_admin_referer(
@@ -477,7 +477,7 @@ final class ExpenseCategoriesPage
         if (
             ! Capabilities::can(Capabilities::MANAGE_FINANCE)
         ) {
-            wp_die('Access denied.');
+            wp_die(esc_html('شما اجازه دسترسی به این بخش را ندارید.'));
         }
 
         $id = sanitize_key(
@@ -507,7 +507,7 @@ final class ExpenseCategoriesPage
         if (
             ! Capabilities::can(Capabilities::MANAGE_FINANCE)
         ) {
-            wp_die('Access denied.');
+            wp_die(esc_html('شما اجازه دسترسی به این بخش را ندارید.'));
         }
 
         $id = sanitize_key(

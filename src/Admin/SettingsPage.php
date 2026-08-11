@@ -88,7 +88,7 @@ final class SettingsPage
         $licenseLabels = array(
             LicenseStatus::ACTIVE => 'فعال و معتبر',
             LicenseStatus::GRACE => 'فعال موقت',
-            LicenseStatus::DEVELOPMENT => 'حالت توسعه',
+            LicenseStatus::DEVELOPMENT => 'آماده استفاده',
             LicenseStatus::INVALID => 'نامعتبر',
             LicenseStatus::ERROR => 'نیازمند بررسی',
             LicenseStatus::UNCONFIGURED => 'فعال نشده',
@@ -452,6 +452,8 @@ final class SettingsPage
 
                 </section>
 
+                <?php if ($this->licenseManager->marketplaceIsConfigured()) : ?>
+
                 <section
                     class="hb-settings-card hb-license-card"
                     id="hb-license"
@@ -465,8 +467,7 @@ final class SettingsPage
                             </h2>
 
                             <p>
-                                مجوز خرید حاشیه‌بان برای همین دامنه ثبت می‌شود
-                                و وضعیت آن به‌صورت دوره‌ای بررسی خواهد شد.
+                                مجوز استفاده از حاشیه‌بان برای همین دامنه ثبت می‌شود و وضعیت آن به‌صورت دوره‌ای بررسی خواهد شد.
                             </p>
                         </div>
 
@@ -481,14 +482,8 @@ final class SettingsPage
                     <div class="hb-license-summary">
 
                         <div>
-                            <span>فروشگاه نرم‌افزاری</span>
-                            <strong>
-                                <?php
-                                echo esc_html(
-                                    $this->licenseManager->providerLabel()
-                                );
-                                ?>
-                            </strong>
+                            <span>سامانه فعال‌سازی</span>
+                            <strong>آماده بررسی مجوز</strong>
                         </div>
 
                         <div>
@@ -536,17 +531,6 @@ final class SettingsPage
 
                     <?php endif; ?>
 
-                    <?php if (
-                        $this->licenseManager->isDevelopmentEnvironment()
-                    ) : ?>
-
-                        <div class="hb-license-dev-note">
-                            <strong>محیط توسعه شناسایی شد.</strong>
-                            روی localhost لایسنس اجباری نیست تا توسعه و تست حاشیه‌بان متوقف نشود.
-                        </div>
-
-                    <?php endif; ?>
-
                     <form
                         method="post"
                         action="<?php echo esc_url(admin_url('admin-post.php')); ?>"
@@ -575,26 +559,6 @@ final class SettingsPage
                                 placeholder="<?php echo esc_attr($this->licenseManager->hasLicenseKey() ? 'برای جایگزینی، کد جدید را وارد کنید' : 'کد مجوز را وارد کنید'); ?>"
                             >
                         </label>
-
-                        <?php if (
-                            ! $this->licenseManager->marketplaceIsConfigured()
-                        ) : ?>
-
-                            <label>
-                                <span>
-                                    توکن محصول ژاکت
-                                    <small>فقط برای آماده‌سازی نسخه فروش</small>
-                                </span>
-                                <input
-                                    type="text"
-                                    name="product_token"
-                                    value=""
-                                    autocomplete="off"
-                                    placeholder="توکن محصول بعد از ساخت محصول در ژاکت"
-                                >
-                            </label>
-
-                        <?php endif; ?>
 
                         <div class="hb-license-actions">
                             <button
@@ -640,11 +604,12 @@ final class SettingsPage
 
                     <p class="hb-license-help">
                         حاشیه‌بان وضعیت مجوز را روزانه بررسی می‌کند.
-                        اگر سرویس مجوز موقتاً در دسترس نباشد، آخرین وضعیت معتبر
-                        تا ۷ روز حفظ می‌شود تا فروشگاه به خاطر قطعی شبکه دچار مشکل نشود.
+                        اگر سرویس فعال‌سازی موقتاً در دسترس نباشد، آخرین وضعیت معتبر تا ۷ روز حفظ می‌شود تا اختلال موقت شبکه باعث توقف کار فروشگاه نشود.
                     </p>
 
                 </section>
+
+                <?php endif; ?>
 
             </div>
 
@@ -706,7 +671,7 @@ final class SettingsPage
 			if (
 				! Capabilities::can(Capabilities::MANAGE_SETTINGS)
 			) {
-				wp_die('Access denied.');
+				wp_die(esc_html('شما اجازه دسترسی به این بخش را ندارید.'));
 			}
 
 			check_admin_referer(
@@ -735,7 +700,7 @@ final class SettingsPage
 			if (
 				! Capabilities::can(Capabilities::MANAGE_SETTINGS)
 			) {
-				wp_die('Access denied.');
+				wp_die(esc_html('شما اجازه دسترسی به این بخش را ندارید.'));
 			}
 
 			check_admin_referer(
@@ -843,7 +808,7 @@ final class SettingsPage
 			if (
 				! Capabilities::can(Capabilities::MANAGE_SETTINGS)
 			) {
-				wp_die('Access denied.');
+				wp_die(esc_html('شما اجازه دسترسی به این بخش را ندارید.'));
 			}
 
 			check_admin_referer(
@@ -873,7 +838,7 @@ final class SettingsPage
 			if (
 				! Capabilities::can(Capabilities::MANAGE_SETTINGS)
 			) {
-				wp_die('Access denied.');
+				wp_die(esc_html('شما اجازه دسترسی به این بخش را ندارید.'));
 			}
 
 			check_admin_referer(

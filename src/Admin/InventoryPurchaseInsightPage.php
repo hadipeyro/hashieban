@@ -95,8 +95,8 @@ final class InventoryPurchaseInsightPage
         <div class="wrap hb-inventory-page">
             <section class="hb-inventory-hero">
                 <div>
-                    <span class="hb-inventory-hero__eyebrow">حاشیه‌بان · هوش موجودی و خرید</span>
-                    <h1>هوش موجودی و تصمیم خرید</h1>
+                    <span class="hb-inventory-hero__eyebrow">حاشیه‌بان · موجودی و خرید</span>
+                    <h1>موجودی و پیشنهاد خرید</h1>
                     <p>
                         بفهم کدام کالا در آستانه اتمام است، کدام موجودی سرمایه را خوابانده
                         و برای خرید بعدی چه مقدار تقریبی منطقی‌تر است.

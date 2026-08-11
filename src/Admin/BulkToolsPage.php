@@ -65,14 +65,14 @@ final class BulkToolsPage
             <section class="hb-bulk-tools-hero">
                 <div>
                     <span class="hb-bulk-tools-hero__eyebrow">حاشیه‌بان · ابزارهای گروهی</span>
-                    <h1>ابزارهای گروهی و مهاجرت داده</h1>
+                    <h1>ابزارهای مدیریت داده</h1>
                     <p>
                         برای فروشگاه‌های قدیمی و دیتای حجیم، اصلاح تک‌به‌تک منطقی نیست.
                         این مرکز برای ویرایش گروهی هزینه خرید محصولات و آماده‌سازی امن سفارش‌های قدیمی برای گزارش‌ها ساخته شده است.
                     </p>
                 </div>
                 <div class="hb-bulk-tools-hero__badge">
-                    <strong>Legacy Safe</strong>
+                    <strong>ایمن برای داده‌های قبلی</strong>
                     <span>سفارش قدیمی مسدود نمی‌شود</span>
                 </div>
             </section>
@@ -90,7 +90,7 @@ final class BulkToolsPage
             <section class="hb-bulk-tools-grid">
                 <article class="hb-bulk-tools-card hb-bulk-tools-card--accent">
                     <div class="hb-bulk-tools-card__icon">CSV</div>
-                    <h2>مدیریت گروهی بهای تمام‌شده</h2>
+                    <h2>مدیریت گروهی هزینه خرید کالا</h2>
                     <p>
                         فایل محصولات را دریافت کن، ستون <code>cogs_store_unit</code> را در Excel ویرایش کن و همان فایل را برگردان.
                         مبالغ این فایل بر اساس واحد واقعی ووکامرس هستند: <strong><?php echo esc_html($storeUnit); ?></strong>.
@@ -119,7 +119,7 @@ final class BulkToolsPage
                 </article>
 
                 <article class="hb-bulk-tools-card">
-                    <div class="hb-bulk-tools-card__icon">IR</div>
+                    <div class="hb-bulk-tools-card__icon">ایران</div>
                     <h2>آماده‌سازی سفارش‌های قدیمی برای نقشه ایران</h2>
                     <p>
                         حاشیه‌بان ابتدا آدرس ارسال و در صورت ناقص بودن، آدرس صورتحساب را می‌خواند و اطلاعات سفارش‌های قدیمی را برای تحلیل جغرافیایی آماده می‌کند.
@@ -147,7 +147,7 @@ final class BulkToolsPage
                 </article>
 
                 <article class="hb-bulk-tools-card hb-bulk-tools-card--accent">
-                    <div class="hb-bulk-tools-card__icon">PRO</div>
+                    <div class="hb-bulk-tools-card__icon">تاریخی</div>
                     <h2>قفل کردن سود تاریخی سفارش‌ها</h2>
                     <p>
                         برای سفارش‌های قدیمی یک نسخه تاریخی از درآمد، هزینه خرید کالا و هزینه‌های همان سفارش،
@@ -176,7 +176,7 @@ final class BulkToolsPage
                 </article>
 
                 <article class="hb-bulk-tools-card">
-                    <div class="hb-bulk-tools-card__icon">FAST</div>
+                    <div class="hb-bulk-tools-card__icon">سریع</div>
                     <h2>شاخص سریع گزارش‌های مالی</h2>
                     <p>
                         این قابلیت از این نسخه به‌صورت خودکار فعال است. حاشیه‌بان شاخص مالی سفارش‌های قدیمی را در پس‌زمینه و به‌صورت Batch می‌سازد
@@ -224,11 +224,11 @@ final class BulkToolsPage
                         <h2>این ابزار چه چیزی را تغییر نمی‌دهد؟</h2>
                         <p>اصل تاریخچه مالی و سفارش‌ها باید دست‌نخورده بماند.</p>
                     </div>
-                    <span class="hb-bulk-tools-chip">Non-destructive migration</span>
+                    <span class="hb-bulk-tools-chip">بدون تغییر مخرب</span>
                 </div>
                 <div class="hb-bulk-tools-rules">
                     <div><strong>سفارش قدیمی</strong><span>به‌خاطر نبود شهر یا استان Block نمی‌شود.</span></div>
-                    <div><strong>آدرس مشتری</strong><span>Backfill فقط داده موجود را Normalize می‌کند و آدرس را حدس نمی‌زند.</span></div>
+                    <div><strong>آدرس مشتری</strong><span>فقط داده‌های قبلی موجود را یکسان‌سازی می‌کند و آدرس جدیدی حدس نمی‌زند.</span></div>
                     <div><strong>هزینه خرید سفارش تاریخی</strong><span>ورود فایل، هزینه خرید فعلی محصول را تغییر می‌دهد؛ تاریخچه سفارش‌های قبلی بازنویسی نمی‌شود.</span></div>
                     <div><strong>HPOS</strong><span>سفارش‌ها فقط از API/CRUD ووکامرس خوانده و ذخیره می‌شوند.</span></div>
                 </div>

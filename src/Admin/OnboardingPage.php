@@ -274,7 +274,7 @@ final class OnboardingPage
             ),
             array(
                 'title' => 'هزینه خرید کالا',
-                'description' => 'برای اینکه سود واقعی باشد، قابلیت بهای تمام‌شده ووکامرس باید فعال باشد.',
+                'description' => 'برای اینکه سود واقعی باشد، قابلیت هزینه خرید کالا ووکامرس باید فعال باشد.',
                 'done' => $this->compatibility->isCogsEnabled(),
                 'note' => 'پس از فعال‌سازی، بهای خرید هر محصول را در ویرایش همان محصول وارد کنید.',
                 'url' => admin_url('admin.php?page=wc-settings&tab=advanced&section=features'),

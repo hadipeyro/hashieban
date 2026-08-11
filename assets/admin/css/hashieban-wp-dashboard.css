@@ -7,17 +7,36 @@
     direction: rtl;
     padding: 14px;
     color: #172033;
+    font-family: Vazirmatn, Tahoma, Arial, sans-serif;
 }
 
 .hb-wp-widget__profit {
-    padding: 16px;
-    border-radius: 16px;
-    background: linear-gradient(135deg, #047857, #10b981);
-    color: #fff;
+    position: relative;
+    overflow: hidden;
+    padding: 17px 18px;
+    border: 1px solid rgba(5, 150, 105, .18);
+    border-radius: 15px;
+    background: #ecfdf5;
+    color: #065f46;
+}
+
+.hb-wp-widget__profit::before {
+    content: '';
+    position: absolute;
+    inset-block: 0;
+    inset-inline-start: 0;
+    width: 4px;
+    background: #10b981;
 }
 
 .hb-wp-widget__profit.is-loss {
-    background: linear-gradient(135deg, #b91c1c, #ef4444);
+    border-color: rgba(220, 38, 38, .18);
+    background: #fef2f2;
+    color: #991b1b;
+}
+
+.hb-wp-widget__profit.is-loss::before {
+    background: #ef4444;
 }
 
 .hb-wp-widget__profit span,
@@ -27,13 +46,14 @@
 
 .hb-wp-widget__profit span {
     margin-bottom: 5px;
-    color: rgba(255,255,255,.8);
+    color: inherit;
     font-size: 12px;
+    opacity: .8;
 }
 
 .hb-wp-widget__profit strong {
     font-size: 23px;
-    line-height: 1.5;
+    line-height: 1.55;
 }
 
 .hb-wp-widget__stats {
@@ -44,10 +64,11 @@
 }
 
 .hb-wp-widget__stats > div {
+    min-width: 0;
     padding: 11px 9px;
     border: 1px solid #e6ebf2;
-    border-radius: 12px;
-    background: #f8fafc;
+    border-radius: 11px;
+    background: #fff;
 }
 
 .hb-wp-widget__stats span,
@@ -63,16 +84,56 @@
 
 .hb-wp-widget__stats strong {
     overflow: hidden;
+    color: #1e293b;
     font-size: 12px;
     text-overflow: ellipsis;
     white-space: nowrap;
 }
 
+.hb-wp-widget__trend-head {
+    margin: 15px 1px 5px;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 10px;
+}
+
+.hb-wp-widget__trend-head strong {
+    color: #334155;
+    font-size: 12px;
+}
+
+.hb-wp-widget__trend-head span {
+    display: inline-flex;
+    align-items: center;
+    gap: 5px;
+    color: #94a3b8;
+    font-size: 10px;
+}
+
+.hb-wp-widget__trend-head i {
+    width: 7px;
+    height: 7px;
+    display: inline-block;
+    border-radius: 999px;
+}
+
+.hb-wp-widget__trend-head i.is-positive {
+    background: #16a34a;
+}
+
+.hb-wp-widget__trend-head i.is-negative {
+    margin-inline-start: 5px;
+    background: #ef4444;
+}
+
 .hb-wp-widget__trend {
-    height: 64px;
-    margin: 14px 0 10px;
-    padding: 6px 8px 0;
-    border-bottom: 1px solid #dce4ee;
+    height: 66px;
+    margin: 0 0 12px;
+    padding: 7px 8px 0;
+    border: 1px solid #eef2f7;
+    border-radius: 10px;
+    background: #f8fafc;
     display: flex;
     align-items: flex-end;
     gap: 4px;
@@ -81,12 +142,16 @@
 .hb-wp-widget__trend span {
     min-width: 4px;
     flex: 1;
-    border-radius: 5px 5px 0 0;
-    background: #2563eb;
+    border-radius: 4px 4px 1px 1px;
+    background: #16a34a;
 }
 
 .hb-wp-widget__trend span.is-negative {
     background: #ef4444;
+}
+
+.hb-wp-widget__trend span.is-zero {
+    background: #cbd5e1;
 }
 
 .hb-wp-widget__links {
@@ -97,7 +162,12 @@
 }
 
 .hb-wp-widget__links > a:not(.button) {
+    color: #475569;
     text-decoration: none;
+}
+
+.hb-wp-widget__links > a:not(.button):hover {
+    color: #1d4ed8;
 }
 
 .hb-wp-widget__note {

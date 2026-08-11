@@ -46,8 +46,8 @@ final class SalesChannelIntelligencePage
         <div class="wrap hb-channel-page">
             <section class="hb-channel-hero">
                 <div>
-                    <span class="hb-channel-hero__eyebrow">حاشیه‌بان · هوش کانال‌های فروش</span>
-                    <h1>مشتری‌ها از کجا می‌آیند؟</h1>
+                    <span class="hb-channel-hero__eyebrow">حاشیه‌بان · کانال‌های فروش</span>
+                    <h1>کانال‌های فروش و منبع سفارش</h1>
                     <p>
                         فروش و سود سفارش‌های ورودی از ترب، ایمالز، گوگل، شبکه‌های اجتماعی،
                         کمپین‌ها و ورود مستقیم را کنار هم مقایسه کن.
@@ -118,7 +118,7 @@ final class SalesChannelIntelligencePage
                 <section class="hb-channel-state hb-channel-state--building">
                     <span class="dashicons dashicons-update"></span>
                     <div>
-                        <h2>در حال آماده‌سازی هوش کانال‌ها</h2>
+                        <h2>در حال آماده‌سازی گزارش کانال‌ها</h2>
                         <p>
                             ساختار شاخص سریع ارتقا پیدا کرده و حاشیه‌بان در پس‌زمینه سفارش‌ها را دوباره فهرست می‌کند.
                             تا پایان کار، گزارش ناقص نمایش داده نمی‌شود.

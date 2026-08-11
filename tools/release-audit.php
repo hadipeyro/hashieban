@@ -128,6 +128,47 @@ foreach (hbAuditFiles($root . '/src', 'php') as $file) {
     }
 }
 
+$adminUiSource = '';
+foreach (hbAuditFiles($root . '/src/Admin', 'php') as $adminFile) {
+    $source = file_get_contents($adminFile);
+    if (is_string($source)) {
+        $adminUiSource .= "\n" . $source;
+    }
+}
+
+$forbiddenCustomerCopy = array(
+    'توکن محصول ژاکت',
+    'محیط توسعه شناسایی شد',
+    'روی localhost لایسنس',
+    'Double Counting',
+    'هیچ Fee',
+);
+
+foreach ($forbiddenCustomerCopy as $forbiddenCopy) {
+    if (strpos($adminUiSource, $forbiddenCopy) !== false) {
+        $failures[] = 'Marketplace/development-specific customer copy found in admin UI: ' . $forbiddenCopy;
+    }
+}
+
+$runtimeSource = '';
+foreach (hbAuditFiles($root . '/src', 'php') as $runtimeFile) {
+    $source = file_get_contents($runtimeFile);
+    if (is_string($source)) {
+        $runtimeSource .= "\n" . $source;
+    }
+}
+
+foreach (array('guard.zhaket', 'ژاکت', 'راست چین', 'راست‌چین') as $marketSpecificRuntimeText) {
+    if (stripos($runtimeSource, $marketSpecificRuntimeText) !== false) {
+        $failures[] = 'Market-specific runtime branding or endpoint found: ' . $marketSpecificRuntimeText;
+    }
+}
+
+$dashboardSource = file_get_contents($root . '/src/Admin/DashboardPage.php');
+if (is_string($dashboardSource) && strpos($dashboardSource, 'data-type="line"') !== false) {
+    $failures[] = 'Duplicate line chart option is still present on the main dashboard.';
+}
+
 $forbiddenReleaseEntries = array(
     '/node_modules',
     '/.git',
@@ -140,9 +181,6 @@ foreach ($forbiddenReleaseEntries as $relative) {
     }
 }
 
-if (! is_readable($root . '/vendor/autoload.php')) {
-    $warnings[] = 'vendor/autoload.php is not present in this source copy. Final marketplace ZIP must include Composer vendor files.';
-}
 
 if ($warnings !== array()) {
     echo PHP_EOL . "Warnings:\n";

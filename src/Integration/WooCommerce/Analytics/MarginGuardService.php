@@ -155,7 +155,7 @@ final class MarginGuardService
             $alerts[] = array(
                 'severity' => 'warning',
                 'code' => 'low_margin_products',
-                'title' => 'محصولات با Margin پایین',
+                'title' => 'محصولات با درصد سود پایین',
                 'message' => number_format_i18n(count($lowMarginProducts)) . ' محصول زیر آستانه ' . number_format_i18n($marginThreshold, 1) . '٪ قرار دارند.',
                 'metric' => number_format_i18n(count($lowMarginProducts)) . ' محصول',
                 'url' => admin_url('admin.php?page=hashieban-products'),
@@ -177,7 +177,7 @@ final class MarginGuardService
             $alerts[] = array(
                 'severity' => 'warning',
                 'code' => 'missing_cogs_products',
-                'title' => 'COGS ناقص در محصولات',
+                'title' => 'هزینه خرید ناقص در محصولات',
                 'message' => 'برای بعضی محصولات قیمت خرید کامل نیست؛ رتبه سودآوری آن‌ها ممکن است گمراه‌کننده باشد.',
                 'metric' => number_format_i18n(count($missingCogsProducts)) . ' محصول',
                 'url' => admin_url('admin.php?page=hashieban-products'),
@@ -200,7 +200,7 @@ final class MarginGuardService
                 'severity' => 'good',
                 'code' => 'healthy',
                 'title' => 'هشدار مهمی در این بازه دیده نشد',
-                'message' => 'بر اساس آستانه‌های فعلی، Margin، سود و سلامت داده در وضعیت قابل قبول است.',
+                'message' => 'بر اساس آستانه‌های فعلی، درصد سود، سود خالص و سلامت داده در وضعیت قابل قبول است.',
                 'metric' => 'وضعیت پایدار',
                 'url' => '',
             );

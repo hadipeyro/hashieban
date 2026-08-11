@@ -84,7 +84,7 @@ final class ReportsHubPage
                     'درصد سود',
                     $this->percentage($report['margin_percentage']),
                     null,
-                    'حاشیه سود خالص در بازه'
+                    'درصد سود خالص در بازه'
                 );
                 $this->renderKpi(
                     'سفارش‌ها',
@@ -146,7 +146,7 @@ final class ReportsHubPage
                     'dashicons-chart-line'
                 );
                 $this->renderModule(
-                    'هوش هزینه‌ها',
+                    'تحلیل هزینه‌ها',
                     'ترکیب هزینه، روند، بودجه، هزینه‌های پرتکرار و فشار هزینه بر فروش.',
                     'hashieban-expense-intelligence',
                     '',
@@ -164,7 +164,7 @@ final class ReportsHubPage
                             <h2>پل سود مدیریتی</h2>
                             <p>از فروش تا سود خالص؛ هر هزینه چه مقدار از درآمد را مصرف کرده است؟</p>
                         </div>
-                        <span class="hb-reports-chip">Profit Bridge</span>
+                        <span class="hb-reports-chip">پل سود</span>
                     </div>
                     <div class="hb-reports-chart hb-reports-chart--large">
                         <canvas id="hashieban-reports-profit-bridge"></canvas>

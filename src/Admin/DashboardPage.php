@@ -81,10 +81,9 @@ final class DashboardPage
             <section class="hb-hero">
                 <div class="hb-hero__content">
                     <div class="hb-hero__eyebrow">حاشیه‌بان</div>
-                    <h1>مرکز فرمان سودآوری فروشگاه</h1>
+                    <h1>خلاصه عملکرد فروشگاه</h1>
                     <p>
-                        سود خالص، هزینه‌ها، روند فروش و وضعیت واقعی مالی
-                        فروشگاه شما در یک نگاه.
+                        فروش، هزینه، سود و وضعیت مالی فروشگاه را در یک نگاه ببینید.
                     </p>
 
                     <div class="hb-hero__meta">
@@ -166,7 +165,7 @@ final class DashboardPage
                 );
 
                 $this->renderKpi(
-                    'حاشیه سود خالص',
+                    'درصد سود خالص',
                     $margin !== null
                         ? number_format_i18n((float) $margin, 1) . '٪'
                         : '—',
@@ -217,29 +216,29 @@ final class DashboardPage
 
             <section class="hb-drilldown-strip">
                 <div class="hb-drilldown-strip__intro">
-                    <span class="hb-drilldown-strip__eyebrow">جزئیات هوشمند</span>
-                    <strong>از عدد کلی برو سراغ دلیلش</strong>
-                    <small>روی هر کارت یا نمودار کلیک کن تا مستقیم وارد تحلیل مرتبط شوی.</small>
+                    <span class="hb-drilldown-strip__eyebrow">دسترسی به جزئیات</span>
+                    <strong>از عدد کلی به گزارش دقیق بروید</strong>
+                    <small>هر کارت یا نمودار شما را مستقیم به گزارش مرتبط می‌برد.</small>
                 </div>
 
                 <a class="hb-drilldown-link" href="<?php echo esc_url($navigation['products']); ?>">
                     <span>محصولات</span>
-                    <strong>کدام کالا سود ساخت؟</strong>
+                    <strong>سود هر کالا را ببینید</strong>
                 </a>
 
                 <a class="hb-drilldown-link" href="<?php echo esc_url($navigation['customers']); ?>">
                     <span>مشتریان</span>
-                    <strong>بهترین مشتری‌ها چه کسانی‌اند؟</strong>
+                    <strong>مشتریان ارزشمند را ببینید</strong>
                 </a>
 
                 <a class="hb-drilldown-link" href="<?php echo esc_url($navigation['time']); ?>">
                     <span>زمان</span>
-                    <strong>رشد و افت از کجا آمده؟</strong>
+                    <strong>روند زمانی را بررسی کنید</strong>
                 </a>
 
                 <a class="hb-drilldown-link" href="<?php echo esc_url($navigation['geo']); ?>">
                     <span>جغرافیا</span>
-                    <strong>کدام استان پول‌سازتر است؟</strong>
+                    <strong>فروش استان‌ها را مقایسه کنید</strong>
                 </a>
             </section>
 
@@ -248,7 +247,7 @@ final class DashboardPage
                     <div class="hb-card__header">
                         <div>
                             <h2>نمودار روند مالی</h2>
-                            <p>نمودار اصلی را به‌دلخواه بین ستونی، خطی و ناحیه‌ای تغییر بده.</p>
+                            <p>نمای روند را متناسب با نوع بررسی بین چند حالت کاربردی تغییر دهید.</p>
                         </div>
 
                         <div class="hb-toolbar">
@@ -260,8 +259,9 @@ final class DashboardPage
 
                             <div class="hb-chip-group" id="hb-trend-type-switcher">
                                 <button type="button" class="is-active" data-type="bar">ستونی</button>
-                                <button type="button" data-type="line">خطی</button>
                                 <button type="button" data-type="area">ناحیه‌ای</button>
+                                <button type="button" data-type="points">نقطه‌ای</button>
+                                <button type="button" data-type="stepped">پله‌ای</button>
                             </div>
                         </div>
                     </div>
@@ -368,7 +368,7 @@ final class DashboardPage
                                 <th>وضعیت</th>
                                 <th>فروش</th>
                                 <th>سود سفارش</th>
-                                <th>حاشیه سود</th>
+                                <th>درصد سود</th>
                             </tr>
                         </thead>
 

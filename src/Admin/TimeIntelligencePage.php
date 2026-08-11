@@ -39,7 +39,7 @@ final class TimeIntelligencePage
             <section class="hb-time-hero">
                 <div>
                     <span class="hb-time-hero__eyebrow">حاشیه‌بان · تحلیل زمانی</span>
-                    <h1>هوش زمانی فروش و سود</h1>
+                    <h1>روند فروش و سود در زمان</h1>
                     <p>
                         روند واقعی فروش و سود را در طول زمان ببین، دوره فعلی را با دوره قبل مقایسه کن
                         و بهترین روزها، روزهای هفته و الگوهای فصلی کسب‌وکارت را پیدا کن.
@@ -93,7 +93,7 @@ final class TimeIntelligencePage
                     'سفارش‌های در حال انجام و تکمیل‌شده'
                 );
                 $this->renderKpi(
-                    'حاشیه سود',
+                    'درصد سود',
                     $this->formatPercentage($report['margin_percentage']),
                     $comparison['margin_change_points'],
                     'تغییر این کارت بر حسب واحد درصد است',
@@ -144,7 +144,7 @@ final class TimeIntelligencePage
                             <h2>روند فروش و سود</h2>
                             <p><?php echo esc_html($this->timelineDescription((string) $report['timeline_mode'])); ?></p>
                         </div>
-                        <span class="hb-time-chip">Timeline</span>
+                        <span class="hb-time-chip">روند زمانی</span>
                     </div>
                     <div class="hb-time-chart-wrap hb-time-chart-wrap--large">
                         <canvas id="hashieban-time-trend-chart"></canvas>
@@ -185,7 +185,7 @@ final class TimeIntelligencePage
                             <h2>الگوی فصلی ماه‌های شمسی</h2>
                             <p>میانگین فروش و سود هر ماه شمسی در سال‌های موجود در بازه</p>
                         </div>
-                        <span class="hb-time-chip">Seasonality</span>
+                        <span class="hb-time-chip">الگوی دوره‌ای</span>
                     </div>
                     <div class="hb-time-chart-wrap">
                         <canvas id="hashieban-time-seasonality-chart"></canvas>

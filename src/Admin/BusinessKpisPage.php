@@ -131,7 +131,7 @@ final class BusinessKpisPage
                 );
 
                 $this->renderPercentKpi(
-                    'حاشیه سود',
+                    'درصد سود',
                     $report['margin_percentage'],
                     null,
                     'سهم سود خالص از فروش'
@@ -223,7 +223,7 @@ final class BusinessKpisPage
                             <h2>نبض عملکرد</h2>
                             <p>۶ مؤلفه مدیریتی در مقیاس ۰ تا ۱۰۰</p>
                         </div>
-                        <span class="hb-kpi-chip">Pulse</span>
+                        <span class="hb-kpi-chip">نمای سریع</span>
                     </header>
                     <div class="hb-kpi-chart-wrap">
                         <canvas id="hashieban-business-pulse-chart"></canvas>

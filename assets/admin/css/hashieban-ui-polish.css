@@ -1,0 +1,230 @@
+/* Hashieban 1.0 - shared presentation layer for every admin screen. */
+
+:root {
+    --hb-surface: #ffffff;
+    --hb-surface-soft: #f8fafc;
+    --hb-border: #e2e8f0;
+    --hb-text: #0f172a;
+    --hb-muted: #64748b;
+    --hb-primary: #2563eb;
+    --hb-positive: #15803d;
+    --hb-warning: #b45309;
+    --hb-danger: #dc2626;
+    --hb-radius-lg: 20px;
+    --hb-radius-md: 14px;
+    --hb-shadow: 0 10px 30px rgba(15, 23, 42, .055);
+}
+
+body.toplevel_page_hashieban #wpbody-content > .wrap,
+body[class*="hashieban_page_hashieban"] #wpbody-content > .wrap {
+    direction: rtl;
+    color: var(--hb-text);
+}
+
+body.toplevel_page_hashieban #wpbody-content > .wrap p,
+body[class*="hashieban_page_hashieban"] #wpbody-content > .wrap p {
+    line-height: 1.85;
+}
+
+/* Keep report headers compact and consistent. */
+.hb-channel-hero,
+.hb-coupon-hero,
+.hb-customer-hero,
+.hb-data-health-hero,
+.hb-expense-intelligence-hero,
+.hb-geo-hero,
+.hb-guard-hero,
+.hb-inventory-hero,
+.hb-kpi-hero,
+.hb-orders-hero,
+.hb-product-hero,
+.hb-reports-hero,
+.hb-time-hero,
+.hb-bulk-tools-hero,
+.hb-settings-hero,
+.hb-category-hero,
+.hb-analytics-hub__hero {
+    min-height: 0 !important;
+    margin-bottom: 20px !important;
+    padding: clamp(24px, 2.4vw, 34px) !important;
+    border-radius: 22px !important;
+    box-shadow: 0 16px 38px rgba(30, 64, 175, .12);
+}
+
+.hb-channel-hero h1,
+.hb-coupon-hero h1,
+.hb-customer-hero h1,
+.hb-data-health-hero h1,
+.hb-expense-intelligence-hero h1,
+.hb-geo-hero h1,
+.hb-guard-hero h1,
+.hb-inventory-hero h1,
+.hb-kpi-hero h1,
+.hb-orders-hero h1,
+.hb-product-hero h1,
+.hb-reports-hero h1,
+.hb-time-hero h1,
+.hb-bulk-tools-hero h1,
+.hb-settings-hero h1,
+.hb-category-hero h1,
+.hb-analytics-hub__hero h1 {
+    margin-top: 7px;
+    margin-bottom: 8px;
+    font-size: clamp(24px, 2.2vw, 32px);
+    line-height: 1.45;
+    letter-spacing: -.2px;
+}
+
+/* Give dates, units and compact metadata real breathing room. */
+.hb-channel-hero__meta,
+.hb-coupon-hero__meta,
+.hb-customer-hero__meta,
+.hb-data-health-hero__meta,
+.hb-expense-intelligence-hero__meta,
+.hb-geo-hero__meta,
+.hb-guard-hero__meta,
+.hb-inventory-hero__meta,
+.hb-kpi-hero__meta,
+.hb-orders-hero__meta,
+.hb-product-hero__meta,
+.hb-reports-hero__meta,
+.hb-time-hero__meta,
+.hb-hero__meta {
+    display: flex;
+    align-items: center;
+    flex-wrap: wrap;
+    gap: 9px 14px !important;
+}
+
+.hb-channel-hero__meta > span,
+.hb-coupon-hero__meta > span,
+.hb-customer-hero__meta > span,
+.hb-data-health-hero__meta > span,
+.hb-expense-intelligence-hero__meta > span,
+.hb-geo-hero__meta > span,
+.hb-guard-hero__meta > span,
+.hb-inventory-hero__meta > span,
+.hb-kpi-hero__meta > span,
+.hb-orders-hero__meta > span,
+.hb-product-hero__meta > span,
+.hb-reports-hero__meta > span,
+.hb-time-hero__meta > span,
+.hb-hero__meta > span {
+    display: inline-flex;
+    align-items: center;
+    gap: 7px;
+    line-height: 1.6;
+}
+
+/* Common card language: subtle border, calm shadow, no random emphasis. */
+.hb-channel-card,
+.hb-coupon-card,
+.hb-customer-card,
+.hb-data-health-card,
+.hb-expense-intelligence-card,
+.hb-geo-card,
+.hb-guard-card,
+.hb-guard-control-card,
+.hb-inventory-card,
+.hb-kpi-card,
+.hb-orders-card,
+.hb-product-card,
+.hb-reports-card,
+.hb-settings-card,
+.hb-time-card,
+.hb-bulk-tools-card,
+.hb-category-card,
+.hb-orders-filter-card,
+.hb-customer-range-card,
+.hb-data-health-range-card,
+.hb-guard-range-card,
+.hb-time-range-card {
+    border-color: var(--hb-border) !important;
+    border-radius: var(--hb-radius-lg) !important;
+    box-shadow: var(--hb-shadow) !important;
+}
+
+/* Forms and filters should read as one system across all reports. */
+body.toplevel_page_hashieban .button,
+body[class*="hashieban_page_hashieban"] .button {
+    border-radius: 9px;
+    transition: border-color .15s ease, box-shadow .15s ease, transform .15s ease;
+}
+
+body.toplevel_page_hashieban .button-primary,
+body[class*="hashieban_page_hashieban"] .button-primary {
+    border-color: var(--hb-primary);
+    background: var(--hb-primary);
+}
+
+body.toplevel_page_hashieban .button:focus-visible,
+body[class*="hashieban_page_hashieban"] .button:focus-visible,
+body.toplevel_page_hashieban a:focus-visible,
+body[class*="hashieban_page_hashieban"] a:focus-visible {
+    outline: 2px solid #60a5fa;
+    outline-offset: 2px;
+    box-shadow: none;
+}
+
+body.toplevel_page_hashieban label,
+body[class*="hashieban_page_hashieban"] label {
+    color: #334155;
+    font-weight: 600;
+}
+
+/* Tables: more readable and screenshot-friendly. */
+body.toplevel_page_hashieban table,
+body[class*="hashieban_page_hashieban"] table {
+    border-color: var(--hb-border);
+}
+
+body.toplevel_page_hashieban table th,
+body[class*="hashieban_page_hashieban"] table th {
+    color: #334155;
+    font-weight: 700;
+    line-height: 1.65;
+}
+
+body.toplevel_page_hashieban table td,
+body[class*="hashieban_page_hashieban"] table td {
+    line-height: 1.75;
+}
+
+body.toplevel_page_hashieban table tbody tr:hover,
+body[class*="hashieban_page_hashieban"] table tbody tr:hover {
+    background: #f8fafc;
+}
+
+/* Semantic text colors remain meaningful across screens. */
+.is-positive,
+.hb-positive {
+    color: var(--hb-positive) !important;
+}
+
+.is-negative,
+.hb-negative {
+    color: var(--hb-danger) !important;
+}
+
+@media (max-width: 782px) {
+    .hb-channel-hero,
+    .hb-coupon-hero,
+    .hb-customer-hero,
+    .hb-data-health-hero,
+    .hb-expense-intelligence-hero,
+    .hb-geo-hero,
+    .hb-guard-hero,
+    .hb-inventory-hero,
+    .hb-kpi-hero,
+    .hb-orders-hero,
+    .hb-product-hero,
+    .hb-reports-hero,
+    .hb-time-hero,
+    .hb-bulk-tools-hero,
+    .hb-settings-hero,
+    .hb-category-hero,
+    .hb-analytics-hub__hero {
+        padding: 22px !important;
+        border-radius: 16px !important;
+    }
+}
