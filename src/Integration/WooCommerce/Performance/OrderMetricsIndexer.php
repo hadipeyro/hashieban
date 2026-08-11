@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace Hashieban\Integration\WooCommerce\Performance;
 
+use Hashieban\Integration\WooCommerce\Attribution\SalesChannelClassifier;
 use Hashieban\Integration\WooCommerce\Order\DirectCostRepository;
 use Hashieban\Integration\WooCommerce\Snapshot\ProfitSnapshotRepository;
 use WC_Order;
@@ -16,14 +17,18 @@ final class OrderMetricsIndexer
 
     private DirectCostRepository $directCosts;
 
+    private SalesChannelClassifier $channels;
+
     public function __construct(
         OrderMetricsRepository $repository,
         ProfitSnapshotRepository $snapshots,
-        DirectCostRepository $directCosts
+        DirectCostRepository $directCosts,
+        SalesChannelClassifier $channels
     ) {
         $this->repository = $repository;
         $this->snapshots = $snapshots;
         $this->directCosts = $directCosts;
+        $this->channels = $channels;
     }
 
     public function register(): void
@@ -143,6 +148,8 @@ final class OrderMetricsIndexer
             ? (int) round(((float) $margin) * 100)
             : null;
 
+        $attribution = $this->resolveAttribution($order);
+
         $row = array(
             'order_id' => $order->get_id(),
             'order_date_local' => $date->format('Y-m-d H:i:s'),
@@ -156,6 +163,15 @@ final class OrderMetricsIndexer
             'incomplete' => (string) ($financial['completeness_status'] ?? '') !== 'complete',
             'margin_bps' => $marginBps,
             'snapshot_revision' => max(1, (int) ($snapshot['revision'] ?? 1)),
+            'channel_key' => (string) ($attribution['channel_key'] ?? 'unknown'),
+            'channel_name' => (string) ($attribution['channel_name'] ?? 'بدون داده منبع'),
+            'channel_group' => (string) ($attribution['channel_group'] ?? 'unknown'),
+            'attribution_known' => ! empty($attribution['known']),
+            'attribution_source_type' => (string) ($attribution['source_type'] ?? ''),
+            'attribution_source' => (string) ($attribution['source'] ?? ''),
+            'attribution_medium' => (string) ($attribution['medium'] ?? ''),
+            'attribution_campaign' => (string) ($attribution['campaign'] ?? ''),
+            'attribution_referrer_domain' => (string) ($attribution['referrer_domain'] ?? ''),
         );
 
         $indexed = $this->repository
@@ -194,6 +210,113 @@ final class OrderMetricsIndexer
     {
         return $this->repository
             ->isReady();
+    }
+
+    private function resolveAttribution(
+        WC_Order $order
+    ): array {
+        $classification = $this->channels->classify(
+            array(
+                'source_type' => (string) $order->get_meta(
+                    '_wc_order_attribution_source_type',
+                    true
+                ),
+                'source' => (string) $order->get_meta(
+                    '_wc_order_attribution_utm_source',
+                    true
+                ),
+                'medium' => (string) $order->get_meta(
+                    '_wc_order_attribution_utm_medium',
+                    true
+                ),
+                'campaign' => (string) $order->get_meta(
+                    '_wc_order_attribution_utm_campaign',
+                    true
+                ),
+                'referrer' => (string) $order->get_meta(
+                    '_wc_order_attribution_referrer',
+                    true
+                ),
+            )
+        );
+
+        $filtered = apply_filters(
+            'hashieban_sales_channel_classification',
+            $classification,
+            $order
+        );
+
+        if (! is_array($filtered)) {
+            $filtered = $classification;
+        }
+
+        $key = sanitize_key(
+            (string) ($filtered['channel_key'] ?? 'unknown')
+        );
+
+        if ($key === '') {
+            $key = 'unknown';
+        }
+
+        return array(
+            'channel_key' => $this->limit($key, 100),
+            'channel_name' => $this->limit(
+                sanitize_text_field(
+                    (string) ($filtered['channel_name'] ?? 'بدون داده منبع')
+                ),
+                191
+            ),
+            'channel_group' => $this->limit(
+                sanitize_key(
+                    (string) ($filtered['channel_group'] ?? 'unknown')
+                ),
+                32
+            ),
+            'known' => ! empty($filtered['known']),
+            'source_type' => $this->limit(
+                sanitize_key(
+                    (string) ($filtered['source_type'] ?? '')
+                ),
+                64
+            ),
+            'source' => $this->limit(
+                sanitize_text_field(
+                    (string) ($filtered['source'] ?? '')
+                ),
+                191
+            ),
+            'medium' => $this->limit(
+                sanitize_text_field(
+                    (string) ($filtered['medium'] ?? '')
+                ),
+                191
+            ),
+            'campaign' => $this->limit(
+                sanitize_text_field(
+                    (string) ($filtered['campaign'] ?? '')
+                ),
+                191
+            ),
+            'referrer_domain' => $this->limit(
+                sanitize_text_field(
+                    (string) ($filtered['referrer_domain'] ?? '')
+                ),
+                191
+            ),
+        );
+    }
+
+    private function limit(
+        string $value,
+        int $length
+    ): string {
+        $value = trim($value);
+
+        if (function_exists('mb_substr')) {
+            return mb_substr($value, 0, $length);
+        }
+
+        return substr($value, 0, $length);
     }
 
     private function isEligibleStatus(

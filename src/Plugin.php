@@ -8,6 +8,7 @@ use Hashieban\Admin\AdminMenu;
 use Hashieban\Admin\AnalyticsHubPage;
 use Hashieban\Admin\BulkToolsPage;
 use Hashieban\Admin\BusinessKpisPage;
+use Hashieban\Admin\SalesChannelIntelligencePage;
 use Hashieban\Admin\CustomerProfitabilityPage;
 use Hashieban\Admin\MarginGuardPage;
 use Hashieban\Admin\DashboardPage;
@@ -32,6 +33,7 @@ use Hashieban\Finance\GlobalOrderCostRepository;
 use Hashieban\Finance\StoreExpenseRepository;
 use Hashieban\Integration\WooCommerce\Analytics\AnalyticsService;
 use Hashieban\Integration\WooCommerce\Analytics\BusinessKpiService;
+use Hashieban\Integration\WooCommerce\Analytics\SalesChannelIntelligenceService;
 use Hashieban\Integration\WooCommerce\Analytics\CustomerProfitabilityService;
 use Hashieban\Integration\WooCommerce\Analytics\DataHealthService;
 use Hashieban\Integration\WooCommerce\Analytics\ExpenseIntelligenceService;
@@ -43,6 +45,7 @@ use Hashieban\Integration\WooCommerce\Analytics\OrderProfitCenterService;
 use Hashieban\Integration\WooCommerce\Analytics\ReportsHubService;
 use Hashieban\Integration\WooCommerce\Analytics\TimeIntelligenceService;
 use Hashieban\Integration\WooCommerce\Compatibility;
+use Hashieban\Integration\WooCommerce\Attribution\SalesChannelClassifier;
 use Hashieban\Integration\WooCommerce\Geo\GeoAddressCapture;
 use Hashieban\Integration\WooCommerce\Geo\GeoAddressResolver;
 use Hashieban\Integration\WooCommerce\Order\DirectCostRepository;
@@ -190,11 +193,15 @@ final class Plugin
 
         $profitSnapshots->register();
 
+        $salesChannelClassifier =
+            new SalesChannelClassifier();
+
         $orderMetricsIndexer =
             new OrderMetricsIndexer(
                 $orderMetricsRepository,
                 $profitSnapshotRepository,
-                $directCostRepository
+                $directCostRepository,
+                $salesChannelClassifier
             );
 
         $orderMetricsIndexer->register();
@@ -288,6 +295,16 @@ final class Plugin
         $businessKpisPage =
             new BusinessKpisPage(
                 $businessKpis
+            );
+
+        $salesChannelIntelligence =
+            new SalesChannelIntelligenceService(
+                $orderMetricsRepository
+            );
+
+        $salesChannelIntelligencePage =
+            new SalesChannelIntelligencePage(
+                $salesChannelIntelligence
             );
 
         $timeIntelligence =
@@ -408,6 +425,7 @@ final class Plugin
                 $dashboard,
                 $analyticsHubPage,
                 $businessKpisPage,
+                $salesChannelIntelligencePage,
                 $productProfitabilityPage,
                 $inventoryPurchaseInsightPage,
                 $customerProfitabilityPage,

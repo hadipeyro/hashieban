@@ -8,7 +8,7 @@ use DateTimeInterface;
 
 final class OrderMetricsRepository
 {
-    private const DATABASE_VERSION = '1';
+    private const DATABASE_VERSION = '2';
 
     private const DATABASE_VERSION_OPTION =
         'hashieban_order_metrics_database_version';
@@ -55,11 +55,22 @@ final class OrderMetricsRepository
                 incomplete TINYINT UNSIGNED NOT NULL DEFAULT 0,
                 margin_bps INT NULL,
                 snapshot_revision INT UNSIGNED NOT NULL DEFAULT 1,
+                channel_key VARCHAR(100) NOT NULL DEFAULT 'unknown',
+                channel_name VARCHAR(191) NOT NULL DEFAULT '',
+                channel_group VARCHAR(32) NOT NULL DEFAULT 'unknown',
+                attribution_known TINYINT UNSIGNED NOT NULL DEFAULT 0,
+                attribution_source_type VARCHAR(64) NOT NULL DEFAULT '',
+                attribution_source VARCHAR(191) NOT NULL DEFAULT '',
+                attribution_medium VARCHAR(191) NOT NULL DEFAULT '',
+                attribution_campaign VARCHAR(191) NOT NULL DEFAULT '',
+                attribution_referrer_domain VARCHAR(191) NOT NULL DEFAULT '',
                 updated_at DATETIME NOT NULL,
                 PRIMARY KEY (order_id),
                 KEY currency_date (currency, order_date_local),
                 KEY order_date_local (order_date_local),
-                KEY status (status)
+                KEY status (status),
+                KEY channel_date (channel_key, order_date_local),
+                KEY attribution_campaign (attribution_campaign(100))
             ) {$charsetCollate};
         ";
 
@@ -136,6 +147,10 @@ final class OrderMetricsRepository
         array $row,
         array $categoryTotals
     ): bool {
+        if (! $this->isSchemaCurrent()) {
+            $this->maybeInstall();
+        }
+
         global $wpdb;
 
         $orderId = (int) ($row['order_id'] ?? 0);
@@ -174,6 +189,24 @@ final class OrderMetricsRepository
                 'margin_bps' => $marginBps,
                 'snapshot_revision' =>
                     max(1, (int) ($row['snapshot_revision'] ?? 1)),
+                'channel_key' =>
+                    (string) ($row['channel_key'] ?? 'unknown'),
+                'channel_name' =>
+                    (string) ($row['channel_name'] ?? ''),
+                'channel_group' =>
+                    (string) ($row['channel_group'] ?? 'unknown'),
+                'attribution_known' =>
+                    ! empty($row['attribution_known']) ? 1 : 0,
+                'attribution_source_type' =>
+                    (string) ($row['attribution_source_type'] ?? ''),
+                'attribution_source' =>
+                    (string) ($row['attribution_source'] ?? ''),
+                'attribution_medium' =>
+                    (string) ($row['attribution_medium'] ?? ''),
+                'attribution_campaign' =>
+                    (string) ($row['attribution_campaign'] ?? ''),
+                'attribution_referrer_domain' =>
+                    (string) ($row['attribution_referrer_domain'] ?? ''),
                 'updated_at' => current_time('mysql'),
             ),
             array(
@@ -189,6 +222,15 @@ final class OrderMetricsRepository
                 '%d',
                 $marginBps === null ? '%s' : '%d',
                 '%d',
+                '%s',
+                '%s',
+                '%s',
+                '%d',
+                '%s',
+                '%s',
+                '%s',
+                '%s',
+                '%s',
                 '%s',
             )
         );
@@ -397,6 +439,133 @@ final class OrderMetricsRepository
         $rows = $wpdb->get_results($sql, ARRAY_A);
 
         return is_array($rows) ? $rows : array();
+    }
+
+    public function channelSummaryBetween(
+        DateTimeInterface $start,
+        DateTimeInterface $end,
+        string $currency
+    ): array {
+        global $wpdb;
+
+        $sql = $wpdb->prepare(
+            "
+            SELECT
+                channel_key,
+                MAX(channel_name) AS channel_name,
+                MAX(channel_group) AS channel_group,
+                COUNT(*) AS order_count,
+                COALESCE(SUM(revenue_minor), 0) AS revenue_minor,
+                COALESCE(SUM(profit_minor), 0) AS profit_minor,
+                COALESCE(SUM(incomplete), 0) AS incomplete_count,
+                COALESCE(SUM(attribution_known), 0) AS attributed_order_count
+            FROM {$this->metricsTable()}
+            WHERE currency = %s
+              AND order_date_local >= %s
+              AND order_date_local <= %s
+            GROUP BY channel_key
+            ORDER BY revenue_minor DESC, order_count DESC
+            ",
+            $currency,
+            $start->format('Y-m-d H:i:s'),
+            $end->format('Y-m-d H:i:s')
+        );
+
+        $rows = $wpdb->get_results($sql, ARRAY_A);
+
+        return is_array($rows) ? $rows : array();
+    }
+
+    public function campaignSummaryBetween(
+        DateTimeInterface $start,
+        DateTimeInterface $end,
+        string $currency,
+        int $limit = 20
+    ): array {
+        global $wpdb;
+
+        $limit = max(1, min(100, $limit));
+
+        $sql = $wpdb->prepare(
+            "
+            SELECT
+                attribution_campaign AS campaign,
+                attribution_source AS source,
+                attribution_medium AS medium,
+                channel_key,
+                MAX(channel_name) AS channel_name,
+                COUNT(*) AS order_count,
+                COALESCE(SUM(revenue_minor), 0) AS revenue_minor,
+                COALESCE(SUM(profit_minor), 0) AS profit_minor
+            FROM {$this->metricsTable()}
+            WHERE currency = %s
+              AND order_date_local >= %s
+              AND order_date_local <= %s
+              AND attribution_campaign <> ''
+            GROUP BY
+                attribution_campaign,
+                attribution_source,
+                attribution_medium,
+                channel_key
+            ORDER BY revenue_minor DESC, order_count DESC
+            LIMIT %d
+            ",
+            $currency,
+            $start->format('Y-m-d H:i:s'),
+            $end->format('Y-m-d H:i:s'),
+            $limit
+        );
+
+        $rows = $wpdb->get_results($sql, ARRAY_A);
+
+        return is_array($rows) ? $rows : array();
+    }
+
+    public function referrerSummaryBetween(
+        DateTimeInterface $start,
+        DateTimeInterface $end,
+        string $currency,
+        int $limit = 20
+    ): array {
+        global $wpdb;
+
+        $limit = max(1, min(100, $limit));
+
+        $sql = $wpdb->prepare(
+            "
+            SELECT
+                attribution_referrer_domain AS referrer_domain,
+                channel_key,
+                MAX(channel_name) AS channel_name,
+                COUNT(*) AS order_count,
+                COALESCE(SUM(revenue_minor), 0) AS revenue_minor,
+                COALESCE(SUM(profit_minor), 0) AS profit_minor
+            FROM {$this->metricsTable()}
+            WHERE currency = %s
+              AND order_date_local >= %s
+              AND order_date_local <= %s
+              AND attribution_referrer_domain <> ''
+            GROUP BY attribution_referrer_domain, channel_key
+            ORDER BY revenue_minor DESC, order_count DESC
+            LIMIT %d
+            ",
+            $currency,
+            $start->format('Y-m-d H:i:s'),
+            $end->format('Y-m-d H:i:s'),
+            $limit
+        );
+
+        $rows = $wpdb->get_results($sql, ARRAY_A);
+
+        return is_array($rows) ? $rows : array();
+    }
+
+    private function isSchemaCurrent(): bool
+    {
+        return (string) get_option(
+            self::DATABASE_VERSION_OPTION,
+            ''
+        ) === self::DATABASE_VERSION;
     }
 
     private function metricsTable(): string

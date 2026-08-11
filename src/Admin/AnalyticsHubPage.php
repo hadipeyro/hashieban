@@ -27,6 +27,12 @@ final class AnalyticsHubPage
                         'url' => admin_url('admin.php?page=hashieban-kpis'),
                     ),
                     array(
+                        'title' => 'مشتری‌ها از کجا می‌آیند؟',
+                        'description' => 'ترب، ایمالز، گوگل، شبکه‌های اجتماعی، کمپین‌ها و ورود مستقیم را بر اساس فروش و سود مقایسه کنید.',
+                        'icon' => 'dashicons-randomize',
+                        'url' => admin_url('admin.php?page=hashieban-channels'),
+                    ),
+                    array(
                         'title' => 'سودآوری محصولات',
                         'description' => 'فروش، سود، حاشیه سود و سهم هر محصول.',
                         'icon' => 'dashicons-products',
@@ -112,6 +118,10 @@ final class AnalyticsHubPage
             </section>
 
             <section class="hb-analytics-hub__quick">
+                <a href="<?php echo esc_url(admin_url('admin.php?page=hashieban-channels')); ?>">
+                    <span class="dashicons dashicons-randomize"></span>
+                    منبع فروش
+                </a>
                 <a href="<?php echo esc_url(admin_url('admin.php?page=hashieban-orders')); ?>">
                     <span class="dashicons dashicons-cart"></span>
                     مرکز سفارش‌ها

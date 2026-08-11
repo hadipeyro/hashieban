@@ -18,6 +18,8 @@ final class AdminMenu
 
     private BusinessKpisPage $businessKpisPage;
 
+    private SalesChannelIntelligencePage $salesChannelIntelligencePage;
+
     private ProductProfitabilityPage $productProfitabilityPage;
 
     private InventoryPurchaseInsightPage $inventoryPurchaseInsightPage;
@@ -53,6 +55,7 @@ final class AdminMenu
         DashboardPage $dashboard,
         AnalyticsHubPage $analyticsHubPage,
         BusinessKpisPage $businessKpisPage,
+        SalesChannelIntelligencePage $salesChannelIntelligencePage,
         ProductProfitabilityPage $productProfitabilityPage,
         InventoryPurchaseInsightPage $inventoryPurchaseInsightPage,
         CustomerProfitabilityPage $customerProfitabilityPage,
@@ -80,6 +83,9 @@ final class AdminMenu
 
         $this->businessKpisPage =
             $businessKpisPage;
+
+        $this->salesChannelIntelligencePage =
+            $salesChannelIntelligencePage;
 
         $this->productProfitabilityPage =
             $productProfitabilityPage;
@@ -193,6 +199,18 @@ final class AdminMenu
             'hashieban-kpis',
             array(
                 $this->businessKpisPage,
+                'render'
+            )
+        );
+
+        add_submenu_page(
+            'hashieban',
+            'هوش کانال‌های فروش و منبع سفارش',
+            'کانال‌های فروش',
+            Capabilities::VIEW_REPORTS,
+            'hashieban-channels',
+            array(
+                $this->salesChannelIntelligencePage,
                 'render'
             )
         );
@@ -405,6 +423,7 @@ final class AdminMenu
         <style id="hashieban-admin-navigation-css">
             #toplevel_page_hashieban .wp-submenu li:has(a[href*="page=hashieban-kpis"]),
             #toplevel_page_hashieban .wp-submenu li:has(a[href*="page=hashieban-products"]),
+            #toplevel_page_hashieban .wp-submenu li:has(a[href*="page=hashieban-channels"]),
             #toplevel_page_hashieban .wp-submenu li:has(a[href*="page=hashieban-inventory"]),
             #toplevel_page_hashieban .wp-submenu li:has(a[href*="page=hashieban-customers"]),
             #toplevel_page_hashieban .wp-submenu li:has(a[href*="page=hashieban-time"]),
@@ -570,6 +589,38 @@ final class AdminMenu
                 'hashieban-business-kpis',
                 plugins_url(
                     'assets/admin/js/hashieban-business-kpis.js',
+                    HASHIEBAN_FILE
+                ),
+                array(
+                    'hashieban-chartjs'
+                ),
+                HASHIEBAN_VERSION,
+                true
+            );
+        }
+
+        if (
+            strpos(
+                $hook,
+                'hashieban-channels'
+            ) !== false
+        ) {
+            wp_enqueue_style(
+                'hashieban-sales-channels',
+                plugins_url(
+                    'assets/admin/css/hashieban-sales-channels.css',
+                    HASHIEBAN_FILE
+                ),
+                array(
+                    'hashieban-admin'
+                ),
+                HASHIEBAN_VERSION
+            );
+
+            wp_enqueue_script(
+                'hashieban-sales-channels',
+                plugins_url(
+                    'assets/admin/js/hashieban-sales-channels.js',
                     HASHIEBAN_FILE
                 ),
                 array(
