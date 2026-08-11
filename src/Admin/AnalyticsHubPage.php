@@ -33,6 +33,12 @@ final class AnalyticsHubPage
                         'url' => admin_url('admin.php?page=hashieban-channels'),
                     ),
                     array(
+                        'title' => 'هوش تخفیف و کوپن',
+                        'description' => 'ببینید هر کد تخفیف چقدر فروش ساخته، چه مقدار سود باقی گذاشته و کجا سفارش زیان‌ده ایجاد کرده است.',
+                        'icon' => 'dashicons-tickets-alt',
+                        'url' => admin_url('admin.php?page=hashieban-coupons'),
+                    ),
+                    array(
                         'title' => 'سودآوری محصولات',
                         'description' => 'فروش، سود، حاشیه سود و سهم هر محصول.',
                         'icon' => 'dashicons-products',

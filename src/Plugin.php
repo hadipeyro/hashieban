@@ -8,6 +8,7 @@ use Hashieban\Admin\AdminMenu;
 use Hashieban\Admin\AnalyticsHubPage;
 use Hashieban\Admin\BulkToolsPage;
 use Hashieban\Admin\BusinessKpisPage;
+use Hashieban\Admin\CouponDiscountIntelligencePage;
 use Hashieban\Admin\SalesChannelIntelligencePage;
 use Hashieban\Admin\CustomerProfitabilityPage;
 use Hashieban\Admin\MarginGuardPage;
@@ -33,6 +34,8 @@ use Hashieban\Finance\GlobalOrderCostRepository;
 use Hashieban\Finance\StoreExpenseRepository;
 use Hashieban\Integration\WooCommerce\Analytics\AnalyticsService;
 use Hashieban\Integration\WooCommerce\Analytics\BusinessKpiService;
+use Hashieban\Integration\WooCommerce\Analytics\CouponDiscountAnalyzer;
+use Hashieban\Integration\WooCommerce\Analytics\CouponDiscountIntelligenceService;
 use Hashieban\Integration\WooCommerce\Analytics\SalesChannelIntelligenceService;
 use Hashieban\Integration\WooCommerce\Analytics\CustomerProfitabilityService;
 use Hashieban\Integration\WooCommerce\Analytics\DataHealthService;
@@ -201,7 +204,8 @@ final class Plugin
                 $orderMetricsRepository,
                 $profitSnapshotRepository,
                 $directCostRepository,
-                $salesChannelClassifier
+                $salesChannelClassifier,
+                $moneyFactory
             );
 
         $orderMetricsIndexer->register();
@@ -305,6 +309,20 @@ final class Plugin
         $salesChannelIntelligencePage =
             new SalesChannelIntelligencePage(
                 $salesChannelIntelligence
+            );
+
+        $couponDiscountAnalyzer =
+            new CouponDiscountAnalyzer();
+
+        $couponDiscountIntelligence =
+            new CouponDiscountIntelligenceService(
+                $orderMetricsRepository,
+                $couponDiscountAnalyzer
+            );
+
+        $couponDiscountIntelligencePage =
+            new CouponDiscountIntelligencePage(
+                $couponDiscountIntelligence
             );
 
         $timeIntelligence =
@@ -426,6 +444,7 @@ final class Plugin
                 $analyticsHubPage,
                 $businessKpisPage,
                 $salesChannelIntelligencePage,
+                $couponDiscountIntelligencePage,
                 $productProfitabilityPage,
                 $inventoryPurchaseInsightPage,
                 $customerProfitabilityPage,

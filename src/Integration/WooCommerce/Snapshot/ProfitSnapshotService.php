@@ -59,6 +59,13 @@ final class ProfitSnapshotService
             100,
             1
         );
+
+        add_action(
+            'woocommerce_update_order',
+            array($this, 'captureOnOrderUpdate'),
+            100,
+            2
+        );
     }
 
     public function captureOnStatusChange(
@@ -110,6 +117,39 @@ final class ProfitSnapshotService
         $this->capture(
             $order,
             'refund:' . $refundId,
+            true
+        );
+    }
+
+    public function captureOnOrderUpdate(
+        int $orderId,
+        $order = null
+    ): void {
+        $resolved = $order instanceof WC_Order
+            ? $order
+            : wc_get_order($orderId);
+
+        if (! $resolved instanceof WC_Order) {
+            return;
+        }
+
+        if (
+            ! in_array(
+                $resolved->get_status(),
+                array(
+                    'processing',
+                    'completed',
+                    'refunded',
+                ),
+                true
+            )
+        ) {
+            return;
+        }
+
+        $this->capture(
+            $resolved,
+            'order-update',
             true
         );
     }

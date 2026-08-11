@@ -8,7 +8,7 @@ use DateTimeInterface;
 
 final class OrderMetricsRepository
 {
-    private const DATABASE_VERSION = '2';
+    private const DATABASE_VERSION = '3';
 
     private const DATABASE_VERSION_OPTION =
         'hashieban_order_metrics_database_version';
@@ -39,6 +39,7 @@ final class OrderMetricsRepository
 
         $metricsTable = $this->metricsTable();
         $categoryTable = $this->categoryTable();
+        $couponTable = $this->couponTable();
         $charsetCollate = $wpdb->get_charset_collate();
 
         $metricsSql = "
@@ -64,13 +65,17 @@ final class OrderMetricsRepository
                 attribution_medium VARCHAR(191) NOT NULL DEFAULT '',
                 attribution_campaign VARCHAR(191) NOT NULL DEFAULT '',
                 attribution_referrer_domain VARCHAR(191) NOT NULL DEFAULT '',
+                coupon_count SMALLINT UNSIGNED NOT NULL DEFAULT 0,
+                discount_minor BIGINT NOT NULL DEFAULT 0,
                 updated_at DATETIME NOT NULL,
                 PRIMARY KEY (order_id),
                 KEY currency_date (currency, order_date_local),
                 KEY order_date_local (order_date_local),
                 KEY status (status),
                 KEY channel_date (channel_key, order_date_local),
-                KEY attribution_campaign (attribution_campaign(100))
+                KEY attribution_campaign (attribution_campaign(100)),
+                KEY coupon_date (coupon_count, order_date_local),
+                KEY discount_date (discount_minor, order_date_local)
             ) {$charsetCollate};
         ";
 
@@ -84,11 +89,22 @@ final class OrderMetricsRepository
             ) {$charsetCollate};
         ";
 
+        $couponSql = "
+            CREATE TABLE {$couponTable} (
+                order_id BIGINT UNSIGNED NOT NULL,
+                coupon_code VARCHAR(100) NOT NULL DEFAULT '',
+                discount_minor BIGINT NOT NULL DEFAULT 0,
+                PRIMARY KEY (order_id, coupon_code),
+                KEY coupon_code (coupon_code)
+            ) {$charsetCollate};
+        ";
+
         require_once ABSPATH
             . 'wp-admin/includes/upgrade.php';
 
         dbDelta($metricsSql);
         dbDelta($categorySql);
+        dbDelta($couponSql);
 
         update_option(
             self::DATABASE_VERSION_OPTION,
@@ -137,6 +153,10 @@ final class OrderMetricsRepository
         );
 
         $wpdb->query(
+            "DELETE FROM {$this->couponTable()}"
+        );
+
+        $wpdb->query(
             "DELETE FROM {$this->metricsTable()}"
         );
 
@@ -145,7 +165,8 @@ final class OrderMetricsRepository
 
     public function replaceOrder(
         array $row,
-        array $categoryTotals
+        array $categoryTotals,
+        array $couponDiscounts = array()
     ): bool {
         if (! $this->isSchemaCurrent()) {
             $this->maybeInstall();
@@ -207,6 +228,10 @@ final class OrderMetricsRepository
                     (string) ($row['attribution_campaign'] ?? ''),
                 'attribution_referrer_domain' =>
                     (string) ($row['attribution_referrer_domain'] ?? ''),
+                'coupon_count' =>
+                    max(0, (int) ($row['coupon_count'] ?? 0)),
+                'discount_minor' =>
+                    max(0, (int) ($row['discount_minor'] ?? 0)),
                 'updated_at' => current_time('mysql'),
             ),
             array(
@@ -231,6 +256,8 @@ final class OrderMetricsRepository
                 '%s',
                 '%s',
                 '%s',
+                '%d',
+                '%d',
                 '%s',
             )
         );
@@ -264,6 +291,37 @@ final class OrderMetricsRepository
             );
         }
 
+        $wpdb->delete(
+            $this->couponTable(),
+            array('order_id' => $orderId),
+            array('%d')
+        );
+
+        foreach ($couponDiscounts as $couponCode => $amountMinor) {
+            $couponCode = sanitize_text_field((string) $couponCode);
+            $amountMinor = max(0, (int) $amountMinor);
+
+            if ($couponCode === '') {
+                continue;
+            }
+
+            if (function_exists('mb_substr')) {
+                $couponCode = mb_substr($couponCode, 0, 100);
+            } else {
+                $couponCode = substr($couponCode, 0, 100);
+            }
+
+            $wpdb->replace(
+                $this->couponTable(),
+                array(
+                    'order_id' => $orderId,
+                    'coupon_code' => $couponCode,
+                    'discount_minor' => $amountMinor,
+                ),
+                array('%d', '%s', '%d')
+            );
+        }
+
         return true;
     }
 
@@ -277,6 +335,12 @@ final class OrderMetricsRepository
 
         $wpdb->delete(
             $this->categoryTable(),
+            array('order_id' => $orderId),
+            array('%d')
+        );
+
+        $wpdb->delete(
+            $this->couponTable(),
             array('order_id' => $orderId),
             array('%d')
         );
@@ -560,6 +624,129 @@ final class OrderMetricsRepository
         return is_array($rows) ? $rows : array();
     }
 
+    public function discountSummaryBetween(
+        DateTimeInterface $start,
+        DateTimeInterface $end,
+        string $currency
+    ): array {
+        global $wpdb;
+
+        $sql = $wpdb->prepare(
+            "
+            SELECT
+                COUNT(*) AS order_count,
+                COALESCE(SUM(revenue_minor), 0) AS revenue_minor,
+                COALESCE(SUM(profit_minor), 0) AS profit_minor,
+                COALESCE(SUM(discount_minor), 0) AS discount_minor,
+                COALESCE(SUM(CASE WHEN discount_minor > 0 THEN 1 ELSE 0 END), 0) AS discounted_order_count,
+                COALESCE(SUM(CASE WHEN coupon_count > 0 THEN 1 ELSE 0 END), 0) AS coupon_order_count,
+                COALESCE(SUM(CASE WHEN coupon_count > 0 AND profit_minor < 0 THEN 1 ELSE 0 END), 0) AS coupon_loss_order_count,
+                COALESCE(SUM(CASE WHEN coupon_count > 1 THEN 1 ELSE 0 END), 0) AS multi_coupon_order_count,
+                COALESCE(SUM(CASE WHEN coupon_count > 0 THEN revenue_minor ELSE 0 END), 0) AS coupon_revenue_minor,
+                COALESCE(SUM(CASE WHEN coupon_count > 0 THEN profit_minor ELSE 0 END), 0) AS coupon_profit_minor,
+                COALESCE(SUM(CASE WHEN coupon_count > 0 THEN discount_minor ELSE 0 END), 0) AS coupon_discount_minor,
+                COALESCE(SUM(CASE WHEN coupon_count = 0 THEN revenue_minor ELSE 0 END), 0) AS no_coupon_revenue_minor,
+                COALESCE(SUM(CASE WHEN coupon_count = 0 THEN profit_minor ELSE 0 END), 0) AS no_coupon_profit_minor,
+                COALESCE(SUM(CASE WHEN coupon_count = 0 THEN 1 ELSE 0 END), 0) AS no_coupon_order_count,
+                COALESCE(SUM(CASE WHEN discount_minor > 0 AND coupon_count = 0 THEN 1 ELSE 0 END), 0) AS unattributed_discount_order_count
+            FROM {$this->metricsTable()}
+            WHERE currency = %s
+              AND order_date_local >= %s
+              AND order_date_local <= %s
+            ",
+            $currency,
+            $start->format('Y-m-d H:i:s'),
+            $end->format('Y-m-d H:i:s')
+        );
+
+        $row = $wpdb->get_row($sql, ARRAY_A);
+
+        return is_array($row) ? $row : array();
+    }
+
+    public function couponSummaryBetween(
+        DateTimeInterface $start,
+        DateTimeInterface $end,
+        string $currency,
+        int $limit = 50
+    ): array {
+        global $wpdb;
+
+        $limit = max(1, min(200, $limit));
+
+        $sql = $wpdb->prepare(
+            "
+            SELECT
+                coupons.coupon_code,
+                COUNT(DISTINCT metrics.order_id) AS order_count,
+                COALESCE(SUM(coupons.discount_minor), 0) AS coupon_discount_minor,
+                COALESCE(SUM(metrics.revenue_minor), 0) AS revenue_minor,
+                COALESCE(SUM(metrics.profit_minor), 0) AS profit_minor,
+                COALESCE(SUM(CASE WHEN metrics.profit_minor < 0 THEN 1 ELSE 0 END), 0) AS loss_order_count,
+                COALESCE(SUM(metrics.incomplete), 0) AS incomplete_count
+            FROM {$this->couponTable()} coupons
+            INNER JOIN {$this->metricsTable()} metrics
+                ON metrics.order_id = coupons.order_id
+            WHERE metrics.currency = %s
+              AND metrics.order_date_local >= %s
+              AND metrics.order_date_local <= %s
+            GROUP BY coupons.coupon_code
+            ORDER BY revenue_minor DESC, order_count DESC
+            LIMIT %d
+            ",
+            $currency,
+            $start->format('Y-m-d H:i:s'),
+            $end->format('Y-m-d H:i:s'),
+            $limit
+        );
+
+        $rows = $wpdb->get_results($sql, ARRAY_A);
+
+        return is_array($rows) ? $rows : array();
+    }
+
+    public function riskyCouponOrdersBetween(
+        DateTimeInterface $start,
+        DateTimeInterface $end,
+        string $currency,
+        int $limit = 12
+    ): array {
+        global $wpdb;
+
+        $limit = max(1, min(50, $limit));
+
+        $sql = $wpdb->prepare(
+            "
+            SELECT
+                order_id,
+                order_date_local,
+                revenue_minor,
+                profit_minor,
+                discount_minor,
+                coupon_count,
+                incomplete
+            FROM {$this->metricsTable()}
+            WHERE currency = %s
+              AND order_date_local >= %s
+              AND order_date_local <= %s
+              AND coupon_count > 0
+            ORDER BY
+                CASE WHEN profit_minor < 0 THEN 0 ELSE 1 END ASC,
+                profit_minor ASC,
+                discount_minor DESC
+            LIMIT %d
+            ",
+            $currency,
+            $start->format('Y-m-d H:i:s'),
+            $end->format('Y-m-d H:i:s'),
+            $limit
+        );
+
+        $rows = $wpdb->get_results($sql, ARRAY_A);
+
+        return is_array($rows) ? $rows : array();
+    }
+
     private function isSchemaCurrent(): bool
     {
         return (string) get_option(
@@ -582,5 +769,13 @@ final class OrderMetricsRepository
 
         return $wpdb->prefix
             . 'hashieban_order_cost_metrics';
+    }
+
+    private function couponTable(): string
+    {
+        global $wpdb;
+
+        return $wpdb->prefix
+            . 'hashieban_order_coupon_metrics';
     }
 }

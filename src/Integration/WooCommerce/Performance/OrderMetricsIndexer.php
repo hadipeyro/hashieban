@@ -6,8 +6,10 @@ namespace Hashieban\Integration\WooCommerce\Performance;
 
 use Hashieban\Integration\WooCommerce\Attribution\SalesChannelClassifier;
 use Hashieban\Integration\WooCommerce\Order\DirectCostRepository;
+use Hashieban\Integration\WooCommerce\Order\MoneyFactory;
 use Hashieban\Integration\WooCommerce\Snapshot\ProfitSnapshotRepository;
 use WC_Order;
+use WC_Order_Item_Coupon;
 
 final class OrderMetricsIndexer
 {
@@ -19,16 +21,20 @@ final class OrderMetricsIndexer
 
     private SalesChannelClassifier $channels;
 
+    private MoneyFactory $moneyFactory;
+
     public function __construct(
         OrderMetricsRepository $repository,
         ProfitSnapshotRepository $snapshots,
         DirectCostRepository $directCosts,
-        SalesChannelClassifier $channels
+        SalesChannelClassifier $channels,
+        MoneyFactory $moneyFactory
     ) {
         $this->repository = $repository;
         $this->snapshots = $snapshots;
         $this->directCosts = $directCosts;
         $this->channels = $channels;
+        $this->moneyFactory = $moneyFactory;
     }
 
     public function register(): void
@@ -45,6 +51,13 @@ final class OrderMetricsIndexer
             array($this, 'syncStatus'),
             120,
             4
+        );
+
+        add_action(
+            'woocommerce_update_order',
+            array($this, 'syncOrderUpdate'),
+            140,
+            2
         );
 
         add_action(
@@ -88,6 +101,25 @@ final class OrderMetricsIndexer
             : wc_get_order($orderId);
 
         if (! $resolved instanceof WC_Order) {
+            return;
+        }
+
+        $this->indexOrder($resolved);
+    }
+
+    public function syncOrderUpdate(
+        int $orderId,
+        $order = null
+    ): void {
+        $resolved = $order instanceof WC_Order
+            ? $order
+            : wc_get_order($orderId);
+
+        if (! $resolved instanceof WC_Order) {
+            return;
+        }
+
+        if (! $this->isEligibleStatus($resolved->get_status())) {
             return;
         }
 
@@ -149,6 +181,18 @@ final class OrderMetricsIndexer
             : null;
 
         $attribution = $this->resolveAttribution($order);
+        $couponDiscounts = $this->resolveCouponDiscounts(
+            $order,
+            (string) ($financial['currency'] ?? $order->get_currency()),
+            wc_get_price_decimals()
+        );
+        $discountMinor = $this->moneyFactory
+            ->fromWooCommerceAmount(
+                $order->get_total_discount(true),
+                (string) ($financial['currency'] ?? $order->get_currency()),
+                wc_get_price_decimals()
+            )
+            ->minorAmount();
 
         $row = array(
             'order_id' => $order->get_id(),
@@ -172,13 +216,16 @@ final class OrderMetricsIndexer
             'attribution_medium' => (string) ($attribution['medium'] ?? ''),
             'attribution_campaign' => (string) ($attribution['campaign'] ?? ''),
             'attribution_referrer_domain' => (string) ($attribution['referrer_domain'] ?? ''),
+            'coupon_count' => count($couponDiscounts),
+            'discount_minor' => max(0, $discountMinor),
         );
 
         $indexed = $this->repository
             ->replaceOrder(
                 $row,
                 $this->directCosts
-                     ->totalsByCategory($order)
+                     ->totalsByCategory($order),
+                $couponDiscounts
             );
 
         if ($indexed) {
@@ -210,6 +257,42 @@ final class OrderMetricsIndexer
     {
         return $this->repository
             ->isReady();
+    }
+
+    private function resolveCouponDiscounts(
+        WC_Order $order,
+        string $currency,
+        int $precision
+    ): array {
+        $discounts = array();
+
+        foreach ($order->get_items('coupon') as $coupon) {
+            if (! $coupon instanceof WC_Order_Item_Coupon) {
+                continue;
+            }
+
+            $code = trim((string) $coupon->get_code());
+
+            if ($code === '') {
+                continue;
+            }
+
+            $minor = $this->moneyFactory
+                ->fromWooCommerceAmount(
+                    $coupon->get_discount(),
+                    $currency,
+                    $precision
+                )
+                ->minorAmount();
+
+            if (! isset($discounts[$code])) {
+                $discounts[$code] = 0;
+            }
+
+            $discounts[$code] += max(0, $minor);
+        }
+
+        return $discounts;
     }
 
     private function resolveAttribution(

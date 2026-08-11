@@ -20,6 +20,8 @@ final class AdminMenu
 
     private SalesChannelIntelligencePage $salesChannelIntelligencePage;
 
+    private CouponDiscountIntelligencePage $couponDiscountIntelligencePage;
+
     private ProductProfitabilityPage $productProfitabilityPage;
 
     private InventoryPurchaseInsightPage $inventoryPurchaseInsightPage;
@@ -56,6 +58,7 @@ final class AdminMenu
         AnalyticsHubPage $analyticsHubPage,
         BusinessKpisPage $businessKpisPage,
         SalesChannelIntelligencePage $salesChannelIntelligencePage,
+        CouponDiscountIntelligencePage $couponDiscountIntelligencePage,
         ProductProfitabilityPage $productProfitabilityPage,
         InventoryPurchaseInsightPage $inventoryPurchaseInsightPage,
         CustomerProfitabilityPage $customerProfitabilityPage,
@@ -86,6 +89,9 @@ final class AdminMenu
 
         $this->salesChannelIntelligencePage =
             $salesChannelIntelligencePage;
+
+        $this->couponDiscountIntelligencePage =
+            $couponDiscountIntelligencePage;
 
         $this->productProfitabilityPage =
             $productProfitabilityPage;
@@ -211,6 +217,18 @@ final class AdminMenu
             'hashieban-channels',
             array(
                 $this->salesChannelIntelligencePage,
+                'render'
+            )
+        );
+
+        add_submenu_page(
+            'hashieban',
+            'هوش تخفیف و کوپن',
+            'تخفیف و کوپن',
+            Capabilities::VIEW_REPORTS,
+            'hashieban-coupons',
+            array(
+                $this->couponDiscountIntelligencePage,
                 'render'
             )
         );
@@ -424,6 +442,7 @@ final class AdminMenu
             #toplevel_page_hashieban .wp-submenu li:has(a[href*="page=hashieban-kpis"]),
             #toplevel_page_hashieban .wp-submenu li:has(a[href*="page=hashieban-products"]),
             #toplevel_page_hashieban .wp-submenu li:has(a[href*="page=hashieban-channels"]),
+            #toplevel_page_hashieban .wp-submenu li:has(a[href*="page=hashieban-coupons"]),
             #toplevel_page_hashieban .wp-submenu li:has(a[href*="page=hashieban-inventory"]),
             #toplevel_page_hashieban .wp-submenu li:has(a[href*="page=hashieban-customers"]),
             #toplevel_page_hashieban .wp-submenu li:has(a[href*="page=hashieban-time"]),
@@ -621,6 +640,38 @@ final class AdminMenu
                 'hashieban-sales-channels',
                 plugins_url(
                     'assets/admin/js/hashieban-sales-channels.js',
+                    HASHIEBAN_FILE
+                ),
+                array(
+                    'hashieban-chartjs'
+                ),
+                HASHIEBAN_VERSION,
+                true
+            );
+        }
+
+        if (
+            strpos(
+                $hook,
+                'hashieban-coupons'
+            ) !== false
+        ) {
+            wp_enqueue_style(
+                'hashieban-coupon-intelligence',
+                plugins_url(
+                    'assets/admin/css/hashieban-coupon-intelligence.css',
+                    HASHIEBAN_FILE
+                ),
+                array(
+                    'hashieban-admin'
+                ),
+                HASHIEBAN_VERSION
+            );
+
+            wp_enqueue_script(
+                'hashieban-coupon-intelligence',
+                plugins_url(
+                    'assets/admin/js/hashieban-coupon-intelligence.js',
                     HASHIEBAN_FILE
                 ),
                 array(
