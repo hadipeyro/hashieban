@@ -6,9 +6,9 @@
 
 **Stable — 1.0.0**
 
-نسخه 1.0.0 برای انتشار عمومی آماده شده و تمرکز آن روی صحت محاسبات مالی، رابط فارسی روشن، ناوبری ساده و بسته نصب استاندارد است.
+Hashieban is ready for public release. The 1.0.0 release focuses on reliable financial calculations, a clear Persian interface, simple navigation, and a clean WordPress package.
 
-## قابلیت‌های اصلی فعلی
+## Features
 
 - محاسبه فروش، هزینه خرید کالا و سود
 - هزینه‌های مستقیم سفارش و هزینه‌های عمومی فروشگاه
@@ -25,7 +25,7 @@
 - ابزارهای گروهی، خروجی CSV و ورود هزینه خرید
 - تجربه کاربری فارسی، دسترسی‌های تفکیک‌شده و زیرساخت فعال‌سازی قابل تنظیم
 
-## اصول توسعه
+## Development principles
 
 - صحت مالی قبل از ظاهر
 - حفظ تاریخچه مالی سفارش‌های قدیمی
@@ -34,7 +34,7 @@
 - وابستگی حداقلی و Assetهای محلی
 - تست خودکار + تست دستی سناریوهای واقعی قبل از انتشار
 
-## QA
+## Quality checks
 
 ```bash
 composer qa
